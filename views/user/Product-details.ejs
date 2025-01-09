@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>
+        <%= product.name %> - Product Details
+    </title>
+    <link rel="stylesheet" href="/css/products.css">
+    <link rel="icon" href="/images/favicon.jpg">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="/js/product-slider.js" defer></script>
+</head>
+
+<body>
+    <!-- Header -->
+    <header>
+        <nav class="navbar">
+            <div class="logo">
+                <a href="/"><img src="/images/logo1.png" alt="Keitai Logo"></a>
+            </div>
+            <ul class="nav-links">
+                <li><a href="/home" class="<%= product.category.name === 'Store' ? 'active' : '' %>">Store</a></li>
+                <li><a href="/laptop" class="<%= product.category.name === 'Laptop' ? 'active' : '' %>">Laptop</a></li>
+                <li><a href="/tablet" class="<%= product.category.name === 'Tablet' ? 'active' : '' %>">Tablet</a></li>
+                <li><a href="/phone" class="<%= product.category.name === 'Phone' ? 'active' : '' %>">Phone</a></li>
+                <li><a href="/watch" class="<%= product.category.name === 'Watch' ? 'active' : '' %>">Watch</a></li>
+                <li><a href="/earpod" class="<%= product.category.name === 'EarPods' ? 'active' : '' %>">EarPods</a>
+                </li>
+                <li><a href="/accessorie"
+                        class="<%= product.category.name === 'Accessories' ? 'active' : '' %>">Accessories</a></li>
+            </ul>
+            <div class="nav-icons">
+                <input type="text" placeholder="Search">
+                <a href="/cart"><i class="fas fa-shopping-cart"></i></a>
+                <a href="/user/profile"><i class="fas fa-user"></i></a>
+            </div>
+        </nav>
+    </header>
+
+    <!-- Breadcrumb Navigation -->
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item">
+                <a href="/<%= product.category.slug %>">
+                    <%= product.category.name %>
+                </a>
+            </li>
+            <li class="breadcrumb-item active" aria-current="page">
+                <%= product.name %>
+            </li>
+        </ol>
+    </nav>
+
+    <!-- Main Product Section -->
+    <section class="product-main">
+        <div class="container">
+            <div class="main-image-container">
+                <img src="/uploads/<%= product.images[0] %>" alt="<%= product.name %>" id="main-product-image">
+                <div class="zoom-lens" id="zoom-lens"></div>
+            </div>
+            <div class="thumbnails">
+                <% product.images.slice(0, 4).forEach((image)=> { %>
+                    <img src="/uploads/<%= image %>" alt="Thumbnail" onclick="changeImage(this)">
+                    <% }); %>
+            </div>
+        </div>
+
+        <div class="zoom-result" id="zoom-result"></div>
+        <div class="product-info">
+            <h1>
+                <%= product.name %>
+            </h1>
+            <p>⭐⭐⭐⭐☆ (<%= Math.floor(Math.random() * 100) + 50 %> Reviews)</p>
+            <p>₹<%= product.salesPrice || product.regularPrice %>
+                    <% if (product.salesPrice) { %>
+                        <span class="discount">₹<%= product.regularPrice %></span>
+                        <% } %>
+            </p>
+            <% if (product.productOffer) { %>
+                <p class="offer">Limited Offer: <%= product.productOffer %>
+                </p>
+                <% } %>
+
+                    <!-- Stock Availability -->
+                    <p class="stock-status" style="
+                color: <%= product.quantity > 10 ? 'green' : product.quantity > 0 ? 'orange' : 'red' %>;
+                font-weight: bold;">
+                        <% if (product.quantity> 10) { %>
+                            In Stock
+                            <% } else if (product.quantity> 0) { %>
+                                Limited Stock: Only <%= product.quantity %> left
+                                    <% } else { %>
+                                        Out of Stock
+                                        <% } %>
+                    </p>
+
+                    <form action="/user/checkout" method="POST" id="action-form">
+                        <input type="hidden" name="productId" value="<%= product._id %>">
+                        <input type="hidden" name="productUrl" value="/product/<%= product._id %>"> <!-- Add product URL -->
+                        <label for="quantity">Quantity:</label>
+                        <div class="quantity-control">
+                            <button type="button" class="btn-quantity" id="decrease-qty" <%= product.quantity === 0 ? 'disabled' : '' %>>-</button>
+                            <input type="number" name="quantity" class="quantity-input" value="1" min="1" max="<%= product.quantity %>" id="quantity" oninput="validateQuantity(this)" <%= product.quantity === 0 ? 'disabled' : '' %>>
+                            <button type="button" class="btn-quantity" id="increase-qty" <%= product.quantity === 0 ? 'disabled' : '' %>>+</button>
+                        </div>
+                        <div class="button-container">
+                            <button type="submit" class="btn-buy" id="buy-now-btn" <%= product.quantity === 0 ? 'disabled' : '' %>>Buy Now</button>
+                            <button type="button" class="btn-cart" id="add-to-cart-btn" <%= product.quantity === 0 ? 'disabled' : '' %>>Add to Cart</button>
+                        </div>
+                    </form>                    
+                    <!-- Add to Cart Form -->
+                    <form id="add-to-cart-form">
+                        <input type="hidden" name="productId" value="<%= product._id %>">
+                    </form>
+        </div>
+
+    </section>
+    <div class="product-description">
+        <h3>Description</h3>
+        <p>
+            <%= product.description %>
+        </p>
+        <h3>About the Product</h3>
+        <p>Brand: <%= product.brand %>
+        </p>
+        <p>Category: <%= product.category.name %>
+        </p>
+        <p>Available Quantity: <%= product.quantity %>
+        </p>
+    </div>
+    <!-- Highlights Section -->
+    <section class="highlights">
+        <div class="container">
+            <h2>Product Highlights</h2>
+            <% if (product.highlights && product.highlights.length> 0) { %>
+                <div class="highlight-row">
+                    <% product.highlights.forEach((highlight)=> { %>
+                        <div class="highlight">
+                            <img src="/uploads/<%= highlight %>" alt="Highlight">
+                        </div>
+                        <% }); %>
+                </div>
+                <% } else { %>
+                    <p>No highlights available for this product.</p>
+                    <% } %>
+        </div>
+    </section>
+    <section class="reviews">
+
+        <div class="container">
+            <h2>Customer Reviews</h2>
+            <div class="review">
+                <textarea placeholder="Share your thoughts with other customers"></textarea>
+                <button class="submit-review">Write a product review</button><br>
+                <h3>Review this product</h3>
+                <p><strong>John Doe</strong> ⭐⭐⭐⭐☆</p>
+                <p>"Amazing performance and build quality. Perfect for my daily work and creative tasks."</p>
+            </div>
+            <div class="review">
+                <p><strong>Jane Smith</strong> ⭐⭐⭐⭐⭐</p>
+                <p>"The M4 chip is truly a game-changer. Battery life is excellent, and the display is stunning."</p>
+            </div>
+            <div class="review">
+                <p><strong>Raj Kumar</strong> ⭐⭐⭐⭐☆</p>
+                <p>"Price is a bit high, but the performance justifies it. Highly recommend for professionals."</p>
+            </div>
+            <div class="review">
+                <p><strong>Emily Johnson</strong> ⭐⭐⭐⭐☆</p>
+                <p>"I love the new AI features, but I wish it came with more ports. Still, a fantastic device."</p>
+            </div>
+            <div class="review">
+                <p><strong>David Lee</strong> ⭐⭐⭐⭐⭐</p>
+                <p>"Switched from Windows, and I couldn't be happier. MacOS runs incredibly smoothly on this machine."
+                </p>
+            </div>
+            <div class="review">
+                <p><strong>Alice Wang</strong> ⭐⭐⭐⭐☆</p>
+                <p>"Great laptop for video editing and rendering. Would recommend to creatives."</p>
+            </div>
+            <div class="review">
+                <p><strong>Mohamed Ali</strong> ⭐⭐⭐⭐☆</p>
+                <p>"Excellent design and build quality. However, delivery was delayed."</p>
+            </div>
+            <div class="review">
+                <p><strong>Samantha Green</strong> ⭐⭐⭐⭐⭐</p>
+                <p>"An incredible laptop with unmatched speed and reliability. Worth every penny."</p>
+            </div>
+        </div>
+    </section>
+    <!-- Related Products Section -->
+    <section class="related-products">
+        <div class="container">
+            <h2>Related Products</h2>
+            <div class="product-row">
+                <div class="product-item">
+                    <img src="/images/i1.jpg" alt="Related Product 1">
+                    <h3>iPhone 16 Pro</h3>
+                    <p>₹119900.00</p>
+                </div>
+                <div class="product-item">
+                    <img src="/images/i3.jpg" alt="Related Product 2">
+                    <h3>iPhone 16 Plus</h3>
+                    <p>₹90900.00</p>
+                </div>
+                <div class="product-item">
+                    <img src="/images/s1.jpg" alt="Related Product 3">
+                    <h3>Galaxy S24 Ultra</h3>
+                    <p>₹121900.00</p>
+                </div>
+                <div class="product-item">
+                    <img src="/images/s2.jpg" alt="Related Product 4">
+                    <h3>Galaxy S24 Plus</h3>
+                    <p>₹99900.00</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container">
+            <p>&copy; 2024 Keitai Store. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script>
+        function changeImage(thumbnail) {
+            document.getElementById("main-product-image").src = thumbnail.src;
+        }
+    </script>
+    <script src="/js/qty.js"></script>
+    <script src="/js/zomm.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <script>
+        async function addToCart() {
+            const form = document.getElementById('add-to-cart-form');
+            const productId = form.querySelector('input[name="productId"]').value;
+            const quantity = form.querySelector('input[name="quantity"]').value;
+
+            try {
+                const response = await fetch('/cart/add', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ productId, quantity }),
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Added to Cart',
+                        text: `Quantity updated to ${quantity}.`,
+                        timer: 3000,
+                        timerProgressBar: true,
+                        showConfirmButton: false,
+                    });
+
+                    // Dynamically update cart total here
+                    const cartTotal = document.getElementById('cart-total');
+                    if (cartTotal && result.newTotal) {
+                        cartTotal.textContent = `₹${result.newTotal}`;
+                    }
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Failed',
+                        text: result.error || 'Failed to add the item to your cart.',
+                        showConfirmButton: true,
+                    });
+                }
+            } catch (error) {
+                console.error('Error adding to cart:', error);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'Something went wrong. Please try again.',
+                    showConfirmButton: true,
+                });
+            }
+        }
+    </script>
+    <script>
+        document.getElementById('add-to-cart-btn').addEventListener('click', async () => {
+            const form = document.getElementById('action-form');
+            const productId = form.querySelector('input[name="productId"]').value;
+            const quantity = form.querySelector('input[name="quantity"]').value;
+
+            try {
+                const response = await fetch('/cart/add', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ productId, quantity }),
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Added to Cart',
+                        text: `Quantity updated to ${quantity}.`,
+                        timer: 3000,
+                        timerProgressBar: true,
+                        showConfirmButton: false,
+                    });
+
+                    // Update cart total dynamically
+                    const cartTotal = document.getElementById('cart-total');
+                    if (cartTotal && result.newTotal) {
+                        cartTotal.textContent = `₹${result.newTotal}`;
+                    }
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Failed',
+                        text: result.error || 'Failed to add the item to your cart.',
+                        showConfirmButton: true,
+                    });
+                }
+            } catch (error) {
+                console.error('Error adding to cart:', error);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'Something went wrong. Please try again.',
+                    showConfirmButton: true,
+                });
+            }
+        });
+
+        function validateQuantity(input) {
+            const min = parseInt(input.min, 10);
+            const max = 5; // Limit to 5
+            const availableStock = '<%= product.quantity %>'; // Inject stock dynamically
+            const value = input.value;
+
+            if (value === "") {
+                return; // Allow empty temporarily
+            }
+
+            const numericValue = parseInt(value, 10);
+
+            if (isNaN(numericValue)) {
+                input.value = min; // Reset to minimum if value is not a number
+            } else if (numericValue < min) {
+                input.value = min; // Enforce minimum value
+            } else if (numericValue > Math.min(availableStock, max)) {
+                input.value = Math.min(availableStock, max); // Enforce the smaller limit (stock or 5)
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Limit Exceeded',
+                    text: `You can only purchase up to ${Math.min(availableStock, max)} units.`,
+                    timer: 3000,
+                    timerProgressBar: true,
+                    showConfirmButton: false,
+                });
+            }
+
+            toggleButtons(input, availableStock, max);
+        }
+
+        function toggleButtons(input, availableStock, max) {
+            const quantity = parseInt(input.value, 10);
+            const decreaseBtn = document.getElementById('decrease-qty');
+            const increaseBtn = document.getElementById('increase-qty');
+
+            // Disable the Increase button if quantity > 5
+            increaseBtn.disabled = quantity >= max;
+
+            // Enable the Increase button if quantity < 5
+            if (quantity < max) {
+                increaseBtn.disabled = false;
+            }
+
+            // Keep the Decrease button always enabled
+            decreaseBtn.disabled = false;
+        }
+
+        // Event listeners for quantity buttons
+        document.getElementById('decrease-qty').addEventListener('click', () => {
+            const quantityInput = document.getElementById('quantity');
+            const currentValue = parseInt(quantityInput.value, 10);
+
+            if (currentValue > 1) {
+                quantityInput.value = currentValue - 1;
+                validateQuantity(quantityInput);
+            }
+        });
+
+        document.getElementById('increase-qty').addEventListener('click', () => {
+            const quantityInput = document.getElementById('quantity');
+            const currentValue = parseInt(quantityInput.value, 10);
+            const max = 5; // Limit to 5
+            const availableStock = '<%= product.quantity %>'; // Inject stock dynamically
+
+            if (currentValue < Math.min(availableStock, max)) {
+                quantityInput.value = currentValue + 1;
+                validateQuantity(quantityInput);
+            } else {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Limit Reached',
+                    text: `You can only purchase up to ${Math.min(availableStock, max)} units.`,
+                    timer: 3000,
+                    timerProgressBar: true,
+                    showConfirmButton: false,
+                });
+            }
+        });
+
+        // Input validation on typing
+        document.getElementById('quantity').addEventListener('input', (event) => {
+            validateQuantity(event.target);
+        });
+
+        // Initial button state on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            const quantityInput = document.getElementById('quantity');
+            const max = 5; // Limit to 5
+            const availableStock =' <%= product.quantity %>'; // Inject stock dynamically
+
+            toggleButtons(quantityInput, availableStock, max);
+        });
+
+
+
+        // Input validation
+        function validateQuantity(input) {
+            const min = parseInt(input.min, 10);
+            const max = parseInt(input.max, 10);
+            const availableStock = <%= product.quantity %>; // Inject stock dynamically
+            const value = input.value;
+            const increaseBtn = document.getElementById('increase-qty');
+
+            if (value === "") {
+                return; // Allow empty temporarily
+            }
+
+            const numericValue = parseInt(value, 10);
+
+            // Check if the input is not a number
+            if (isNaN(numericValue)) {
+                input.value = min; // Reset to minimum if value is not a number
+            }
+            // Check if the value is less than the minimum
+            else if (numericValue < min) {
+                input.value = min; // Enforce minimum value
+            }
+            // Check if the value exceeds available stock or maximum limit
+            else if (numericValue > availableStock || numericValue > 5) {
+                input.value = Math.min(availableStock, 5); // Set to the smaller limit
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Limit Exceeded',
+                    text: `You can only purchase up to ${Math.min(availableStock, 5)} units.`,
+                    timer: 3000,
+                    timerProgressBar: true,
+                    showConfirmButton: false,
+                });
+                increaseBtn.disabled = true; // Disable the Increase button
+            } else {
+                increaseBtn.disabled = false; // Re-enable the Increase button
+            }
+        }
+
+    </script>
+    <script>
+        function changeImage(thumbnail) {
+            document.getElementById("main-product-image").src = thumbnail.src;
+            document.querySelectorAll('.thumbnails img').forEach(img => img.classList.remove('active'));
+            thumbnail.classList.add('active');
+        }
+    </script>
+</body>
+
+</html>

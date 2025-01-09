@@ -1,0 +1,136 @@
+/* General reset and font styling */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+  
+  body {
+    font-family: Arial, sans-serif;
+    line-height: 1.6;
+    background-color: #f4f4f4;
+    color: #333;
+    padding: 20px;
+  }
+  
+  header {
+    text-align: center;
+    margin-bottom: 30px;
+  }
+  
+  header h1 {
+    font-size: 2.5rem;
+    color: #4CAF50;
+  }
+  
+  header p {
+    font-size: 1.2rem;
+    color: #555;
+  }
+  
+  h2 {
+    margin-bottom: 20px;
+    font-size: 1.8rem;
+    color: #333;
+  }
+  
+  /* Order details section */
+  .order-details {
+    background: #fff;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    margin-bottom: 30px;
+  }
+  
+  .product-info {
+    display: flex;
+    align-items: center;
+    margin-bottom: 20px;
+  }
+  
+  .product-info img {
+    max-width: 150px;
+    margin-right: 20px;
+    border-radius: 8px;
+  }
+  
+  .product-info div {
+    flex: 1;
+  }
+  
+  .product-info p {
+    margin-bottom: 10px;
+    font-size: 1.2rem;
+  }
+  
+  .product-info strong {
+    font-weight: bold;
+  }
+  
+  /* Button to go back to home */
+  .back-home {
+    text-align: center;
+  }
+  
+  .back-home button {
+    padding: 12px 30px;
+    font-size: 1rem;
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+  }
+  
+  .back-home button:hover {
+    background-color: #45a049;
+  }
+  
+  .back-home button:focus {
+    outline: none;
+  }
+  
+  /* Related Products */
+.related-products {
+  padding: 40px 0;
+}
+
+.related-products h2 {
+  font-size: 24px;
+  margin-bottom: 30px;
+  text-align: center;
+}
+
+.product-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.product-item {
+  width: 30%;
+  text-align: center;
+  background-color: #fff;
+  padding: 15px;
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.product-item img {
+  width: 100%;
+  max-width: 180px;
+  height: auto;
+  margin-bottom: 15px;
+}
+
+.product-item h3 {
+  font-size: 18px;
+  margin-bottom: 10px;
+}
+
+.product-item p {
+  font-size: 16px;
+  color: #333;
+}

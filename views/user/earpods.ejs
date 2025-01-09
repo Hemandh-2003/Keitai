@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Laptop Lineup</title>
+    <link rel="icon" href="/images/faibcon.jpg">
+    <link rel="stylesheet" href="/css/page.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+
+<body>
+    <!-- Header -->
+    <header>
+        <nav class="navbar">
+            <div class="logo">
+                <a href="/">
+                    <img src="/images/logo1.png" alt="Keitai Logo"></a>
+            </div>
+            <ul class="nav-links">
+                <li><a href="/home">Store</a></li>
+                <li><a href="/laptop">Laptop</a></li>
+                <li><a href="/tablet">Tablet</a></li>
+                <li><a href="/phone">Phone</a></li>
+                <li><a href="/watch">Watch</a></li>
+                <li><a href="/earpods" class="active">EarPods</a></li>
+                <li><a href="/accessories">Accessories</a></li>
+            </ul>
+            <div class="nav-icons">
+                <input type="text" placeholder="Search">
+                <a href="/cart"><i class="fas fa-shopping-cart"></i></a>
+                <a href="/user/profile"><i class="fas fa-user"></i></a>
+            </div>
+        </nav>
+    </header>
+
+    <!-- Main Content -->
+    <main>
+        <div class="content-wrapper">
+            <section class="phone-lineup">
+                <div class="promo-banner">
+                    <div class="banner">
+                      <img src="images/ap-banner1.jpg" alt="Airpods Promo 1">
+                    </div>
+                    <div class="banner">
+                        <img src="images/ap-banner2.jpg" alt="Airpods Promo 2">
+                    </div>
+                </div>
+            </section>
+            <section class="filter-section">
+                <!-- Filter Toggle Button -->
+                <button class="filter-toggle-btn" id="filter-toggle-btn">
+                    <img src="images/filter.png" alt="Filter Icon"> Filter
+                </button>
+
+                <!-- Filter Sidebar (Initially Hidden) -->
+                <aside class="filter-sidebar" id="filter-sidebar">
+                    <h3>Filter By</h3>
+                    <form action="/<%= category.slug %>" method="get" id="filter-form">
+                        <!-- Sort Filter -->
+                        <div class="filter-group">
+                            <h4>Sort By</h4>
+                            <select name="sort" onchange="this.form.submit()">
+                                <option value="">Select Sort Order</option>
+                                <option value="price-asc" <%=query && query.sort==='price-asc' ? 'selected' : '' %>
+                                    >Price: Low to High</option>
+                                <option value="price-desc" <%=query && query.sort==='price-desc' ? 'selected' : '' %>
+                                    >Price: High to Low</option>
+                                <option value="name-asc" <%=query && query.sort==='name-asc' ? 'selected' : '' %>>Name:
+                                    A to Z</option>
+                                <option value="name-desc" <%=query && query.sort==='name-desc' ? 'selected' : '' %>
+                                    >Name: Z to A</option>
+                            </select>
+                        </div>
+
+                        <!-- Brand Filter -->
+                        <div class="filter-group">
+                            <h4>Brand</h4>
+                            <label><input type="checkbox" name="brand" value="Apple" <%=query.brand==='Apple'
+                                    ? 'checked' : '' %>> Apple</label><br>
+                            <label><input type="checkbox" name="brand" value="Samsung" <%=query.brand==='Samsung'
+                                    ? 'checked' : '' %>> Samsung</label>
+                        </div>
+
+                        <!-- Price Filter -->
+                        <div class="filter-group">
+                            <h4>Price</h4>
+                            <label><input type="radio" name="price" value="below-50000" <%=query.price==='below-50000'
+                                    ? 'checked' : '' %>> Below ₹50,000</label><br>
+                            <label><input type="radio" name="price" value="50000-100000" <%=query.price==='50000-100000'
+                                    ? 'checked' : '' %>> ₹50,000 - ₹1,00,000</label><br>
+                            <label><input type="radio" name="price" value="above-100000" <%=query.price==='above-100000'
+                                    ? 'checked' : '' %>> Above ₹1,00,000</label>
+                        </div>
+
+                        <!-- Apply and Clear Buttons -->
+                        <button type="submit">Apply Filters</button>
+                        <button type="button" onclick="clearFilters()">Clear Filters</button>
+                    </form>
+
+                </aside>
+            </section>
+            <section class="categories col-lg-12">
+                <h2><span class="blue-text">Featured Products.</span> Check out our latest items.</h2>
+                <div class="row">
+                  <% products.forEach(product => { %>
+                    <div class="col-lg-3 col-md-4 col-sm-6 mb-4">
+                      <a href="/admin/products/<%= product._id %>" style="text-decoration: none; color: inherit;">
+                        <div class="product-card text-center">
+                          <img src="/uploads/<%= product.images[0] %>" alt="<%= product.name %>" class="img-fluid">
+                          <p class="mt-2">
+                            <%= product.name %>
+                          </p>
+                          <p>
+                            <!-- Show salesPrice if available, else regularPrice -->
+                            <%= product.salesPrice ? '₹' + product.salesPrice.toLocaleString('en-IN') : '₹' + product.regularPrice.toLocaleString('en-IN') %>
+                          </p>
+                        </div>
+                      </a>
+                    </div>
+                  <% }); %>
+                </div>
+              </section>    
+    </main>
+    <!-- Footer -->
+    <footer>
+        <div class="footer-links">
+            <a href="#">Privacy Policy</a>
+            <a href="#">Terms of Service</a>
+            <a href="#">Contact</a>
+        </div>
+    </footer>
+
+    <script>
+        function clearFilters() {
+            const currentUrl = window.location.pathname; // Retain the current category slug
+            window.location.href = currentUrl; // Reload without query parameters
+        }
+    </script>
+    <script>
+        // Get filter elements
+        const filterSidebar = document.getElementById('filter-sidebar');
+        const filterToggleButton = document.getElementById('filter-toggle-btn');
+
+        // Toggle the filter sidebar
+        filterToggleButton.addEventListener('click', () => {
+            const isVisible = filterSidebar.style.display === 'block';
+            filterSidebar.style.display = isVisible ? 'none' : 'block';
+        });
+
+        // Close filter sidebar if clicked outside
+        document.addEventListener('click', (event) => {
+            if (!filterSidebar.contains(event.target) && !filterToggleButton.contains(event.target)) {
+                filterSidebar.style.display = 'none';
+            }
+        });
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-ENjdO4Dr2bkBIFxQpeo1zE63F5oY6pD8Cqh1zFHmZxEFSfoN3jD9RVBl+zR8KSk"
+        crossorigin="anonymous"></script>
+</body>
+
+</html>

@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Checkout</title>
+  <link rel="stylesheet" href="/css/checkout.css">
+</head>
+
+<body>
+  <header>
+    <h1>Checkout</h1>
+    <a href="/home" class="cancel-btn">Cancel</a>
+  </header>
+
+  <form action="/user/place-order" method="POST" class="checkout-form">
+    <input type="hidden" name="totalAmount" value="<%= totalAmount %>">
+
+    <!-- Address Section -->
+    <section>
+      <h2>Shipping Address</h2>
+      <div class="address-list">
+        <% addresses.forEach((address)=> { %>
+          <label class="address-item">
+            <input type="radio" name="selectedAddress" value="<%= address._id %>" <%=address.default ? 'checked' : ''
+              %>>
+            <div>
+              <p><strong>
+                  <%= address.name %>
+                </strong></p>
+              <p>
+                <%= address.street %>, <%= address.city %>
+              </p>
+              <p>
+                <%= address.state %>, <%= address.zip %>
+              </p>
+              <p>
+                <%= address.country %>
+              </p>
+              <p>Phone: <%= address.phone %>
+              </p>
+              <a href="/user/address/edit/<%= address._id %>" class="edit-link">Edit</a>
+            </div>
+          </label>
+          <% }); %>
+            <a href="/user/address" class="add-address">+ Add Address</a>
+      </div>
+    </section>
+
+    <!-- Order Summary -->
+    <!-- Order Summary -->
+    <section>
+      <h2>Order Summary</h2>
+      <ul class="order-list">
+        <% let totalPrice=0; %>
+          <% cart.forEach(item=> { %>
+            <% let itemPrice=item.product.salesPrice || item.product.regularPrice; %>
+              <% let itemTotal=itemPrice * item.quantity; %>
+                <% totalPrice +=itemTotal; %>
+                  <li>
+                    <p>
+                      <%= item.product.name %> (x<%= item.quantity %>)
+                    </p>
+                    <p>₹<%= itemTotal %>
+                    </p>
+                  </li>
+                  <% }); %>
+      </ul>
+      <% const deliveryCharge=totalPrice < 50000 ? 80 : 0; %>
+        <p>Delivery Charge: ₹<%= deliveryCharge %>
+        </p>
+        <p><strong>Total: ₹<%= totalPrice + deliveryCharge %></strong></p>
+    </section>
+
+    <!-- Hidden Inputs to Pass Data -->
+    <input type="hidden" name="totalAmount" value="<%= totalPrice + deliveryCharge %>">
+    <input type="hidden" name="deliveryCharge" value="<%= deliveryCharge %>">
+
+
+    <!-- Payment Method -->
+    <section>
+      <h2>Payment Method</h2>
+      <label class="payment-option">
+        <input type="radio" name="paymentMethod" value="COD" checked>
+        Cash on Delivery
+      </label>
+    </section>
+
+    <button type="submit" class="submit-btn">Continue with Order</button>
+
+    <% cart.forEach(item=> { %>
+      <input type="hidden" name="productIds[]" value="<%= item.product._id %>">
+      <input type="hidden" name="quantities[]" value="<%= item.quantity %>">
+      <% }); %>
+  </form>
+
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<script>
+  document.querySelector('.submit-btn').addEventListener('click', (e) => {
+    const selectedAddress = document.querySelector('input[name="selectedAddress"]:checked');
+    if (!selectedAddress) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Shipping Address Required',
+        text: 'Please select a shipping address before continuing with your order.',
+        confirmButtonText: 'OK',
+      });
+      e.preventDefault();
+    }
+  });
+</script>
+</body>
+
+</html>

@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Confirm Your Order</title>
+  <link rel="stylesheet" href="/css/checkout.css">
+</head>
+
+<body>
+  <header>
+    <h1>Order Confirmation</h1>
+    <a href="<%= checkoutUrl %>" class="back-link">&larr; Back to Checkout</a>
+  </header>
+
+  <main>
+    <!-- Order Summary -->
+    <section class="order-summary">
+      <h2>Order Summary</h2>
+      <% orderItems.forEach((item)=> { %>
+        <div class="order-item">
+          <p><strong>Product Name:</strong>
+            <%= item.product.name %>
+          </p>
+          <p><strong>Price:</strong> ₹<%= item.product.salesPrice || item.product.regularPrice %>
+          </p>
+          <p><strong>Quantity:</strong>
+            <%= item.quantity %>
+          </p>
+        </div>
+        <% }); %>
+          <p><strong>Delivery Charge:</strong> ₹<%= deliveryCharge %>
+          </p>
+          <p class="total-amount"><strong>Total Amount:</strong> ₹<%= totalAmount %>
+          </p>
+    </section>
+
+
+    <!-- Shipping Information -->
+    <section class="shipping-info">
+      <h2>Shipping Address</h2>
+      <% if (address) { %>
+        <div class="address-details">
+          <p><strong>Name:</strong>
+            <%= address.name %>
+          </p>
+          <p>
+            <strong>Address:</strong>
+            <%= address.street %>, <%= address.city %>, <%= address.state %> - <%= address.zip %>
+          </p>
+          <p><strong>Phone:</strong>
+            <%= address.phone %>
+          </p>
+        </div>
+        <a href="/user/checkout" class="edit-link">Change Address</a>
+        <% } else { %>
+          <p class="error">No shipping address provided.</p>
+          <% } %>
+    </section>
+
+    <!-- Payment Method -->
+    <section class="payment-method">
+      <h2>Payment Method</h2>
+      <% if (paymentMethod) { %>
+        <p><strong>Selected Payment Method:</strong>
+          <%= paymentMethod %>
+        </p>
+        <% } else { %>
+          <p class="error">No payment method selected.</p>
+          <% } %>
+    </section>
+
+    <!-- Place Order -->
+    <section class="confirm-order">
+      <form action="/user/confirm-payment" method="POST">
+        <% orderItems.forEach((item)=> { %>
+          <input type="hidden" name="productIds[]" value="<%= item.product._id %>">
+          <input type="hidden" name="quantities[]" value="<%= item.quantity %>">
+          <% }); %>
+            <input type="hidden" name="selectedAddress" value="<%= address._id %>">
+            <input type="hidden" name="totalAmount" value="<%= totalAmount %>">
+            <input type="hidden" name="paymentMethod" value="<%= paymentMethod %>">
+            <button type="submit" class="place-order-btn">Place Order</button>
+            <a href="/user/product-details" class="cancel-btn">Cancel</a>
+      </form>
+    </section>
+
+    <!-- Estimated Delivery -->
+    <section class="delivery-date">
+      <h2>Estimated Delivery</h2>
+      <p>Your order will arrive by: <strong>
+          <%= estimatedDate.toDateString() %>
+        </strong></p>
+    </section>
+  </main>
+</body>
+
+</html>

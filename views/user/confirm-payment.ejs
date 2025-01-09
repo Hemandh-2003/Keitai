@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Order Confirmation</title>
+  <link rel="stylesheet" href="/css/confirm-payment.css">
+</head>
+
+<body>
+  <header>
+    <h1>Your Order is Placed</h1>
+    <p>Thank you for your order! We are processing it and will send you an update soon.</p>
+  </header>
+
+  <section class="order-details">
+    <h2>Order Summary</h2>
+    <% orderItems.forEach(item=> { %>
+      <div class="product-info">
+        <img src="/uploads/<%= item.product.images %>" alt="<%= item.product.name %>" class="product-image">
+        <div>
+          <p><strong>Product:</strong>
+            <%= item.product.name %>
+          </p>
+          <p><strong>Brand:</strong>
+            <%= item.product.brand %>
+          </p>
+          <p><strong>Price:</strong> ₹<%= item.product.salesPrice || item.product.regularPrice %>
+          </p>
+          <p><strong>Quantity:</strong>
+            <%= item.quantity %>
+          </p>
+          <div>
+            <p>Delivery Charge: ₹<%= deliveryCharge %>
+            </p>
+            <strong><p>Grand Total: ₹<%= totalAmount %>
+            </p></strong>
+          </div>
+        </div>
+      </div>
+      <% }); %>
+
+        <p><strong>Estimated Arrival Date:</strong>
+          <%= arrivalDate.toDateString() %>
+        </p>
+  </section>
+
+  <section class="back-home">
+    <button onclick="window.location.href='/home';">Go Back to Home</button>
+  </section>
+  <section class="related-products">
+    <div class="container">
+      <h2>Contine Shopping</h2>
+      <div class="product-row">
+        <div class="product-item">
+          <img src="/images/i1.jpg" alt="Related Product 1">
+          <h3>iPhone 16 Pro</h3>
+          <p>₹119900.00</p>
+        </div>
+        <div class="product-item">
+          <img src="/images/i3.jpg" alt="Related Product 2">
+          <h3>iPhone 16 Plus</h3>
+          <p>₹90900.00</p>
+        </div>
+        <div class="product-item">
+          <img src="/images/s1.jpg" alt="Related Product 3">
+          <h3>Galaxy S24 Ultra</h3>
+          <p>₹121900.00</p>
+        </div>
+        <div class="product-item">
+          <img src="/images/s2.jpg" alt="Related Product 4">
+          <h3>Galaxy S24 Plus</h3>
+          <p>₹99900.00</p>
+        </div>
+      </div>
+    </div>
+  </section>
+  <section class="related-products">
+    <div class="container">
+      <div class="product-row">
+        <div class="product-item">
+          <img src="/images/i1.jpg" alt="Related Product 1">
+          <h3>iPhone 16 Pro</h3>
+          <p>₹119900.00</p>
+        </div>
+        <div class="product-item">
+          <img src="/images/i3.jpg" alt="Related Product 2">
+          <h3>iPhone 16 Plus</h3>
+          <p>₹90900.00</p>
+        </div>
+        <div class="product-item">
+          <img src="/images/s1.jpg" alt="Related Product 3">
+          <h3>Galaxy S24 Ultra</h3>
+          <p>₹121900.00</p>
+        </div>
+        <div class="product-item">
+          <img src="/images/s2.jpg" alt="Related Product 4">
+          <h3>Galaxy S24 Plus</h3>
+          <p>₹99900.00</p>
+        </div>
+      </div>
+    </div>
+  </section>
+  <script>
+    window.history.replaceState(null, null, '/user/confirm-payment');
+  </script>  
+</body>
+
+</html>

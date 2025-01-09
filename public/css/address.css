@@ -1,0 +1,230 @@
+/* General styles */
+body {
+    font-family: 'Roboto', sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #f9f9f9;
+    color: #333;
+  }
+  
+  header {
+    background-color: #000;
+    color: #fff;
+    padding: 15px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  
+  header h1 {
+    margin: 0;
+    font-size: 18px;
+  }
+  
+  header .back-link {
+    color: #fff;
+    text-decoration: none;
+    font-size: 14px;
+  }
+  
+  header .back-link:hover {
+    text-decoration: underline;
+  }
+  
+  /* Address Section */
+  .address-section {
+    margin: 20px;
+    display: flex;
+    flex-direction: row;
+    gap: 20px;
+  }
+  
+  /* Add Address Card */
+  .add-address-card {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: #fff;
+    padding: 20px;
+    border-radius: 5px;
+    box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
+    cursor: pointer;
+  }
+  
+  .add-address-btn {
+    display: flex;
+    align-items: center;
+    font-size: 16px;
+    font-weight: 500;
+    color: #ffffff;
+  }
+  
+  .add-address-btn i {
+    margin-right: 10px;
+    font-size: 20px;
+  }
+  
+  .add-address-btn p {
+    margin: 0;
+  }
+  
+  /* Address Cards */
+/* Individual Address Card with Fixed Size */
+.address-card {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  padding: 20px;
+  background-color: #fff;
+  border: 1px solid #e0e0e0;
+  border-radius: 10px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  transition: box-shadow 0.3s ease, transform 0.3s ease;
+  width: 320px; /* Fixed width */
+  height: 184px; /* Fixed height */
+  overflow: hidden; /* Ensures no content spills out */
+}
+
+.address-card:hover {
+  transform: translateY(-5px); /* Slight lift on hover */
+  box-shadow: 0 6px 10px rgba(0, 0, 0, 0.2); /* Stronger shadow on hover */
+}
+
+  
+  .address-header {
+    display: flex;
+    justify-content: flex-end;
+  }
+  
+  .default-badge {
+    padding: 5px 10px;
+    background-color: #28a745;
+    color: #fff;
+    font-size: 12px;
+    font-weight: bold;
+    border-radius: 5px;
+    text-transform: uppercase;
+  }
+  
+  .address-details {
+    font-size: 14px;
+    color: #555;
+  }
+  
+  .address-details p {
+    margin: 0;
+    line-height: 1.6;
+  }
+  
+  .address-details strong {
+    font-size: 16px;
+    color: #000;
+  }
+  
+  .address-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+  }
+  
+  .address-actions .edit-link,
+  .address-actions .remove-link {
+    font-size: 14px;
+    text-decoration: none;
+    padding: 8px 15px;
+    border-radius: 5px;
+    transition: background-color 0.3s ease, color 0.3s ease;
+  }
+  
+  .address-actions .edit-link {
+    background-color: #007bff;
+    color: #fff;
+  }
+  
+  .address-actions .edit-link:hover {
+    background-color: #0056b3;
+  }
+  
+  .address-actions .remove-link {
+    background-color: #dc3545;
+    color: #fff;
+  }
+  
+  .address-actions .remove-link:hover {
+    background-color: #a71d2a;
+  }
+  
+  
+  /* Modal Styles */
+.modal {
+  display: none; /* Hidden by default */
+  position: fixed; /* Stay in place */
+  z-index: 1; /* Sit on top */
+  left: 0;
+  top: 0;
+  width: 100%; /* Full width */
+  height: 100%; /* Full height */
+  overflow: auto; /* Enable scroll if needed */
+  background-color: rgba(0, 0, 0, 0.4); /* Black with opacity */
+  padding-top: 60px;
+}
+
+.modal-content {
+  background-color: #fefefe;
+  margin: 5% auto;
+  padding: 20px;
+  border: 1px solid #888;
+  width: 80%; /* Could be more or less, depending on screen size */
+  max-width: 500px;
+  box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
+  max-height: 80vh; /* Limit the height of the modal */
+  overflow-y: auto; /* Enable vertical scrolling */
+}
+
+.close-modal {
+  background-color: #f44336;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  cursor: pointer;
+  text-align: center;
+  font-size: 16px;
+  margin-top: 10px;
+}
+
+.close-modal:hover {
+  background-color: #d32f2f;
+}
+
+/* Style the form elements */
+form {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+form label {
+  font-size: 14px;
+  font-weight: bold;
+}
+
+form input {
+  padding: 10px;
+  font-size: 16px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  width: 100%;
+}
+
+.save-btn {
+  background-color: #000000;
+  color: white;
+  padding: 10px 15px;
+  border: none;
+  cursor: pointer;
+  width: 100%;
+}
+
+.save-btn:hover {
+  background-color: #000000d1;
+}

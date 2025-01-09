@@ -1,0 +1,184 @@
+/* General Styles */
+body {
+    margin: 0;
+    padding: 0;
+    font-family: 'Roboto', sans-serif;
+    background: linear-gradient(135deg, #e0e0e0, #f8f9fa);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    color: #333;
+}
+
+/* Navbar */
+.navbar {
+    width: 100%;
+    background-color: black; /* Navbar background color */
+    padding: 10px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start; /* Align content to the left */
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2); /* Add a subtle shadow */
+    position: fixed; /* Makes the navbar fixed at the top */
+    top: 0;
+    left: 0;
+    z-index: 1000;
+}
+
+.navbar .logo img {
+    max-height: none;
+    max-width: none; /* Remove width restriction */
+    height: 70px;    /* Set desired height for the logo */
+    width: auto;     /* Maintain aspect ratio */
+    margin: -10px 0; /* Adjust spacing to prevent navbar enlargement */
+}
+
+/* Adjust body padding to account for the navbar height */
+body {
+    padding-top: 70px; /* Add padding equal to the navbar height */
+}
+
+/* Signup Container */
+.signup-container {
+    width: 100%;
+    padding: 20px;
+    max-width: 400px;
+    background: white;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    border-radius: 10px;
+    overflow: hidden;
+    animation: fadeIn 0.5s ease-in-out;
+    text-align: center;
+}
+
+.signup-container h1 {
+    font-size: 24px;
+    color: #020202;
+    margin-bottom: 20px;
+}
+
+/* Form */
+.signup-form .form-group {
+    margin-bottom: 15px;
+    text-align: left;
+}
+
+.signup-form label {
+    display: block;
+    font-size: 14px;
+    font-weight: 500;
+    margin-bottom: 5px;
+    color: #333;
+}
+
+.signup-form input {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    font-size: 16px;
+    outline: none;
+    transition: border-color 0.3s ease-in-out;
+}
+
+.signup-form input:focus {
+    border-color: #007bff;
+}
+
+/* Password Wrapper */
+.password-wrapper {
+    position: relative;
+}
+
+.password-wrapper input {
+    padding-right: 40px;
+}
+
+.password-wrapper .toggle-password {
+    position: absolute;
+    top: 50%;
+    right: 10px;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 18px;
+    color: #666;
+}
+
+/* Signup Button */
+.signup-button {
+    width: 100%;
+    background-color: #000000;
+    color: white;
+    padding: 10px;
+    font-size: 16px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    margin-top: 10px;
+    transition: background-color 0.3s ease-in-out;
+}
+
+.signup-button:hover {
+    background-color: #000000e7;
+}
+
+/* Social Login */
+.social-icons {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.social-icons a {
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background-color: #f4f4f9;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+    transition: transform 0.2s ease-in-out;
+}
+
+.social-icons a:hover {
+    transform: scale(1.1);
+    background-color: #00000055;
+}
+
+.social-icons img {
+    width: 20px;
+    height: 20px;
+}
+.login-link {
+    color: #007bff;
+    text-decoration: none;
+    font-weight: bold;
+  }
+
+/* Footer */
+.footer {
+    margin-top: 20px;
+    font-size: 14px;
+    color: #666;
+}
+
+.footer a {
+    font-weight: bold;
+}
+
+/* Animations */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}

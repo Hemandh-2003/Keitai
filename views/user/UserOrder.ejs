@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Your Orders</title>
+  <link rel="stylesheet" href="/css/user-order.css">
+  <link rel="stylesheet" href="/css/user-profile.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+
+<body>
+  <header>
+    <div class="header-content">
+      <h1>Your Orders</h1>
+      <div class="sorting-container">
+        <label for="sort-orders">Sort by:</label>
+        <select id="sort-orders" onchange="sortOrders()">
+          <option value="newest" <%= sortBy === 'newest' ? 'selected' : '' %>>Newest First</option>
+          <option value="oldest" <%= sortBy === 'oldest' ? 'selected' : '' %>>Oldest First</option>
+        </select>
+      </div>
+    </div>
+  </header>  
+  <!-- Main Content Section -->
+  <div class="main-container">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <a href="/user/profile">
+        <i class="fas fa-user"></i>
+        Profile
+      </a>
+      <a href="/user/address">
+        <i class="fas fa-map-marker-alt"></i>
+        Your Address
+      </a>
+      <a href="/cart">
+        <i class="fas fa-shopping-cart"></i>
+        Your Cart
+      </a>
+      <a href="/user/orders"  class="active">
+        <i class="fas fa-box"></i>
+        Your Orders
+      </a>
+      <a href="/wishlist">
+        <i class="fas fa-heart"></i>
+        Wishlist
+      </a>
+      <a href="/wallet">
+        <i class="fas fa-wallet"></i>
+        Wallet
+      </a>
+      <a href="/reviews">
+        <i class="fas fa-star"></i>
+        Your Reviews
+      </a>
+      <a href="/user/settings">
+        <i class="fas fa-cog"></i>
+        Settings
+      </a>
+      <a href="/logout">
+        <i class="fas fa-sign-out-alt"></i>
+        Logout
+      </a>
+    </aside>
+
+    <!-- Orders Section -->
+    <section class="orders-section">
+      <% if (orders.length === 0) { %>
+        <p class="no-orders">No orders found.</p>
+      <% } else { %>
+        <% orders.forEach(order => { %>
+          <article class="order-card">
+            <div class="order-header">
+              <span class="order-status">
+                <%= order.status %>
+              </span>
+              <span class="order-date">
+                <%= new Date(order.createdAt).toLocaleDateString() %>
+              </span>
+            </div>
+            <div class="order-products">
+              <% order.products.forEach(item => { %>
+                <div class="order-product">
+                  <p><strong>Product:</strong> <%= item.product.name %> (<%= item.quantity %>)</p>
+                </div>
+              <% }) %>
+            </div>
+            <div class="order-info">
+              <p><strong>Total Amount:</strong> ₹<%= new Intl.NumberFormat('en-IN').format(order.totalAmount.toFixed(2)) %></p>
+            </div>
+            <footer>
+              <button class="view-details-btn">
+                <a href="/user/order/<%= order._id %>">View Details</a>
+              </button>
+            </footer>
+          </article>
+        <% }) %>
+      <% } %>
+      <div class="pagination-container">
+        <div class="pagination">
+          <% if (currentPage > 1) { %>
+            <a href="/user/orders?page=<%= currentPage - 1 %>&sortBy=<%= sortBy %>" class="page-link">Previous</a>
+          <% } %>
+      
+          <% for (let i = 1; i <= totalPages; i++) { %>
+            <a href="/user/orders?page=<%= i %>&sortBy=<%= sortBy %>"
+               class="page-link <%= i === currentPage ? 'active' : '' %>">
+              <%= i %>
+            </a>
+          <% } %>
+      
+          <% if (currentPage < totalPages) { %>
+            <a href="/user/orders?page=<%= currentPage + 1 %>&sortBy=<%= sortBy %>" class="page-link">Next</a>
+          <% } %>
+        </div>
+      </div>   
+    </section>
+
+    <!-- Pagination Section --> 
+
+  <!-- Scripts -->
+  <script>
+    // Sort Orders
+    function sortOrders() {
+      const sortBy = document.getElementById('sort-orders').value;
+      window.location.href = `/user/orders?sortBy=${sortBy}`;
+    }
+  </script>
+</body>
+
+</html>

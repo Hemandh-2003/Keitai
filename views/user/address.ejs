@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Your Address</title>
+  <link rel="stylesheet" href="/css/address.css">
+  <link rel="stylesheet" href="/css/user-profile.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+
+<body>
+  <!-- Header -->
+  <header>
+    <h1>Your Address</h1>
+  </header>
+  <div class="main-container">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <a href="/user/profile">
+        <i class="fas fa-user"></i>
+        Profile
+      </a>
+      <a href="/user/address"  class="active">
+        <i class="fas fa-map-marker-alt"></i>
+        Your Address
+      </a>
+      <a href="/cart">
+        <i class="fas fa-shopping-cart"></i>
+        Your Cart
+      </a>
+      <a href="/user/orders">
+        <i class="fas fa-box"></i>
+        Your Orders
+      </a>
+      <a href="/wishlist">
+        <i class="fas fa-heart"></i>
+        Wishlist
+      </a>
+      <a href="/wallet">
+        <i class="fas fa-wallet"></i>
+        Wallet
+      </a>
+      <a href="/reviews">
+        <i class="fas fa-star"></i>
+        Your Reviews
+      </a>
+      <a href="/user/settings">
+        <i class="fas fa-cog"></i>
+        Settings
+      </a>
+      <a href="/logout">
+        <i class="fas fa-sign-out-alt"></i>
+        Logout
+      </a>
+    </aside>  
+    <!-- Address Section -->
+    <section class="address-section">
+      <!-- Add Address Card -->
+      <div class="add-address-card">
+        <button class="add-address-btn">
+          <i class="fas fa-plus"></i>
+          <p>Add Address</p>
+        </button>
+      </div>
+    
+      <!-- Existing Address Cards -->
+      <div class="address-cards-container">
+        <% addresses.forEach((address) => { %>
+          <div class="address-card">
+            <div class="address-header">
+              <% if (address.default) { %>
+                <span class="default-badge">Default</span>
+              <% } %>
+            </div>
+            <div class="address-details">
+              <p><strong><%= address.name %></strong></p>
+              <p><%= address.street %>, <%= address.city %></p>
+              <p><%= address.state %>, <%= address.zip %></p>
+              <p><%= address.country %></p>
+              <p>Phone: <%= address.phone %></p>
+            </div>
+            <div class="address-actions">
+              <a href="/user/address/edit/<%= address._id %>" class="edit-link">Edit</a>
+              <a href="/user/address/remove/<%= address._id %>" class="remove-link" onclick="return confirm('Are you sure you want to remove this address?')">Remove</a>
+            </div>
+          </div>
+        <% }) %>
+      </div>
+    </section>
+    
+
+    <!-- Add Address Modal -->
+    <div id="addAddressModal" class="modal">
+      <div class="modal-content">
+        <h2>Add New Address</h2>
+        <form id="addAddressForm" action="/user/address/add" method="POST">
+          <label for="name">Full Name:</label>
+          <input type="text" id="name" name="name" required>
+          <label for="street">Street Address:</label>
+          <input type="text" id="street" name="street" required>
+          <label for="city">City:</label>
+          <input type="text" id="city" name="city" required>
+          <label for="state">State:</label>
+          <input type="text" id="state" name="state" required>
+          <label for="zip">ZIP Code:</label>
+          <input type="text" id="zip" name="zip" required pattern="^\d{6}$" title="ZIP Code must be 6 digits">
+          <label for="country">Country:</label>
+          <input type="text" id="country" name="country" required>
+          <label for="phone">Phone Number:</label>
+          <input type="tel" id="phone" name="phone" required pattern="^\d{10}$" title="Phone number must be 10 digits">
+          <button type="submit" class="save-btn">Save</button>
+        </form>
+        <button class="close-modal">Cancel</button>
+      </div>
+    </div>
+
+    <script>
+      // Modal functionality
+      const addAddressBtn = document.querySelector('.add-address-btn');
+      const modal = document.getElementById('addAddressModal');
+      const closeModal = document.querySelector('.close-modal');
+      const addAddressForm = document.getElementById('addAddressForm');
+
+      addAddressBtn.addEventListener('click', () => {
+        modal.style.display = 'block';
+      });
+
+      closeModal.addEventListener('click', () => {
+        modal.style.display = 'none';
+      });
+
+      window.addEventListener('click', (event) => {
+        if (event.target === modal) {
+          modal.style.display = 'none';
+        }
+      });
+
+      // Form validation
+      addAddressForm.addEventListener('submit', (event) => {
+        const zip = document.getElementById('zip').value;
+        const phone = document.getElementById('phone').value;
+
+        if (zip.length !== 6 || isNaN(zip)) {
+          alert('ZIP Code must be exactly 6 digits.');
+          event.preventDefault();
+          return;
+        }
+
+        if (phone.length !== 10 || isNaN(phone)) {
+          alert('Phone number must be exactly 10 digits.');
+          event.preventDefault();
+          return;
+        }
+      });
+    </script>
+</body>
+
+</html>

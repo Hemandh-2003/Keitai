@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <link rel="stylesheet" href="/css/Order.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Order Management</title>
+</head>
+
+<body>
+  <div class="dashboard-container">
+    <nav class="sidebar">
+      <div class="logo">
+        <img src="/images/logo1.png" alt="Logo">
+      </div>
+      <ul>
+        <li><a href="/admin/dashboard"><i class="icon-dashboard"></i> Dashboard</a></li>
+        <li><a href="/admin/orders" class="active"><i class="icon-orders"></i> Orders</a></li>
+        <li><a href="/admin/products"><i class="icon-products"></i> Products</a></li>
+        <li><a href="/admin/users"><i class="icon-users"></i> Users</a></li>
+        <li><a href="/admin/categories"><i class="icon-categories"></i> Categories</a></li>
+        <li><a href="/admin/coupons"><i class="icon-coupons"></i> Coupons</a></li>
+        <li><a href="/admin/banners"><i class="icon-banners"></i> Banners</a></li>
+        <li><a href="/admin/payments"><i class="icon-payments"></i> Payments</a></li>
+        <li><a href="/admin/offers"><i class="icon-offers"></i> Offers</a></li>
+      </ul>
+    </nav>
+    <h1>Order Management</h1>
+    <div class="sorting-container">
+      <form method="GET" action="/admin/orders">
+        <select name="sort" onchange="this.form.submit()">
+          <option value="new" <%=sort==='new' ? 'selected' : '' %>>Newest</option>
+          <option value="old" <%=sort==='old' ? 'selected' : '' %>>Oldest</option>
+          <option value="cancelled" <%=sort==='cancelled' ? 'selected' : '' %>>Cancelled (Admin)</option>
+          <option value="user-cancelled" <%=sort==='user-cancelled' ? 'selected' : '' %>>Cancelled (User)</option>
+          <option value="shipped" <%=sort==='shipped' ? 'selected' : '' %>>Shipped</option>
+          <option value="delivered" <%=sort==='delivered' ? 'selected' : '' %>>Delivered</option>
+          <option value="pending" <%=sort==='pending' ? 'selected' : '' %>>Pending</option>
+        </select>
+      </form>
+    </div>
+
+    <% if (orders.length===0) { %>
+      <p>No orders found.</p>
+      <% } else { %>
+        <table>
+          <thead>
+            <tr>
+              <th>Order ID</th>
+              <th>User</th>
+              <th>Status</th>
+              <th>Payment</th>
+              <th>Total Price</th>
+              <th>Products</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% orders.forEach(order => { %>
+              <tr>
+                <td>
+                  <div class="order-id">
+                    <strong><%= order._id %></strong>
+                    <br>
+                    <small class="date"><%= new Date(order.createdAt).toLocaleDateString() %></small>
+                  </div>
+                </td>
+                <td>
+                  <div class="user-info">
+                    <%= order.user ? order.user.name : 'Unknown User' %>
+                  </div>
+                </td>
+                <td>
+                  <span class="status-label <%= order.status.toLowerCase().replace(/\s+/g, '-') %>">
+                    <%= order.status %>
+                  </span>
+                </td>
+                <td>
+                  <div class="payment-method">
+                    <%= order.paymentMethod %>
+                  </div>
+                </td>
+                <td>
+                  <div class="total-price">
+                    $<%= order.totalAmount.toFixed(2) %>
+                  </div>
+                </td>
+                <td>
+                  <ul class="product-list">
+                    <% order.products.forEach(item => { %>
+                      <li>
+                        <%= item.product.name %> (Qty: <%= item.quantity %>)
+                      </li>
+                    <% }) %>
+                  </ul>
+                </td>
+                <td>
+                  <div class="action-buttons">
+                    <form action="/admin/orders/update-status/<%= order._id %>" method="POST">
+                      <select name="status" <%= (order.status.includes('Cancelled')) ? 'disabled' : '' %>>
+                        <option value="Pending" <%= order.status === 'Pending' ? 'selected' : '' %>>Pending</option>
+                        <option value="Shipped" <%= order.status === 'Shipped' ? 'selected' : '' %>>Shipped</option>
+                        <option value="Delivered" <%= order.status === 'Delivered' ? 'selected' : '' %>>Delivered</option>
+                        <option value="Cancelled" <%= order.status === 'Cancelled' ? 'selected' : '' %>>Cancelled</option>
+                        <option value="User Cancelled" <%= order.status === 'User Cancelled' ? 'selected' : '' %>>User Cancelled</option>
+                      </select>
+                      <button type="submit" class="update-status" <%= (order.status.includes('Cancelled')) ? 'disabled' : '' %>>
+                        Update
+                      </button>
+                    </form>
+                    <form action="/admin/orders/cancel/<%= order._id %>" method="POST" onsubmit="return confirm('Are you sure you want to cancel this order?');">
+                      <button type="submit" class="cancel-order" <%= (order.status.includes('Cancelled')) ? 'disabled' : '' %>>
+                        Cancel
+                      </button>
+                    </form>
+                  </div>
+                </td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+        
+        <div class="pagination">
+          <% if (currentPage> 1) { %>
+            <a href="/admin/orders?sort=<%= sort %>&page=<%= currentPage - 1 %>">Previous</a>
+            <% } %>
+              <span>Page <%= currentPage %> of <%= totalPages %></span>
+              <% if (currentPage < totalPages) { %>
+                <a href="/admin/orders?sort=<%= sort %>&page=<%= currentPage + 1 %>">Next</a>
+                <% } %>
+        </div>
+        <% } %>
+  </div>
+</body>
+
+</html>

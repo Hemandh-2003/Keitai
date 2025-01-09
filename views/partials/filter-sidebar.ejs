@@ -1,0 +1,32 @@
+<section class="filter-section">
+    <button class="filter-toggle-btn" id="filter-toggle-btn">
+        <img src="/images/filter.png" alt="Filter Icon"> Filter
+    </button>
+
+    <aside class="filter-sidebar" id="filter-sidebar">
+        <h3>Filter By</h3>
+        <form id="filter-form">
+            <div class="filter-group">
+                <h4>Brand</h4>
+                <label><input type="checkbox" name="brand" value="Apple"> Apple</label><br>
+                <label><input type="checkbox" name="brand" value="Samsung"> Samsung</label>
+            </div>
+
+            <div class="filter-group">
+                <h4>Price</h4>
+                <label><input type="radio" name="price" value="below-50000"> Below ₹50,000</label><br>
+                <label><input type="radio" name="price" value="50000-100000"> ₹50,000 - ₹1,00,000</label><br>
+                <label><input type="radio" name="price" value="above-100000"> Above ₹1,00,000</label>
+            </div>
+
+            <div class="filter-group">
+                <h4>Storage</h4>
+                <label><input type="checkbox" name="storage" value="128GB"> 128GB</label><br>
+                <label><input type="checkbox" name="storage" value="256GB"> 256GB</label><br>
+                <label><input type="checkbox" name="storage" value="512GB"> 512GB</label>
+            </div>
+
+            <button type="submit">Apply Filters</button>
+        </form>
+    </aside>
+</section>
