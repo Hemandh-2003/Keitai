@@ -1,0 +1,130 @@
+/* General Reset */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Arial', sans-serif;
+  background-color: #f6f6f6;
+  color: #333;
+  line-height: 1.6;
+}
+
+/* Header Styling */
+header {
+  background-color: #000000;
+  color: white;
+  padding: 16px;
+  text-align: center;
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+}
+
+header nav {
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+}
+
+header .back-link {
+  color: white;
+  font-size: 16px;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+}
+
+header .back-link i {
+  margin-right: 8px;
+}
+
+header h1 {
+  margin-top: 8px;
+  font-size: 24px;
+}
+
+/* Order Details Section */
+.order-details-section {
+  padding: 30px 20px;
+  margin: 20px auto;
+  max-width: 800px;
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.order-details-section h2,
+h3 {
+  font-size: 22px;
+  margin-bottom: 15px;
+  color: #232f3e;
+}
+
+.order-details-section p {
+  font-size: 16px;
+  margin-bottom: 10px;
+  color: #555;
+}
+
+.product-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.product-item {
+  background: #f9f9f9;
+  padding: 15px;
+  margin-bottom: 10px;
+  border-radius: 6px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+.shipping-address {
+  margin-top: 10px;
+  line-height: 1.5;
+}
+
+.cancel-btn {
+  display: inline-block;
+  background-color: #FF9900;
+  color: white;
+  padding: 12px 20px;
+  font-size: 16px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  text-align: center;
+  transition: background-color 0.3s ease;
+}
+
+.cancel-btn:hover {
+  background-color: #f08804;
+}
+
+.cancel-btn:focus {
+  outline: none;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .order-details-section {
+    padding: 20px;
+  }
+
+  h2, h3 {
+    font-size: 18px;
+  }
+
+  p {
+    font-size: 14px;
+  }
+
+  .cancel-btn {
+    font-size: 14px;
+    padding: 10px 18px;
+  }
+}

@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Verify OTP - Keitai</title>
+  <link rel="icon" href="/images/faibcon.jpg">
+  <link rel="stylesheet" href="/css/otp.css">
+</head>
+<body>
+  <div class="otp-container">
+    <h1>Verify Your Email</h1>
+    <% if (error) { %>
+      <p class="error"><%= error %></p>
+    <% } %>
+    <form id="otp-form" action="/verify-otp" method="POST">
+      <input type="hidden" name="email" value="<%= email %>">
+      <div class="form-group">
+        <label for="otp">Enter OTP:</label>
+        <input type="text" id="otp" name="otp" required>
+      </div>
+      <p class="timer" id="timer">Time remaining: 0:00</p>
+      <button type="submit" id="verify-btn">Verify</button>
+    </form>
+    <button id="resend-btn" class="resend-btn">Resend OTP</button>
+  </div>
+
+  <script>
+    let timerElement = document.getElementById('timer');
+    let resendButton = document.getElementById('resend-btn'); // Assuming this button exists for resending OTP
+    let timeRemaining = 60; // Initial timer (1 minute)
+    const penaltyTime = 5; // 5 seconds penalty for incorrect OTP
+  
+    // Start the countdown timer
+    const startTimer = () => {
+      const interval = setInterval(() => {
+        if (timeRemaining <= 0) {
+          clearInterval(interval);
+          resendButton.style.display = 'block'; // Show resend button when timer ends
+        } else {
+          timerElement.textContent = `Time remaining: ${timeRemaining} seconds`;
+          timeRemaining--;
+        }
+      }, 1000);
+    };
+  
+    // Start the timer on page load
+    document.addEventListener('DOMContentLoaded', startTimer);
+  
+   // Handle OTP submission
+   const otpForm = document.querySelector('form');
+  otpForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    const email = document.querySelector('input[name="email"]').value;
+    const otp = document.querySelector('input[name="otp"]').value;
+
+    const response = await fetch(otpForm.action, {
+      method: otpForm.method,
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ email, otp }),
+    });
+
+    const result = await response.json();
+
+    if (result.success) {
+      window.location.href = '/login';
+    } else {
+      alert(result.error || 'Invalid OTP.');
+    }
+  });
+  
+    // Resend OTP handler
+    resendButton.addEventListener('click', async () => {
+      const email = document.querySelector('input[name="email"]').value;
+      const response = await fetch(`/resend-otp?email=${email}`);
+      if (response.ok) {
+        alert('OTP resent successfully.');
+        timeRemaining = 60; // Reset the timer
+        resendButton.style.display = 'none'; // Hide resend button
+        startTimer();
+      } else {
+        alert('Failed to resend OTP. Please try again.');
+      }
+    });
+  </script>  
+</body>
+</html>

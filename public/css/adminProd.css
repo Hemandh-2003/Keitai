@@ -1,0 +1,461 @@
+/* General Styling */
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background-color: #1e1e2f;
+    color: #ffffff;
+    line-height: 1.6;
+}
+.dashboard-container {
+    display: flex;
+    min-height: 100vh;
+    background-color: #181818; /* Dark background for the body */
+    position: relative;
+    margin-left: 197px;
+  }
+  
+  /* Sidebar */
+  .sidebar {
+    width: 155px;
+    background: linear-gradient(to right, #232526, #414345); /* Gradient background */
+    height: 100vh;
+    padding: 20px;
+    position: fixed;
+    top: 0;
+    left: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+    z-index: 10; /* Make sure sidebar is above the background but below the content */
+  }
+  
+  /* Logo */
+  .sidebar .logo img {
+    width: 150px;
+    margin-bottom: 30px;
+    transition: all 0.3s ease;
+  }
+  
+  .sidebar .logo img:hover {
+    transform: scale(1.1); /* Slightly scale the logo on hover */
+  }
+  
+  /* Sidebar Links */
+  .sidebar ul {
+    list-style: none;
+    padding: 0;
+    width: 100%;
+  }
+  
+  .sidebar ul li {
+    margin: 20px 0;
+    width: 100%;
+  }
+  
+  .sidebar ul li a {
+    color: #fff;
+    text-decoration: none;
+    font-size: 16px;
+    display: flex;
+    align-items: center;
+    padding: 10px 15px;
+    border-radius: 5px;
+    transition: background-color 0.3s ease, transform 0.3s ease;
+  }
+  
+  .sidebar ul li a i {
+    margin-right: 15px;
+    font-size: 18px;
+  }
+  
+  /* Hover Effect */
+  .sidebar ul li a:hover {
+    background-color: #007bff;
+    transform: translateX(10px);
+  }
+  
+  /* Active link styles */
+  .sidebar ul li a.active {
+    background-color: #0056b3;
+    color: #fff;
+  }
+  .icon-logout {
+    color: #fff;
+    text-decoration: none;
+    margin-left: 15px;
+    font-size: 16px;
+    cursor: pointer;
+  }
+  
+  .icon-logout:hover {
+    color: #f44336;
+  }
+  
+.container {
+    max-width: 1200px;
+    margin: 20px auto;
+    padding: 20px;
+    background-color: #26263b;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* Heading Styles */
+h1, h2 {
+    text-align: center;
+    color: #ff9900;
+    margin-bottom: 20px;
+}
+
+/* Add Product Form */
+.add-product {
+    margin-bottom: 30px;
+    padding: 20px;
+    background-color: #29294a;
+    border-radius: 8px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+.add-product form {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.add-product .form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.add-product input,
+.add-product select,
+.add-product textarea {
+    width: 100%;
+    padding: 10px;
+    border: none;
+    border-radius: 4px;
+    font-size: 16px;
+    background-color: #1e1e2f;
+    color: #ffffff;
+}
+
+.add-product input::placeholder,
+.add-product textarea::placeholder {
+    color: #aaaaaa;
+}
+
+.add-product button {
+    padding: 10px 15px;
+    background-color: #007bff;
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 16px;
+    transition: background-color 0.3s;
+}
+
+.add-product button:hover {
+    background-color: #0056b3;
+}
+
+/* Product Table */
+.table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+    background-color: #29294a;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+.table thead {
+    background-color: #414345;
+}
+
+.table th, .table td {
+    padding: 12px 15px;
+    text-align: left;
+    border-bottom: 1px solid #333;
+    color: #fff;
+}
+
+.table th {
+    font-size: 16px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+}
+
+.table tbody tr:hover {
+    background-color: #3b3b5c;
+}
+
+.table a {
+    color: #ff9900;
+    text-decoration: none;
+    font-weight: bold;
+    transition: color 0.3s ease;
+}
+
+.table a:hover {
+    color: #ffa500;
+}
+
+/* Buttons in Table */
+.table td a {
+    margin-right: 10px;
+}
+
+.table td a:last-child {
+    margin-right: 0;
+}
+.product-image {
+    width: 80px;
+    height: 90px;
+    object-fit: contain;
+    border-radius: 8px;
+    border: 0px solid #ddd;
+  }
+  .image-upload-container {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr); /* 4 columns */
+    gap: 15px; /* Space between boxes */
+}
+
+.image-box {
+    width: 100%;
+    aspect-ratio: 1 / 1; /* Makes the boxes square */
+    border: 2px dashed #ccc;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+}
+
+.image-label {
+    text-align: center;
+    font-size: 14px;
+    color: #ccc;
+}
+
+.image-preview {
+    max-width: 100%;
+    max-height: 100%;
+    display: block;
+    object-fit: cover;
+}
+  .image-box {
+    width: 150px;
+    height: 150px;
+    border: 2px dashed #aaa;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+  }
+  
+  .image-box input {
+    display: none;
+  }
+  
+  .image-box label {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    cursor: pointer;
+    color: #ccc;
+    font-size: 14px;
+    font-weight: bold;
+    background-color: #1e1e2f;
+    text-align: center;
+  }
+  
+  .image-box img {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    top: 0;
+    left: 0;
+    border-radius: 8px;
+  }
+  
+/* Responsive Design */
+@media (max-width: 768px) {
+    .add-product form {
+        flex-direction: column;
+    }
+
+    .table thead {
+        display: none;
+    }
+
+    .table tr {
+        display: block;
+        margin-bottom: 10px;
+    }
+
+    .table td {
+        display: flex;
+        justify-content: space-between;
+        padding: 10px;
+        border-bottom: 1px solid #414345;
+    }
+
+    .table td::before {
+        content: attr(data-label);
+        font-weight: bold;
+        text-transform: uppercase;
+        margin-right: 10px;
+        color: #ff9900;
+    }
+}
+/* Crop Button Styling */
+.crop-image-btn {
+  position: absolute;
+  bottom: 10px;
+  left: 10px;
+  background-color: #007bff;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  padding: 5px 10px;
+  font-size: 14px;
+  cursor: pointer;
+  display: none;
+}
+
+.crop-image-btn:hover {
+  background-color: #0056b3;
+}
+.preview-box {
+  width: 100%;
+  height: 300px;  /* Set the height of the preview box */
+  overflow: hidden;
+  position: relative;
+}
+
+.image-preview {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+.image-upload-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+}
+
+.image-box {
+  position: relative;
+  width: 150px;
+  height: 150px;
+  border: 1px dashed #ccc;
+  text-align: center;
+}
+
+.image-actions {
+  text-align: center;
+  margin-top: 10px;
+}
+
+.preview-box {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+.image-preview {
+  width: 100%;
+  height: auto;
+}
+
+.crop-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.crop-modal-content {
+  background: #fff;
+  padding: 20px;
+  border-radius: 5px;
+  text-align: center;
+}
+
+.crop-area img {
+  max-width: 100%;
+  max-height: 300px;
+}
+
+.close-modal {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  font-size: 24px;
+  cursor: pointer;
+}
+.image-upload-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+}
+
+.image-box {
+  position: relative;
+  width: 150px;
+  height: 150px;
+  border: 1px dashed #ccc;
+  text-align: center;
+}
+
+.image-actions {
+  text-align: center;
+  margin-top: 10px;
+}
+
+.preview-box {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+.image-preview {
+  width: 100%;
+  height: auto;
+}
+.pagination {
+  margin-top: 20px;
+  text-align: center;
+}
+
+.pagination a {
+  margin: 0 5px;
+  padding: 8px 16px;
+  text-decoration: none;
+  background-color: #f1f1f1;
+  border-radius: 5px;
+  border: 1px solid #ddd;
+}
+
+.pagination a.active {
+  background-color: #4CAF50;
+  color: white;
+}
+
+.pagination a:hover {
+  background-color: #ddd;
+}

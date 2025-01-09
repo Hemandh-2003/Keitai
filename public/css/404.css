@@ -1,0 +1,73 @@
+/* General Reset */
+body, html {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Arial', sans-serif;
+    height: 100%;
+    background: #f0f0f0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+  
+  /* Dialog Box Styling */
+  .dialog-box {
+    background: #ffffff;
+    padding: 2rem 3rem;
+    border-radius: 10px;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+    text-align: center;
+    max-width: 400px;
+    width: 90%;
+  }
+  
+  .dialog-box h1 {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    color: #ff4757;
+  }
+  
+  .dialog-box p {
+    font-size: 1.2rem;
+    margin-bottom: 1.5rem;
+    color: #333333;
+  }
+  
+  .dialog-box a {
+    display: inline-block;
+    padding: 10px 20px;
+    background: #4caf50;
+    color: #ffffff;
+    font-size: 1rem;
+    font-weight: bold;
+    text-decoration: none;
+    border-radius: 5px;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+  }
+  
+  .dialog-box a:hover {
+    background: #45a049;
+    transform: translateY(-2px);
+  }
+  
+  .dialog-box a:active {
+    transform: translateY(1px);
+  }
+  
+  /* Responsive Design */
+  @media (max-width: 768px) {
+    .dialog-box h1 {
+      font-size: 2.5rem;
+    }
+  
+    .dialog-box p {
+      font-size: 1rem;
+    }
+  
+    .dialog-box a {
+      font-size: 0.9rem;
+      padding: 8px 16px;
+    }
+  }
+  

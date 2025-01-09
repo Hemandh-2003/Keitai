@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Dashboard</title>
+  <link rel="stylesheet" href="/css/admin.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script> <!-- Chart.js for graphs -->
+</head>
+<body>
+  <div class="dashboard-container">
+    <!-- Sidebar -->
+    <nav class="sidebar">
+      <div class="logo">
+        <img src="/images/logo1.png" alt="Logo">
+      </div>
+      <ul>
+        <li><a href="/admin/dashboard" class="active"><i class="icon-dashboard"></i> Dashboard</a></li>
+        <li><a href="/admin/orders"><i class="icon-orders"></i> Orders</a></li>
+        <li><a href="/admin/products"><i class="icon-products"></i> Products</a></li>
+        <li><a href="/admin/users"><i class="icon-users"></i> Users</a></li>
+        <li><a href="/admin/categories"><i class="icon-categories"></i> Categories</a></li>
+        <li><a href="/admin/coupons"><i class="icon-coupons"></i> Coupons</a></li>
+        <li><a href="/admin/banners"><i class="icon-banners"></i> Banners</a></li>
+        <li><a href="/admin/payments"><i class="icon-payments"></i> Payments</a></li>
+        <li><a href="/admin/offers"><i class="icon-offers"></i> Offers</a></li>
+      </ul>
+    </nav>  
+
+    <!-- Main Content -->
+    <div class="main-content">
+      <header class="top-bar">
+        <input type="text" placeholder="search">
+        <div class="admin-controls">
+          <span>Admin</span>
+          <form action="/admin/logout" method="POST" style="display: inline;">
+            <button type="submit" class="icon-logout" style="background: none; border: none; cursor: pointer; color: #fff;">
+              Logout
+            </button>
+          </form>
+        </div>
+      </header>
+
+      <section class="stats-section">
+        <div class="stat-card">Today Sales <span>₹1,50,350.00</span></div>
+        <div class="stat-card">Today Expenses <span>₹15,000.00</span></div>
+        <div class="stat-card">Today Visitors <span>6268</span></div>
+        <div class="stat-card">Today Orders <span>625</span></div>
+      </section>
+
+      <section class="charts-section">
+        <div class="sales-overview">
+          <h3>Sales Overview</h3>
+          <canvas id="salesChart"></canvas>
+        </div>
+        <div class="visitors">
+          <h3>Visited Customers</h3>
+          <canvas id="visitorsChart"></canvas>
+        </div>
+      </section>
+
+      <section class="filters-section">
+        <h3>Filter</h3>
+        <form>
+          <input type="date" name="startDate" placeholder="Starting Date">
+          <input type="date" name="endDate" placeholder="Ending Date">
+          <button type="submit">Apply Filter</button>
+        </form>
+      </section>
+
+      <section class="download-report">
+        <h3>Download Report</h3>
+        <button>Download Report</button>
+        <select>
+          <option value="pdf">PDF</option>
+          <option value="excel">Excel</option>
+        </select>
+      </section>
+    </div>
+  </div>
+
+  <!-- JavaScript for Charts -->
+  <script>
+    // Sales Chart Data
+    const salesData = {
+      labels: ['January', 'February', 'March', 'April', 'May', 'June'], // Replace with dynamic data if needed
+      datasets: [{
+        label: 'Monthly Sales (₹)',
+        data: [15000, 20000, 30000, 25000, 40000, 35000], // Replace with real sales data
+        backgroundColor: 'rgba(54, 162, 235, 0.2)',
+        borderColor: 'rgba(54, 162, 235, 1)',
+        borderWidth: 1
+      }]
+    };
+
+    // Visitors Chart Data
+    const visitorsData = {
+      labels: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'],
+      datasets: [{
+        label: 'Visitors',
+        data: [400, 500, 600, 700, 800, 900, 1000],
+        backgroundColor: 'rgba(255, 99, 132, 0.2)',
+        borderColor: 'rgba(255, 99, 132, 1)',
+        borderWidth: 1
+      }]
+    };
+
+    // Sales Chart
+    new Chart(document.getElementById('salesChart'), {
+      type: 'bar',
+      data: salesData
+    });
+
+    // Visitors Chart
+    new Chart(document.getElementById('visitorsChart'), {
+      type: 'line',
+      data: visitorsData
+    });
+  </script>
+</body>
+</html>

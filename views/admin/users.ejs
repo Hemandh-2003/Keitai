@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <title>Admin - Users</title>
+  <link rel="stylesheet" href="/css/users.css">
+</head>
+
+<body>
+  <div class="dashboard-container">
+    <nav class="sidebar">
+      <div class="logo">
+        <img src="/images/logo1.png" alt="Logo">
+      </div>
+      <ul>
+        <li><a href="/admin/dashboard"><i class="icon-dashboard"></i> Dashboard</a></li>
+        <li><a href="/admin/orders"><i class="icon-orders"></i> Orders</a></li>
+        <li><a href="/admin/products"><i class="icon-products"></i> Products</a></li>
+        <li><a href="/admin/users" class="active"><i class="icon-users"></i> Users</a></li>
+        <li><a href="/admin/categories"><i class="icon-categories"></i> Categories</a></li>
+        <li><a href="/admin/coupons"><i class="icon-coupons"></i> Coupons</a></li>
+        <li><a href="/admin/banners"><i class="icon-banners"></i> Banners</a></li>
+        <li><a href="/admin/payments"><i class="icon-payments"></i> Payments</a></li>
+        <li><a href="/admin/offers"><i class="icon-offers"></i> Offers</a></li>
+      </ul>
+    </nav>
+
+    <div class="container">
+      <h1>Manage Users</h1>
+
+      <!-- Sort Dropdown -->
+      <div class="sort-products">
+        <label for="sort-category">Sort By Status:</label>
+        <select id="sort-category" name="sort" onchange="sortUsers()">
+          <option value="all" <% if (sortBy==='all' ) { %>selected<% } %>>Show All</option>
+          <option value="blocked" <% if (sortBy==='blocked' ) { %>selected<% } %>>Blocked</option>
+          <option value="unblocked" <% if (sortBy==='unblocked' ) { %>selected<% } %>>Unblocked</option>
+        </select>
+      </div>
+
+
+      <!-- Users Table -->
+      <table class="table">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Name</th>
+            <th>Email</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% users.forEach((user)=> { %>
+            <tr>
+              <td>
+                <%= user._id %>
+              </td>
+              <td>
+                <%= user.name %>
+              </td>
+              <td>
+                <%= user.email %>
+              </td>
+              <td>
+                <% if (user.isBlocked) { %>
+                  <span style="color: red;">Blocked</span>
+                  <% } else { %>
+                    <span style="color: green;">Active</span>
+                    <% } %>
+              </td>
+              <td>
+                <% if (!user.isBlocked) { %>
+                  <form action="/admin/block/<%= user._id %>" method="POST" style="display:inline;">
+                    <button type="submit" class="btn btn-warning">Block</button>
+                  </form>
+                  <% } else { %>
+                    <form action="/admin/unblock/<%= user._id %>" method="POST" style="display:inline;">
+                      <button type="submit" class="btn btn-success">Unblock</button>
+                    </form>
+                    <% } %>
+              </td>
+            </tr>
+            <% }); %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+  <div class="pagination">
+    <% if (currentPage > 1) { %>
+      <a href="/admin/users?sort=<%= sortBy %>&page=<%= currentPage - 1 %>">Previous</a>
+    <% } %>
+  
+    <% for (let i = 1; i <= totalPages; i++) { %>
+      <a href="/admin/users?sort=<%= sortBy %>&page=<%= i %>" class="<%= currentPage === i ? 'active' : '' %>"><%= i %></a>
+    <% } %>
+  
+    <% if (currentPage < totalPages) { %>
+      <a href="/admin/users?sort=<%= sortBy %>&page=<%= currentPage + 1 %>">Next</a>
+    <% } %>
+  </div>
+  <script>
+    function sortUsers() {
+      const sortOption = document.getElementById('sort-category').value;
+      const queryParams = sortOption ? `?sort=${sortOption}` : '';
+      window.location.href = `/admin/users${queryParams}`;
+    }
+  </script>
+</body>
+
+</html>

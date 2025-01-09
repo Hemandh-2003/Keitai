@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>User Profile</title>
+  <link rel="stylesheet" href="/css/user-profile.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+
+<body>
+  <!-- Header -->
+  <header>
+    <div class="header-left">
+      <a href="/home" class="back-arrow">
+        <i class="fas fa-arrow-left"></i>
+      </a>
+      <img src="/images/logo1.png" alt="Logo" class="logo">
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <div class="main-container">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <a href="/user/profile" class="active">
+        <i class="fas fa-user"></i>
+        Profile
+      </a>
+      <a href="/user/address">
+        <i class="fas fa-map-marker-alt"></i>
+        Your Address
+      </a>
+      <a href="/cart">
+        <i class="fas fa-shopping-cart"></i>
+        Your Cart
+      </a>
+      <a href="/user/orders">
+        <i class="fas fa-box"></i>
+        Your Orders
+      </a>
+      <a href="/wishlist">
+        <i class="fas fa-heart"></i>
+        Wishlist
+      </a>
+      <a href="/wallet">
+        <i class="fas fa-wallet"></i>
+        Wallet
+      </a>
+      <a href="/reviews">
+        <i class="fas fa-star"></i>
+        Your Reviews
+      </a>
+      <a href="/user/settings">
+        <i class="fas fa-cog"></i>
+        Settings
+      </a>
+      <a href="/logout">
+        <i class="fas fa-sign-out-alt"></i>
+        Logout
+      </a>
+    </aside>
+
+    <!-- Profile Section -->
+    <div class="content">
+      <div class="user-info">
+        <div class="user-avatar" 
+        style='background-image: url(<%= user && user.avatar ? `"${user.avatar}"` : '"/images/user.webp"' %>);'>
+   </div>   
+        <div class="user-details">
+          <span id="name-display">
+            <strong>Name:</strong> <span id="user-name">
+              <%= user && user.name ? user.name : 'User' %>
+            </span>
+            <button id="edit-name-btn">Edit</button>
+          </span>
+          <span><strong>Email:</strong>
+            <%= user && user.email ? user.email : 'user@example.com' %>
+          </span>
+        </div>
+      </div>
+
+      <!-- Edit Name Form -->
+      <form id="edit-name-form" class="hidden" action="/user/update-name" method="POST">
+        <input type="text" id="new-name" name="name" value="<%= user && user.name ? user.name : '' %>" required>
+        <button type="submit">Save</button>
+        <button type="button" id="cancel-edit-btn">Cancel</button>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    // Handle "Edit" button click
+    document.getElementById('edit-name-btn').addEventListener('click', function () {
+      document.getElementById('name-display').classList.add('hidden');
+      document.getElementById('edit-name-form').classList.remove('hidden');
+    });
+
+    // Handle "Cancel" button click
+    document.getElementById('cancel-edit-btn').addEventListener('click', function () {
+      document.getElementById('edit-name-form').classList.add('hidden');
+      document.getElementById('name-display').classList.remove('hidden');
+    });
+  </script>
+</body>
+
+</html>

@@ -1,0 +1,247 @@
+/* General Styles */
+body {
+    margin: 0;
+    padding: 0;
+    font-family: 'Roboto', sans-serif;
+    background: linear-gradient(135deg, #e0e0e0, #f8f9fa);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+  }
+  
+  .login-container {
+    width: 100%;
+    max-width: 400px;
+    background: white;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    border-radius: 10px;
+    overflow: hidden;
+    animation: fadeIn 0.5s ease-in-out;
+  }
+  
+ /* Header Navbar */
+.header {
+  width: 100%;
+  background-color: black; /* Navbar background color */
+  padding: 10px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start; /* Align content to the left */
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2); /* Add a subtle shadow */
+  position: fixed; /* Makes the header fixed at the top */
+  top: 0; /* Aligns the header to the very top of the viewport */
+  left: 0; /* Ensures it starts from the left edge of the screen */
+  z-index: 1000; /* Keeps it above other content */
+}
+
+.header .logo img {
+  max-height: none;
+  max-width: none;  /* Remove width restriction */
+  height: 70px;     /* Set desired height for the logo */
+  width: auto;      /* Maintain aspect ratio */
+  margin: -10px 0;  /* Adjust spacing to prevent navbar enlargement */
+}
+
+
+/* Adjust body padding to prevent content overlap */
+body {
+  padding-top: 70px; /* Add padding equal to the header height */
+}
+
+  
+  /* Login Box */
+  .login-box {
+    padding: 30px 20px;
+    text-align: center;
+  }
+  
+  .login-box h1 {
+    font-size: 24px;
+    color: #020202;
+    margin-bottom: 20px;
+  }
+  
+  /* Form */
+  .login-form .form-group {
+    margin-bottom: 15px;
+    text-align: left;
+  }
+  
+  .login-form label {
+    display: block;
+    font-size: 14px;
+    font-weight: 500;
+    margin-bottom: 5px;
+    color: #333;
+  }
+  
+  .login-form input {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    font-size: 16px;
+    outline: none;
+    transition: border-color 0.3s ease-in-out;
+  }
+  
+  .login-form input:focus {
+    border-color: #007bff;
+  }
+  
+  .password-wrapper {
+    position: relative;
+  }
+  
+  .password-wrapper input {
+    padding-right: 40px;
+  }
+  
+  .password-wrapper .toggle-password {
+    position: absolute;
+    top: 50%;
+    right: 10px;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 18px;
+    color: #666;
+  }
+  
+  .login-button {
+    width: 100%;
+    background-color: #000000;
+    color: white;
+    padding: 10px;
+    font-size: 16px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    margin-top: 10px;
+    transition: background-color 0.3s ease-in-out;
+  }
+  
+  .login-button:hover {
+    background-color: #000000e7;
+  }
+  
+  /* Options */
+  .login-options {
+    margin-top: 20px;
+  }
+  
+  .login-options .forgot-password {
+    font-size: 12px;
+    color: #666;
+    text-decoration: none;
+  }
+  
+  .login-options a {
+    color: #007bff;
+    text-decoration: none;
+    font-weight: bold;
+  }
+  
+  .login-options a:hover {
+    text-decoration: underline;
+  }
+  
+  .login-options p {
+    font-size: 14px;
+    margin: 10px 0;
+    color: #333;
+  }
+  
+  .social-login {
+    display: flex;
+    justify-content: center;
+    gap: 10px; /* Space between buttons */
+    margin-top: 20px;
+}
+
+.social-login a {
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%; /* Circular buttons */
+    background-color: #f4f4f9; /* Default background */
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1); /* Subtle shadow */
+    transition: transform 0.3s ease, background-color 0.3s ease;
+}
+
+.social-login a:hover {
+    transform: scale(1.1); /* Slight zoom on hover */
+}
+
+.social-login img {
+    width: 20px;
+    height: 20px; /* Icons fit perfectly within the buttons */
+}
+
+.social-login .google {
+    background-color: #ffffff; /* Google red */
+}
+
+.social-login .facebook {
+    background-color: #ffffff; /* Facebook blue */
+}
+
+.social-login .google:hover {
+    background-color: #00000055; /* Darker red on hover */
+}
+
+.social-login .facebook:hover {
+    background-color: #00000055; /* Darker blue on hover */
+}
+  
+  .social-button {
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    font-size: 18px;
+    font-weight: bold;
+    color: white;
+    transition: transform 0.3s ease-in-out;
+  }
+  
+  .social-button:hover {
+    transform: scale(1.1);
+  }
+  
+  .social-button.google {
+    background-color: #db4437;
+  }
+  
+  .social-button.apple {
+    background-color: black;
+  }
+  
+  .social-button.facebook {
+    background-color: #4267B2;
+  }
+  
+  /* Animations */
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(-10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  .error-message p {
+    color: red;
+    font-weight: bold;
+    margin: 0;
+    padding: 5px 0;
+  }
+   

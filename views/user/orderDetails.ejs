@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Order Details</title>
+  <link rel="stylesheet" href="/css/order-details.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+
+<body>
+  <!-- Header -->
+  <header>
+    <nav>
+      <a href="javascript:void(0);" class="back-link" onclick="goBack()">
+        <i class="fas fa-arrow-left"></i> Back to Orders
+      </a>
+    </nav>
+    <h1>Order Details</h1>
+  </header>
+
+  <!-- Order Details Section -->
+  <section class="order-details-section">
+    <div class="order-summary">
+      <h2>Order #<%= order.orderNumber %></h2>
+      <p><strong>Status:</strong> <%= order.status %></p>
+      <p><strong>Order Date:</strong> <%= new Date(order.createdAt).toLocaleDateString() %></p>
+      <p><strong>Total Amount:</strong> ₹<%= order.totalAmount.toFixed(2) %></p>
+      <p><strong>Estimated Delivery:</strong> <%= new Date(order.estimatedDelivery).toLocaleDateString() %></p>
+    </div>
+
+    <h3>Products</h3>
+    <ul class="product-list">
+      <% order.products.forEach(item => { %>
+        <li class="product-item">
+          <p><strong>Product Name:</strong> <%= item.product.name %></p>
+          <p><strong>Quantity:</strong> <%= item.quantity %></p>
+          <p><strong>Price:</strong> ₹<%= item.product.salesPrice || item.product.regularPrice %></p>
+        </li>
+      <% }) %>
+    </ul>
+
+    <h3>Shipping Address</h3>
+    <div class="shipping-address">
+      <p><%= selectedAddress?.name || 'N/A' %></p>
+      <p><%= selectedAddress?.street || 'N/A' %>, <%= selectedAddress?.city || 'N/A' %></p>
+      <p><%= selectedAddress?.state || 'N/A' %>, <%= selectedAddress?.zip || 'N/A' %>, <%= selectedAddress?.country || 'N/A' %></p>
+      <p><strong>Phone:</strong> <%= selectedAddress?.phone || 'N/A' %></p>
+    </div>
+
+    <h3>Payment Method</h3>
+    <p><%= order.paymentMethod %></p>
+
+    <% if (order.status === 'Pending') { %>
+      <form action="/user/orders/cancel/<%= order._id %>" method="POST" onsubmit="return confirm('Are you sure you want to cancel this order?');">
+        <button type="submit" class="cancel-btn">Cancel Order</button>
+      </form>
+    <% } %>
+  </section>
+
+  <script>
+    function goBack() {
+      if (document.referrer) {
+        window.history.back();
+      } else {
+        window.location.href = '/user/orders';
+      }
+    }
+  </script>
+</body>
+
+</html>

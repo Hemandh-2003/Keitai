@@ -1,0 +1,8 @@
+<nav>
+    <ul>
+      <% categories.forEach((category) => { %>
+        <li><a href="/<%= category.slug %>"><%= category.name %></a></li>
+      <% }); %>
+    </ul>
+  </nav>
+  

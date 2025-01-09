@@ -1,0 +1,233 @@
+/* General Styles */
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background-color: #1e1e2f;
+    color: #ffffff;
+    line-height: 1.6;
+}
+.dashboard-container {
+    display: block;
+    min-height: 100vh;
+    background-color: #26263b; 
+    position: relative;
+    margin-left: 197px;
+  }
+  
+  /* Sidebar */
+  .sidebar {
+    width: 155px;
+    background: linear-gradient(to right, #232526, #414345); /* Gradient background */
+    height: 100vh;
+    padding: 20px;
+    position: fixed;
+    top: 0;
+    left: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+    z-index: 10; /* Make sure sidebar is above the background but below the content */
+  }
+  
+  /* Logo */
+  .sidebar .logo img {
+    width: 150px;
+    margin-bottom: 30px;
+    transition: all 0.3s ease;
+  }
+  
+  .sidebar .logo img:hover {
+    transform: scale(1.1); /* Slightly scale the logo on hover */
+  }
+  
+  /* Sidebar Links */
+  .sidebar ul {
+    list-style: none;
+    padding: 0;
+    width: 100%;
+  }
+  
+  .sidebar ul li {
+    margin: 20px 0;
+    width: 100%;
+  }
+  
+  .sidebar ul li a {
+    color: #fff;
+    text-decoration: none;
+    font-size: 16px;
+    display: flex;
+    align-items: center;
+    padding: 10px 15px;
+    border-radius: 5px;
+    transition: background-color 0.3s ease, transform 0.3s ease;
+  }
+  
+  .sidebar ul li a i {
+    margin-right: 15px;
+    font-size: 18px;
+  }
+  
+  /* Hover Effect */
+  .sidebar ul li a:hover {
+    background-color: #007bff;
+    transform: translateX(10px);
+  }
+  
+  /* Active link styles */
+  .sidebar ul li a.active {
+    background-color: #0056b3;
+    color: #fff;
+  }
+  .icon-logout {
+    color: #fff;
+    text-decoration: none;
+    margin-left: 15px;
+    font-size: 16px;
+    cursor: pointer;
+  }
+  
+  .icon-logout:hover {
+    color: #f44336;
+  }
+/* Container */
+.container {
+    margin: 20px auto;
+    max-width: 90%;
+    background-color: #26263b;
+    border-radius: 10px;
+    padding: 20px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+}
+
+/* Page Header */
+h1 {
+    text-align: center;
+    margin-bottom: 20px;
+    font-size: 28px;
+    color: #ffffff;
+    border-bottom: 2px solid #007bff;
+    padding-bottom: 10px;
+}
+
+/* Table Styles */
+.table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+    background-color: #2b2b3f;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.table th,
+.table td {
+    padding: 12px 15px;
+    text-align: center;
+    border-bottom: 1px solid #3c3c5c;
+}
+
+.table th {
+    background-color: #007bff;
+    color: #ffffff;
+    font-weight: bold;
+    font-size: 16px;
+}
+
+.table tr:nth-child(even) {
+    background-color: #343453;
+}
+
+.table tr:hover {
+    background-color: #414169;
+    transition: background-color 0.3s ease;
+}
+
+.table td {
+    color: #cccccc;
+    font-size: 15px;
+}
+
+/* Status Styles */
+span {
+    font-weight: bold;
+}
+
+span[style="color: red;"] {
+    color: #ff4d4d !important;
+}
+
+span[style="color: green;"] {
+    color: #4dff88 !important;
+}
+
+/* Button Styles */
+button {
+    border: none;
+    border-radius: 5px;
+    padding: 8px 12px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+}
+
+.btn-warning {
+    background-color: #61e60e;
+    color: #000;
+}
+
+.btn-warning:hover {
+    background-color: #61e60e;
+    transform: scale(1.05);
+}
+
+.btn-success {
+    background-color: #fe0000;
+    color: #fff;
+}
+
+.btn-success:hover {
+    background-color: #fe0000;
+    transform: scale(1.05);
+}
+
+/* Responsive Styles */
+@media (max-width: 768px) {
+    .table {
+        font-size: 12px;
+    }
+
+    .table th,
+    .table td {
+        padding: 8px 10px;
+    }
+
+    button {
+        font-size: 12px;
+        padding: 6px 10px;
+    }
+}
+.pagination {
+  margin-top: 20px;
+  text-align: center;
+}
+
+.pagination a {
+  margin: 0 5px;
+  padding: 5px 10px;
+  text-decoration: none;
+  color: #000;
+  border: 1px solid #ddd;
+  border-radius: 3px;
+}
+
+.pagination a.active {
+  background-color: #4CAF50;
+  color: white;
+  border-color: #4CAF50;
+}
+
+.pagination a:hover {
+  background-color: #ddd;
+}

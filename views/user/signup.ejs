@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Signup - Keitai</title>
+  <link rel="icon" href="/images/faibcon.jpg">
+  <link rel="stylesheet" href="/css/signup.css">
+  <link rel="icon" href="/images/faibcon.jpg">
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+</head>
+<body>
+  <!-- Navbar Section -->
+  <header class="navbar">
+    <a href="/" class="logo">
+      <img src="/images/logo1.png" alt="Keitai Logo">
+    </a>
+    <nav></nav> <!-- Empty navbar, space for future content -->
+  </header>
+  <!-- Signup Form Section -->
+  <div class="signup-container">
+    <div class="signup-form-container">
+      <h1>Create a new account</h1>
+      <form class="signup-form" action="/register" method="POST" onsubmit="return validateSignupForm()">
+        <div class="form-group">
+          <label for="name">Name:</label>
+          <input type="text" id="name" name="name" required>
+        </div>
+        <div class="form-group">
+          <label for="email">Email:</label>
+          <input type="email" id="email" name="email" required>
+        </div>
+        <div class="form-group">
+          <label for="password">Password:</label>
+          <div class="password-wrapper">
+            <input type="password" id="password" name="password" required>
+            <button type="button" class="toggle-password">👁️</button>
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="confirm">Confirm:</label>
+          <div class="password-wrapper">
+            <input type="password" id="confirm" name="confirm" required>
+            <button type="button" class="toggle-password">👁️</button>
+          </div>
+        </div>
+        <button type="submit" class="signup-button">Create</button>
+      </form>
+      <div class="signup-footer">
+        <p>Existing User? <a href="/login" class="login-link">Log in Here</a></p>
+        <p>Or</p>
+        <p>Create Account using:</p>
+        <div class="social-icons">
+          <a href="/auth/google"><img src="/images/google.png" alt="Google"></a>
+          <a href="#"><img src="/images/facebook.png" alt="Facebook"></a>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script src="/js/validation.js"></script>
+  <script>
+    const toggleButtons = document.querySelectorAll('.toggle-password');
+    toggleButtons.forEach(button => {
+      button.addEventListener('click', () => {
+        const input = button.previousElementSibling;
+        const type = input.getAttribute('type') === 'password' ? 'text' : 'password';
+        input.setAttribute('type', type);
+        button.textContent = type === 'password' ? '👁️' : '🙈';
+      });
+    });
+
+    // Example of handling server error with SweetAlert
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+</body>
+</html>

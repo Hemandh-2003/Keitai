@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <title>Edit Product</title>
+  <link rel="stylesheet" href="/css/editProduct.css">
+</head>
+
+<body>
+  <div class="container">
+    <h1>Edit Product</h1>
+
+    <form action="/admin/products/update/<%= product._id %>" method="POST" enctype="multipart/form-data">
+      <!-- Product Name -->
+      <div class="form-group">
+        <label for="name">Product Name:</label>
+        <input type="text" id="name" name="name" value="<%= product.name %>" placeholder="Product Name" required>
+      </div>
+
+      <!-- Category -->
+      <div class="form-group">
+        <label for="category">Category:</label>
+        <select id="category" name="category" required>
+          <% categories.forEach((category)=> { %>
+            <option value="<%= category._id %>" <%=product.category && product.category.equals(category._id)
+              ? 'selected' : '' %>>
+              <%= category.name %>
+            </option>
+            <% }); %>
+        </select>
+      </div>
+
+      <!-- Brand -->
+      <div class="form-group">
+        <label for="brand">Brand:</label>
+        <input type="text" id="brand" name="brand" value="<%= product.brand %>" placeholder="Brand" required>
+      </div>
+
+      <!-- Regular Price -->
+      <div class="form-group">
+        <label for="regularPrice">Regular Price:</label>
+        <input type="number" id="regularPrice" name="regularPrice" value="<%= product.regularPrice %>"
+          placeholder="Regular Price" required>
+      </div>
+
+      <!-- Sales Price -->
+      <div class="form-group">
+        <label for="salesPrice">Sales Price (Optional):</label>
+        <input type="number" id="salesPrice" name="salesPrice" value="<%= product.salesPrice || '' %>"
+          placeholder="Sales Price">
+      </div>
+<!-- Product Images -->
+<div class="form-group">
+  <label for="images">Product Images:</label>
+  <div class="image-upload-container">
+    <% product.images.forEach((image, index) => { %>
+      <div class="image-box">
+        <img src="/uploads/<%= image %>" alt="Image <%= index + 1 %>" class="image-preview">
+        <button type="button" class="delete-image-btn" onclick="removeImage('<%= image %>')">Remove</button>
+      </div>
+    <% }); %>
+    <% for (let i = product.images.length; i < 4; i++) { %>
+      <div class="image-box">
+        <input type="file" name="images" accept="image/*">
+      </div>
+    <% } %>
+  </div>
+</div>
+
+<!-- Product Highlights -->
+<div class="form-group">
+  <label for="highlights">Product Highlights:</label>
+  <div class="image-upload-container">
+    <% product.highlights.forEach((highlight, index) => { %>
+      <div class="image-box">
+        <img src="/uploads/<%= highlight %>" alt="Highlight <%= index + 1 %>" class="image-preview">
+        <button type="button" class="delete-highlight-btn" onclick="removeHighlight('<%= highlight %>')">Remove</button>
+      </div>
+    <% }); %>
+    <% for (let i = product.highlights.length; i < 4; i++) { %>
+      <div class="image-box">
+        <input type="file" name="highlights" accept="image/*">
+      </div>
+    <% } %>
+  </div>
+</div>
+
+
+              <!-- Quantity -->
+              <div class="form-group">
+                <label for="quantity">Quantity:</label>
+                <input type="number" id="quantity" name="quantity" value="<%= product.quantity %>"
+                  placeholder="Quantity" required>
+              </div>
+
+              <!-- Product Offer -->
+              <div class="form-group">
+                <label for="productOffer">Product Offer (Optional):</label>
+                <input type="text" id="productOffer" name="productOffer" value="<%= product.productOffer || '' %>"
+                  placeholder="Product Offer">
+              </div>
+
+              <!-- Description -->
+              <div class="form-group">
+                <label for="description">Description:</label>
+                <textarea id="description" name="description" rows="4"
+                  placeholder="Description"><%= product.description %></textarea>
+              </div>
+
+              <!-- Submit Button -->
+              <button type="submit">Update Product</button>
+    </form>
+
+    <!-- Back Button -->
+    <div class="back-button">
+      <a href="/admin/products">Back to Product List</a>
+    </div>
+  </div>
+
+  <script>
+    function removeHighlight(highlight) {
+      if (confirm("Are you sure you want to remove this highlight?")) {
+        // Send a request to the server to delete the highlight
+        fetch(`/admin/products/delete-highlight/${highlight}`, { method: "DELETE" })
+          .then((response) => response.json())
+          .then((data) => {
+            if (data.success) {
+              location.reload(); // Refresh page to reflect changes
+            } else {
+              alert("Failed to remove highlight. Please try again.");
+            }
+          });
+      }
+    }
+  </script>  
+</body>
+
+</html>
