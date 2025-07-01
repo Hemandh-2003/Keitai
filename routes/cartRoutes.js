@@ -8,6 +8,9 @@ const router = express.Router();
 // Add item to cart
 router.post('/add', isLoggedIn, cartController.addToCart);
 
+// Product Details
+router.get('/product/:productId', isLoggedIn,cartController.getProductDetails);
+
 // Get cart
 router.get('/', isLoggedIn, checkBlockedUser, cartController.getCart); // Ensure correct use of middleware
 

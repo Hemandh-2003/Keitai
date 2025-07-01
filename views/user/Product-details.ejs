@@ -7,6 +7,7 @@
     <title>
         <%= product.name %> - Product Details
     </title>
+    <link rel="stylesheet" href="/css/search.css">
     <link rel="stylesheet" href="/css/products.css">
     <link rel="icon" href="/images/favicon.jpg">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
@@ -32,7 +33,11 @@
                         class="<%= product.category.name === 'Accessories' ? 'active' : '' %>">Accessories</a></li>
             </ul>
             <div class="nav-icons">
-                <input type="text" placeholder="Search">
+                <div class="search-container">
+                    <input type="text" id="search-input" placeholder="Search for products...">
+                    <i class="fas fa-search"></i>
+                    <div id="search-results"></div> <!-- Dropdown inside the search container -->
+                </div>
                 <a href="/cart"><i class="fas fa-shopping-cart"></i></a>
                 <a href="/user/profile"><i class="fas fa-user"></i></a>
             </div>
@@ -43,7 +48,7 @@
     <nav aria-label="breadcrumb">
         <ol class="breadcrumb">
             <li class="breadcrumb-item">
-                <a href="/<%= product.category.slug %>">
+                <a href="/<%= product.category.name.toLowerCase() %>">
                     <%= product.category.name %>
                 </a>
             </li>
@@ -69,6 +74,12 @@
 
         <div class="zoom-result" id="zoom-result"></div>
         <div class="product-info">
+            <div class="wishlist-container">
+                <button class="wishlist-icon" onclick="addToWishlist('<%= product._id %>', this, event)"
+                    style="background: none; border: none; cursor: pointer;">
+                    <i class="fas fa-heart"></i>
+                </button>
+            </div>
             <h1>
                 <%= product.name %>
             </h1>
@@ -98,18 +109,25 @@
 
                     <form action="/user/checkout" method="POST" id="action-form">
                         <input type="hidden" name="productId" value="<%= product._id %>">
-                        <input type="hidden" name="productUrl" value="/product/<%= product._id %>"> <!-- Add product URL -->
+                        <input type="hidden" name="productUrl" value="/product/<%= product._id %>">
+                        <!-- Add product URL -->
                         <label for="quantity">Quantity:</label>
                         <div class="quantity-control">
-                            <button type="button" class="btn-quantity" id="decrease-qty" <%= product.quantity === 0 ? 'disabled' : '' %>>-</button>
-                            <input type="number" name="quantity" class="quantity-input" value="1" min="1" max="<%= product.quantity %>" id="quantity" oninput="validateQuantity(this)" <%= product.quantity === 0 ? 'disabled' : '' %>>
-                            <button type="button" class="btn-quantity" id="increase-qty" <%= product.quantity === 0 ? 'disabled' : '' %>>+</button>
+                            <button type="button" class="btn-quantity" id="decrease-qty" <%=product.quantity===0
+                                ? 'disabled' : '' %>>-</button>
+                            <input type="number" name="quantity" class="quantity-input" value="1" min="1"
+                                max="<%= product.quantity %>" id="quantity" oninput="validateQuantity(this)"
+                                <%=product.quantity===0 ? 'disabled' : '' %>>
+                            <button type="button" class="btn-quantity" id="increase-qty" <%=product.quantity===0
+                                ? 'disabled' : '' %>>+</button>
                         </div>
                         <div class="button-container">
-                            <button type="submit" class="btn-buy" id="buy-now-btn" <%= product.quantity === 0 ? 'disabled' : '' %>>Buy Now</button>
-                            <button type="button" class="btn-cart" id="add-to-cart-btn" <%= product.quantity === 0 ? 'disabled' : '' %>>Add to Cart</button>
+                            <button type="submit" class="btn-buy" id="buy-now-btn" <%=product.quantity===0 ? 'disabled'
+                                : '' %>>Buy Now</button>
+                            <button type="button" class="btn-cart" id="add-to-cart-btn" <%=product.quantity===0
+                                ? 'disabled' : '' %>>Add to Cart</button>
                         </div>
-                    </form>                    
+                    </form>
                     <!-- Add to Cart Form -->
                     <form id="add-to-cart-form">
                         <input type="hidden" name="productId" value="<%= product._id %>">
@@ -193,31 +211,31 @@
     <section class="related-products">
         <div class="container">
             <h2>Related Products</h2>
-            <div class="product-row">
-                <div class="product-item">
-                    <img src="/images/i1.jpg" alt="Related Product 1">
-                    <h3>iPhone 16 Pro</h3>
-                    <p>₹119900.00</p>
+            <% if (relatedProducts && relatedProducts.length> 0) { %>
+                <div class="product-row">
+                    <% relatedProducts.forEach(relatedProduct=> { %>
+                        <div class="product-item">
+                            <a href="/product/<%= relatedProduct._id %>">
+                                <% if (relatedProduct.images && relatedProduct.images.length> 0) { %>
+                                    <img src="/uploads/<%= relatedProduct.images[0] %>"
+                                        alt="<%= relatedProduct.name %>">
+                                    <% } else { %>
+                                        <img src="/images/default-product.jpg" alt="<%= relatedProduct.name %>">
+                                        <% } %>
+                                            <h3>
+                                                <%= relatedProduct.name %>
+                                            </h3>
+                                            <p>₹<%= relatedProduct.salesPrice || relatedProduct.regularPrice %>
+                                            </p>
+                            </a>
+                        </div>
+                        <% }); %>
                 </div>
-                <div class="product-item">
-                    <img src="/images/i3.jpg" alt="Related Product 2">
-                    <h3>iPhone 16 Plus</h3>
-                    <p>₹90900.00</p>
-                </div>
-                <div class="product-item">
-                    <img src="/images/s1.jpg" alt="Related Product 3">
-                    <h3>Galaxy S24 Ultra</h3>
-                    <p>₹121900.00</p>
-                </div>
-                <div class="product-item">
-                    <img src="/images/s2.jpg" alt="Related Product 4">
-                    <h3>Galaxy S24 Plus</h3>
-                    <p>₹99900.00</p>
-                </div>
-            </div>
+                <% } else { %>
+                    <p>No related products found.</p>
+                    <% } %>
         </div>
     </section>
-
     <!-- Footer -->
     <footer>
         <div class="container">
@@ -230,9 +248,7 @@
             document.getElementById("main-product-image").src = thumbnail.src;
         }
     </script>
-    <script src="/js/qty.js"></script>
-    <script src="/js/zomm.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
 
     <script>
         async function addToCart() {
@@ -330,7 +346,7 @@
                 Swal.fire({
                     icon: 'error',
                     title: 'Error',
-                    text: 'Something went wrong. Please try again.',
+                    text: 'You Forgot to login',
                     showConfirmButton: true,
                 });
             }
@@ -425,7 +441,7 @@
         document.addEventListener('DOMContentLoaded', () => {
             const quantityInput = document.getElementById('quantity');
             const max = 5; // Limit to 5
-            const availableStock =' <%= product.quantity %>'; // Inject stock dynamically
+            const availableStock = ' <%= product.quantity %>'; // Inject stock dynamically
 
             toggleButtons(quantityInput, availableStock, max);
         });
@@ -479,6 +495,11 @@
             thumbnail.classList.add('active');
         }
     </script>
+    <script src="/js/search.js"></script>
+    <script src="/js/qty.js"></script>
+    <script src="/js/zomm.js"></script>
+    <script src="/js/wish.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </body>
 
 </html>

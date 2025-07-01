@@ -8,19 +8,33 @@ const bcrypt = require('bcryptjs');
 //Profile
 exports.getProfile = async (req, res) => {
   try {
-    const user = await User.findById(req.session.user._id);
+    const userId = req.session.user._id;
+
+    // Fetch user, recent address, and recent order
+    const user = await User.findById(userId);
     if (!user) {
       return res.status(404).send('User not found');
     }
 
+    const recentAddress = user.addresses && user.addresses.length > 0 
+      ? user.addresses[user.addresses.length - 1] 
+      : null;
+
+    const recentOrder = await Order.findOne({ user: userId })
+      .sort({ createdAt: -1 })
+      .populate('products.product', 'name price');
+
     res.render('user/user-profile', {
       user,
+      recentAddress,
+      recentOrder,
     });
   } catch (err) {
     console.error('Error fetching user profile:', err);
     res.status(500).send('Internal Server Error');
   }
-}
+};
+
 //address
 exports.getAddresses = async (req, res) => {
   try {
@@ -263,61 +277,42 @@ exports.cancelOrder = async (req, res) => {
 // Get Products
 exports.getProducts = async (req, res) => {
   try {
-    // Extract query parameters
-    const { search, category, sort, page = 1, limit = 10 } = req.query;
-    console.log('Query Parameters:', { search, category, sort, page, limit });
+    const { search, category, sort, page = 1 } = req.query;
+    const perPage = 12; // 12 products per page
+    const query = { isBlocked: false }; // Only show non-blocked products
 
-    const query = {};
-
-    // Search functionality
     if (search) {
       query.name = { $regex: search, $options: 'i' };
-      console.log('Search Filter Applied:', query.name);
     }
 
-    // Filter by category
     if (category) {
       query.category = category;
-      console.log('Category Filter Applied:', query.category);
     }
 
-    // Sort functionality
     const sortOption = {};
-    if (sort === 'priceAsc') {
-      sortOption.salesPrice = 1;
-    } else if (sort === 'priceDesc') {
-      sortOption.salesPrice = -1;
-    } else if (sort === 'nameAsc') {
-      sortOption.name = 1;
-    } else if (sort === 'nameDesc') {
-      sortOption.name = -1;
-    }
-    console.log('Sort Option:', sortOption);
+    if (sort === 'price-asc') sortOption.salesPrice = 1;
+    if (sort === 'price-desc') sortOption.salesPrice = -1;
+    if (sort === 'name-asc') sortOption.name = 1;
+    if (sort === 'name-desc') sortOption.name = -1;
 
-    // Pagination
-    const skip = (page - 1) * limit;
-    console.log('Pagination:', { skip, limit });
+    const skip = (page - 1) * perPage;
 
-    // Fetch products
     const products = await Product.find(query)
       .sort(sortOption)
       .skip(skip)
-      .limit(parseInt(limit));
-    console.log('Fetched Products:', products);
+      .limit(perPage);
 
-    // Total product count for pagination
     const totalProducts = await Product.countDocuments(query);
-    console.log('Total Products:', totalProducts);
+    const totalPages = Math.ceil(totalProducts / perPage);
 
-    // Render the view with fetched data
     res.render('user/home', {
       products,
-      totalPages: Math.ceil(totalProducts / limit),
       currentPage: parseInt(page),
-      totalProducts,
+      totalPages,
       search,
       category,
       sort,
+      query: req.query // Pass all query parameters for pagination links
     });
   } catch (err) {
     console.error('Error fetching products:', err);
@@ -325,49 +320,51 @@ exports.getProducts = async (req, res) => {
   }
 };
 
-
 // Get Product Details
 exports.getProductDetails = async (req, res) => {
   try {
     const productId = req.params.productId;
-
-    const product = await Product.findById(productId).populate('category');
-
-    if (!product) {
-      return res.status(404).send('Product not found');
-    }
-
-    res.render('user/product-details', {
-      user: req.session.user,
-      product,
-    });
-  } catch (error) {
-    console.error('Error fetching product details:', error);
-    res.status(500).send('Internal Server Error');
-  }
-};
-exports.getProductDetailsWithRelated = async (req, res) => {
-  try {
-    const productId = req.params.id;
-    const product = await Product.findById(productId).populate('category');
+    const product = await Product.findOne({
+      _id: productId,
+      isBlocked: false
+    }).populate('category');
 
     if (!product) {
-      return res.status(404).send('Product not found');
+      return res.status(404).send('Product not found or is unavailable');
     }
 
+    // Add related products fetch
     const relatedProducts = await Product.find({
       category: product.category._id,
       _id: { $ne: productId },
+      isBlocked: false
     }).limit(4);
 
-    res.render('user/Product-details', { product, relatedProducts });
-
+    res.render('user/product-details', { 
+      user: req.session.user, 
+      product,
+      relatedProducts  // Make sure to pass this to the view
+    });
   } catch (error) {
-    console.error('Error fetching product details or related products:', error);
-    res.status(500).send('Server Error');
+    res.status(500).send('Internal Server Error');
   }
 };
 
+/* In userController.js
+exports.searchProducts = async (req, res) => {
+  try {
+    const query = req.query.query;
+    const products = await Product.find({
+      $text: { $search: query },
+      isBlocked: false,
+      isDeleted: false
+    }).limit(10);
+
+    res.json(products);
+  } catch (error) {
+    res.status(500).json({ error: 'Search failed' });
+  }
+};*/
 // Checkout
 exports.checkout = async (req, res) => {
   try {
@@ -642,7 +639,16 @@ exports.renderConfirmPayment = async (req, res) => {
     // Calculate the final amount including delivery charge
     const finalTotalAmount = totalAmount + deliveryCharge;
 
-    console.log('Final Total Amount (including delivery charge):', finalTotalAmount);
+    // === Related Products Logic ===
+    let relatedProducts = [];
+    if (orderItems.length > 0) {
+      const categories = orderItems.map(item => item.product.category);
+      // Fetch related products from same categories
+      relatedProducts = await Product.find({
+        category: { $in: categories },
+        _id: { $nin: orderItems.map(item => item.product._id) }, // exclude already ordered items
+      }).limit(6);
+    }
 
     res.render('user/confirm-payment', {
       orderItems,
@@ -651,6 +657,7 @@ exports.renderConfirmPayment = async (req, res) => {
       totalAmount: finalTotalAmount, // Updated amount
       deliveryCharge,
       arrivalDate: new Date(arrivalDate), // Ensure proper date format
+      relatedProducts // ✅ Passed to EJS
     });
   } catch (err) {
     console.error('Error rendering confirmation page:', err.message);
@@ -658,68 +665,6 @@ exports.renderConfirmPayment = async (req, res) => {
   }
 };
 
-
-/*filter
-exports.getLaptopProducts = async (req, res) => {
-  try {
-    // Extract sort, brand, and price parameters from the query string
-    const { sort, brand, price } = req.query;
-
-    // Initialize sorting conditions
-    let sortCondition = {};
-
-    // Apply sorting based on the selected option
-    if (sort) {
-      if (sort === 'price-asc') {
-        sortCondition.regularPrice = 1; // Ascending price
-      } else if (sort === 'price-desc') {
-        sortCondition.regularPrice = -1; // Descending price
-      } else if (sort === 'name-asc') {
-        sortCondition.name = 1; // Alphabetical order
-      } else if (sort === 'name-desc') {
-        sortCondition.name = -1; // Reverse alphabetical order
-      } else if (sort === 'brand-asc') {
-        sortCondition.brand = 1; // Ascending brand
-      } else if (sort === 'brand-desc') {
-        sortCondition.brand = -1; // Descending brand
-      }
-    }
-
-    // Initialize filtering conditions
-    let filterCondition = { category: "Laptop" };
-
-    // Apply brand filter if provided
-    if (brand) {
-      filterCondition.brand = brand;
-    }
-
-    // Apply price filter if provided
-    if (price) {
-      if (price === "below-50000") {
-        filterCondition.regularPrice = { $lt: 50000 }; // Price below 50,000
-      } else if (price === "50000-100000") {
-        filterCondition.regularPrice = { $gte: 50000, $lte: 100000 }; // Price between 50,000 and 100,000
-      } else if (price === "above-100000") {
-        filterCondition.regularPrice = { $gt: 100000 }; // Price above 100,000
-      }
-    }
-
-    // Get products with applied sorting and filtering
-    const products = await Product.find(filterCondition).sort(sortCondition);
-
-    // Pass products and the current query to the frontend
-    console.log(req.query);
-    res.render('user/laptop', { 
-      products, 
-      query: req.query // Pass the sorting and filtering options to the frontend
-    });
-
-  } catch (error) {
-    console.error('Error fetching laptop products:', error);
-    res.status(500).send('An error occurred while fetching products.');
-  }
-};
-*/
 
 //settings
 exports.getSettingsPage = (req, res) => {
@@ -926,5 +871,35 @@ exports.resendOtp = async (req, res) => {
   } catch (error) {
     console.error('Error during OTP resend:', error);
     return res.render('user/reotp', { email, message: 'An error occurred. Please try again.', messageType: 'error' });
+  }
+};
+exports.getProductDetailsWithRelated = async (req, res) => {
+  try {
+    const productId = req.params.productId; // Make sure this matches your route parameter
+    const product = await Product.findOne({
+      _id: productId,
+      isBlocked: false
+    }).populate('category');
+
+    if (!product) {
+      return res.status(404).send('Product not found');
+    }
+
+    const relatedProducts = await Product.find({
+      category: product.category._id,
+      _id: { $ne: productId },//
+      isBlocked: false
+    }).limit(4);
+    console.log("related:",relatedProducts)
+
+    res.render('user/Product-details', { 
+      user: req.session.user, 
+      product,
+      relatedProducts 
+    });
+
+  } catch (error) {
+    console.error('Error:', error);
+    res.status(500).send('Server Error');
   }
 };

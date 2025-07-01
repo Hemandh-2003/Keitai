@@ -65,9 +65,9 @@
     <!-- Profile Section -->
     <div class="content">
       <div class="user-info">
-        <div class="user-avatar" 
-        style='background-image: url(<%= user && user.avatar ? `"${user.avatar}"` : '"/images/user.webp"' %>);'>
-   </div>   
+        <div class="user-avatar"
+          style='background-image: url(<%= user && user.avatar ? `"${user.avatar}"` : '"/images/user.webp"' %>);'>
+        </div>
         <div class="user-details">
           <span id="name-display">
             <strong>Name:</strong> <span id="user-name">
@@ -87,9 +87,53 @@
         <button type="submit">Save</button>
         <button type="button" id="cancel-edit-btn">Cancel</button>
       </form>
-    </div>
+      <div class="recent-info-container">
+        <!-- Recently Added Address -->
+        <div class="recent-section address-section">
+          <h2>Recently Added Address</h2>
+          <% if (recentAddress) { %>
+            <div class="address">
+              <p><strong>Name:</strong> <%= recentAddress.name %></p>
+              <p><strong>Address:</strong> <%= recentAddress.street %></p>
+              <p><strong>City:</strong> <%= recentAddress.city %>, <%= recentAddress.state %>, <%= recentAddress.zip %></p>
+              <p><strong>Country:</strong> <%= recentAddress.country %></p>
+              <p><strong>Phone:</strong> <%= recentAddress.phone %></p>
+            </div>
+          <% } else { %>
+            <p>No recent address found.</p>
+          <% } %>
+        </div>        
+      
+        <!-- Recent Order -->
+        <div class="recent-section order-section">
+          <h2>Recent Order</h2>
+          <% if (recentOrder) { %>
+            <div class="order">
+              <p><strong>Order ID:</strong> <%= recentOrder._id %></p>
+              <p><strong>Date:</strong> <%= new Date(recentOrder.createdAt).toLocaleDateString() %></p>
+              <p><strong>Status:</strong> <%= recentOrder.status %></p>
+              <p><strong>Total:</strong>
+                <% if (recentOrder.totalAmount) { %>
+                  $<%= recentOrder.totalAmount.toFixed(2) %>
+                <% } else { %>
+                  Not available
+                <% } %>
+              </p>
+              <h3>Products:</h3>
+              <ul>
+                <% recentOrder.products.forEach(product => { %>
+                  <li>
+                    <%= product.product.name %> -
+                  </li>
+                <% }) %>
+              </ul>
+            </div>
+          <% } else { %>
+            <p>No recent orders found.</p>
+          <% } %>
+        </div>
+      </div>      
   </div>
-
   <script>
     // Handle "Edit" button click
     document.getElementById('edit-name-btn').addEventListener('click', function () {

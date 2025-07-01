@@ -28,9 +28,9 @@
   <script>
     let timerElement = document.getElementById('timer');
     let resendButton = document.getElementById('resend-btn'); // Assuming this button exists for resending OTP
-    let timeRemaining = 60; // Initial timer (1 minute)
+    let timeRemaining = sessionStorage.getItem('timeRemaining') || 60; // Retrieve saved time or default to 60
     const penaltyTime = 5; // 5 seconds penalty for incorrect OTP
-  
+    
     // Start the countdown timer
     const startTimer = () => {
       const interval = setInterval(() => {
@@ -40,37 +40,38 @@
         } else {
           timerElement.textContent = `Time remaining: ${timeRemaining} seconds`;
           timeRemaining--;
+          sessionStorage.setItem('timeRemaining', timeRemaining); // Save updated time
         }
       }, 1000);
     };
-  
+
     // Start the timer on page load
     document.addEventListener('DOMContentLoaded', startTimer);
   
-   // Handle OTP submission
-   const otpForm = document.querySelector('form');
-  otpForm.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    
-    const email = document.querySelector('input[name="email"]').value;
-    const otp = document.querySelector('input[name="otp"]').value;
+    // Handle OTP submission
+    const otpForm = document.querySelector('form');
+    otpForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const email = document.querySelector('input[name="email"]').value;
+      const otp = document.querySelector('input[name="otp"]').value;
 
-    const response = await fetch(otpForm.action, {
-      method: otpForm.method,
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ email, otp }),
+      const response = await fetch(otpForm.action, {
+        method: otpForm.method,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, otp }),
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        window.location.href = '/login';
+      } else {
+        alert(result.error || 'Invalid OTP.');
+      }
     });
-
-    const result = await response.json();
-
-    if (result.success) {
-      window.location.href = '/login';
-    } else {
-      alert(result.error || 'Invalid OTP.');
-    }
-  });
   
     // Resend OTP handler
     resendButton.addEventListener('click', async () => {
@@ -79,12 +80,13 @@
       if (response.ok) {
         alert('OTP resent successfully.');
         timeRemaining = 60; // Reset the timer
+        sessionStorage.setItem('timeRemaining', timeRemaining); // Save the reset time
         resendButton.style.display = 'none'; // Hide resend button
         startTimer();
       } else {
         alert('Failed to resend OTP. Please try again.');
       }
     });
-  </script>  
+  </script>
 </body>
 </html>

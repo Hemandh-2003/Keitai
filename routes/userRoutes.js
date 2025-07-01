@@ -24,9 +24,7 @@ router.post('/orders/cancel/:id', ...protect, userController.cancelOrder);
 
 // Product Routes
 router.get('/home', userController.getProducts);
-router.get('/product/:productId', ...protect, userController.getProductDetails);
-router.get('/product/:id/related', userController.getProductDetailsWithRelated);
-
+router.get('/product/:productId', userController.getProductDetailsWithRelated);
 // Checkout Routes
 router.get('/checkout', ...protect, userController.getCheckout);
 router.post('/checkout', ...protect, userController.checkout);
@@ -50,6 +48,6 @@ router.get('/reset-password/:email', userController.getResetPasswordPage);
 router.post('/reset-password', userController.handleResetPassword);
 console.log(userController.verifyOtp);
 router.post('/verify-otp-reset', userController.verifyOtp);
-
+router.get('/product/:id/related', userController.getProductDetailsWithRelated);
 
 module.exports = router;

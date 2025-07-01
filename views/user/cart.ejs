@@ -5,9 +5,11 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Your Cart</title>
+  <link rel="stylesheet" href="/css/search.css">
   <link rel="stylesheet" href="/css/cart.css">
   <link rel="icon" href="/images/favicon.jpg">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
 
 <body>
@@ -29,7 +31,11 @@
         <li><a href="/accessories">Accessories</a></li>
       </ul>
       <div class="nav-icons">
-        <input type="text" placeholder="Search products, categories...">
+        <div class="search-container">
+          <input type="text" id="search-input" placeholder="Search for products...">
+          <i class="fas fa-search"></i>
+          <div id="search-results"></div>
+        </div>
         <a href="/user/profile"><i class="fas fa-user" aria-label="Profile"></i></a>
       </div>
     </nav>
@@ -47,9 +53,9 @@
       </div>
 
       <!-- Proceed to Checkout -->
-      <form action="/user/checkout" method="POST">
+      <form id="checkout-form" action="/user/checkout" method="POST">
         <% cart.items.forEach(item=> { %>
-          <% if (item.product) { %>
+          <% if (item.product && item.product.quantity> 0) { %>
             <input type="hidden" name="productIds[]" value="<%= item.product._id %>">
             <input type="hidden" name="quantities[]" value="<%= item.quantity %>">
             <% } %>
@@ -115,146 +121,34 @@
       <% } else { %>
         <p class="empty-cart">Your cart is empty</p>
         <% } %>
+
+          <% if (cart && cart.items.length> 0) { %>
+            <!-- Pagination Controls -->
+            <div class="pagination">
+              <% if (currentPage> 1) { %>
+                <a href="/cart?page=<%= currentPage - 1 %>" class="page-link">Previous</a>
+                <% } %>
+
+                  <% for (let i=1; i <=totalPages; i++) { %>
+                    <% if (i===currentPage) { %>
+                      <span class="page-link current">
+                        <%= i %>
+                      </span>
+                      <% } else { %>
+                        <a href="/cart?page=<%= i %>" class="page-link">
+                          <%= i %>
+                        </a>
+                        <% } %>
+                          <% } %>
+
+                            <% if (currentPage < totalPages) { %>
+                              <a href="/cart?page=<%= currentPage + 1 %>" class="page-link">Next</a>
+                              <% } %>
+            </div>
+            <% } %>
   </div>
-  <script>
-    document.querySelectorAll('.quantity-controls').forEach(control => {
-      const decreaseBtn = control.querySelector('.decrease-btn');
-      const increaseBtn = control.querySelector('.increase-btn');
-      const quantityInput = control.querySelector('.quantity-input');
-      const productId = control.closest('form').querySelector('input[name="productId"]').value;
-      const stockQuantity = parseInt(control.closest('.cart-item').querySelector('.item-stock').textContent.match(/\d+/)[0], 10); // Get stock quantity from the page
-      const buyNowBtn = control.closest('.item-actions').querySelector('.buy-btn'); // Buy now button
-  
-      const userMax = 5; // Maximum quantity a user can add for any product in the cart
-  
-      // Function to validate quantity and update Buy Now button
-      function validateQuantity() {
-        let currentQuantity = parseInt(quantityInput.value, 10) || 1;
-  
-        // If quantity exceeds stock or userMax, disable the Buy Now button and show SweetAlert
-        if (currentQuantity > stockQuantity || currentQuantity > userMax) {
-          buyNowBtn.disabled = true; // Disable Buy Now button
-          Swal.fire({
-            icon: 'warning',
-            title: 'Quantity Limit Exceeded',
-            text: `You can only add up to ${Math.min(stockQuantity, userMax)} units of this item.`,
-            timer: 3000,
-            timerProgressBar: true,
-            showConfirmButton: false,
-          });
-        } else {
-          buyNowBtn.disabled = false; // Enable Buy Now button if quantity is valid
-        }
-      }
-  
-      // Decrease quantity
-      decreaseBtn.addEventListener('click', () => {
-        let currentValue = parseInt(quantityInput.value, 10) || 1;
-        const min = parseInt(quantityInput.min, 10) || 1;
-  
-        if (currentValue > min) {
-          quantityInput.value = currentValue - 1;
-          updateCart(productId, quantityInput.value);
-          validateQuantity(); // Validate after changing quantity
-        }
-      });
-  
-      // Increase quantity
-      increaseBtn.addEventListener('click', () => {
-        let currentValue = parseInt(quantityInput.value, 10) || 1;
-        const max = Math.min(parseInt(quantityInput.max, 10) || 1, userMax); // Enforce userMax as the upper limit
-  
-        if (currentValue < max) {
-          quantityInput.value = currentValue + 1;
-          updateCart(productId, quantityInput.value);
-          validateQuantity(); // Validate after changing quantity
-        } else {
-          Swal.fire({
-            icon: 'warning',
-            title: 'Quantity Limit Reached',
-            text: `You can only add up to ${userMax} units of this item.`,
-            timer: 3000,
-            timerProgressBar: true,
-            showConfirmButton: false,
-          });
-        }
-      });
-  
-      // Update quantity on blur (when focus leaves the input)
-      quantityInput.addEventListener('blur', () => {
-        let value = parseInt(quantityInput.value, 10);
-        const max = Math.min(parseInt(quantityInput.max, 10) || 1, userMax); // Enforce userMax on manual entry
-  
-        if (isNaN(value) || value < 1) {
-          value = 1; // Set to minimum if invalid
-        } else if (value > max) {
-          value = max; // Enforce userMax
-          Swal.fire({
-            icon: 'warning',
-            title: 'Quantity Limit Reached',
-            text: `You can only add up to ${userMax} units of this item.`,
-            timer: 3000,
-            timerProgressBar: true,
-            showConfirmButton: false,
-          });
-        }
-  
-        quantityInput.value = value;
-        updateCart(productId, value);
-        validateQuantity(); // Validate after updating quantity
-      });
-  
-      // Listen for input changes (i.e., when the user types a value)
-      quantityInput.addEventListener('input', () => {
-        let currentQuantity = parseInt(quantityInput.value, 10) || 1;
-  
-        // Show SweetAlert if the user manually types a quantity greater than the max limit
-        if (currentQuantity > stockQuantity || currentQuantity > userMax) {
-          buyNowBtn.disabled = true; // Disable Buy Now button if limit exceeded
-          Swal.fire({
-            icon: 'warning',
-            title: 'Quantity Limit Exceeded',
-            text: `You can only add up to ${Math.min(stockQuantity, userMax)} units of this item.`,
-            timer: 3000,
-            timerProgressBar: true,
-            showConfirmButton: false,
-          });
-        } else {
-          buyNowBtn.disabled = false; // Enable Buy Now button if quantity is valid
-        }
-      });
-  
-      // Update cart function
-      function updateCart(productId, quantity) {
-        fetch('/cart/update', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ productId, quantity })
-        })
-          .then(response => response.json())
-          .then(data => {
-            if (data.error) {
-              Swal.fire({
-                icon: 'error',
-                title: 'Error',
-                text: data.error,
-              });
-  
-              // Reset the input value to the server-approved quantity
-              quantityInput.value = data.currentQuantity || quantity;
-            } else if (data.cart) {
-              // Refresh the page to reflect updated cart data
-              window.location.reload();
-            }
-          })
-          .catch(error => console.error('Error updating cart:', error));
-      }
-  
-      // Initial validation of quantity
-      validateQuantity();
-    });
-  </script>    
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="/js/search.js"></script>
+  <script src="/js/cart.js"></script>
 </body>
 
 </html>

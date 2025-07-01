@@ -1,0 +1,322 @@
+/* General Reset */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+  
+  body {
+    font-family: 'Arial', sans-serif;
+    background-color: #f9f9f9;
+    color: #333;
+    line-height: 1.6;
+  }
+  /* In products.css or home.css */
+.wishlist-icon i.fas.fa-heart {
+  transition: color 0.3s ease;
+}
+
+.wishlist-icon i.fas.fa-heart.text-secondary {
+  color: #6c757d; /* Gray color for non-wishlisted */
+}
+
+.wishlist-icon i.fas.fa-heart.text-danger {
+  color: #dc3545; /* Red color for wishlisted */
+}
+
+.wishlist-icon:hover i.fas.fa-heart {
+  transform: scale(1.1);
+}
+
+  /* Header */
+  header {
+    background-color: #000; /* Black background */
+    padding: 8px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    color: #fff;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    position: fixed; /* Fix the header at the top */
+    top: 0; /* Ensure it's at the very top */
+    left: 0; /* Align with the left edge */
+    width: 100%; /* Full width */
+    z-index: 1000; /* Ensure the header stays on top of other content */
+  }
+  
+  .navbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  
+  .logo img {
+    height: 46px;
+    margin-right: 15px;
+  }
+  
+  .nav-icons {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+  
+  .nav-icons input {
+    padding: 0.5rem;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    width: 300px;
+  }
+  
+  .nav-icons a {
+    color: #333;
+    text-decoration: none;
+    font-size: 1.2rem;
+  }
+  
+  /* Sidebar */
+  .sidebar {
+    width: 220px;
+    background-color: #f2f2f2;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+    position: fixed;
+    top: 70px; /* Adjust based on header height */
+    left: 0;
+    height: calc(100vh - 70px); /* Full height minus header */
+    overflow-y: auto; /* Enable scrolling if content overflows */
+  }
+  
+  .sidebar a {
+    text-decoration: none;
+    color: #333;
+    font-size: 16px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px;
+    border-radius: 5px;
+    transition: background-color 0.3s ease, color 0.3s ease;
+  }
+  
+  .sidebar a:hover {
+    background-color: #000000;
+    color: #fff;
+  }
+  
+  .sidebar a.active {
+    background-color: #000;
+    color: white;
+  }
+  
+/* Wishlist Container */
+.wishlist-container {
+    margin-left: 240px; /* Sidebar width + padding */
+    padding: 2rem;
+    margin-top: 4%;
+  }
+  
+  .wishlist-container h1 {
+    font-size: 2rem;
+    margin-bottom: 1.5rem;
+    color: #333;
+  }
+  
+  /* Wishlist Items */
+  .wishlist-items {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+  
+  .wishlist-item {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    padding: 1rem;
+    background-color: #fff;
+    border: 1px solid #e0e0e0; /* Light border */
+    border-radius: 8px;
+    transition: box-shadow 0.3s ease;
+  }
+  
+  .wishlist-item:hover {
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  }
+  
+  .wishlist-item img {
+    width: 120px; 
+    height: 120px; 
+    object-fit: contain; 
+    border-radius: 8px; 
+  }
+  
+  .item-details {
+    flex: 1;
+  }
+  
+  .item-title {
+    font-size: 1.25rem;
+    font-weight: bold;
+    margin-bottom: 0.5rem;
+    color: #333;
+  }
+  
+  .item-price {
+    font-size: 1.1rem;
+    color: #555;
+    margin-bottom: 0.5rem;
+  }
+  
+  .item-discount {
+    font-size: 1.1rem;
+    color: #000000;
+    margin-bottom: 0.5rem;
+  }
+  
+  .item-actions {
+    display: flex;
+    gap: 1rem;
+  }
+  
+  .delete-btn {
+    background-color: #e74c3c;
+    color: #fff;
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+  }
+  
+  .delete-btn:hover {
+    background-color: #c0392b;
+  }
+  
+  .add-to-cart-btn {
+    background-color: #28a745; /* Green color */
+    color: #fff;
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+  }
+  
+  .add-to-cart-btn:hover {
+    background-color: #218838; /* Darker green on hover */
+  }
+  
+  /* Empty Wishlist */
+  .empty-wishlist {
+    text-align: center;
+    font-size: 1.2rem;
+    color: #777;
+    margin-top: 2rem;
+  }
+  /* Pagination Container */
+.pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-top: 20px;
+    gap: 10px; 
+    margin-right: 8%;
+  }
+  
+  /* Pagination Links */
+  .pagination a {
+    text-decoration: none;
+    color: #333; /* Default text color */
+    padding: 8px 12px; /* Padding for clickable area */
+    border: 1px solid #ddd; /* Light border */
+    border-radius: 4px; /* Rounded corners */
+    transition: all 0.3s ease; /* Smooth transition for hover effects */
+  }
+  
+  /* Active Page Link */
+  .pagination a.active {
+    background-color: #007bff; /* Blue background for active page */
+    color: #fff; /* White text for active page */
+    border-color: #007bff; /* Match border color with background */
+  }
+  
+  /* Hover Effect for Links */
+  .pagination a:hover:not(.active) {
+    background-color: #f8f9fa; /* Light gray background on hover */
+    border-color: #ddd; /* Match border color with background */
+  }
+  
+  /* Disabled Links (Previous/Next when not applicable) */
+  .pagination a.disabled {
+    color: #ccc; /* Grayed-out text */
+    pointer-events: none; /* Disable click events */
+    border-color: #eee; /* Light border for disabled state */
+  }
+  
+  /* Previous and Next Buttons */
+  .pagination a.prev,
+  .pagination a.next {
+    font-weight: bold; /* Make text bold */
+  }
+  
+  /* Responsive Design for Smaller Screens */
+  @media (max-width: 600px) {
+    .pagination {
+      flex-wrap: wrap; /* Allow wrapping for smaller screens */
+      gap: 5px; /* Reduce gap between links */
+    }
+  
+    .pagination a {
+      padding: 6px 10px; /* Smaller padding for smaller screens */
+      font-size: 14px; /* Smaller font size */
+    }
+  }
+  /* Responsive Design */
+  @media (max-width: 768px) {
+    .wishlist-container {
+      margin-left: 0;
+      padding: 1rem;
+      margin-top: 20px; /* Adjust for smaller screens */
+    }
+  
+    .wishlist-item {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 1rem;
+    }
+  
+    .wishlist-item img {
+      width: 100%;
+      height: auto;
+    }
+  
+    .item-actions {
+      width: 100%;
+      justify-content: space-between;
+    }
+  }
+  
+  @media (max-width: 480px) {
+    .wishlist-item img {
+      height: 150px;
+    }
+  
+    .item-title {
+      font-size: 1.1rem;
+    }
+  
+    .item-price,
+    .item-discount {
+      font-size: 1rem;
+    }
+  
+    .delete-btn,
+    .add-to-cart-btn {
+      padding: 0.5rem;
+      font-size: 0.9rem;
+    }
+  }

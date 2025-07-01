@@ -6,6 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Order Confirmation</title>
   <link rel="stylesheet" href="/css/confirm-payment.css">
+   <link rel="stylesheet" href="/css/products.css">
 </head>
 
 <body>
@@ -18,7 +19,7 @@
     <h2>Order Summary</h2>
     <% orderItems.forEach(item=> { %>
       <div class="product-info">
-        <img src="/uploads/<%= item.product.images %>" alt="<%= item.product.name %>" class="product-image">
+        <img src="/uploads/<%= item.product.images[0] %>"  alt="<%= item.product.name %>" class="product-image">
         <div>
           <p><strong>Product:</strong>
             <%= item.product.name %>
@@ -50,58 +51,33 @@
     <button onclick="window.location.href='/home';">Go Back to Home</button>
   </section>
   <section class="related-products">
-    <div class="container">
-      <h2>Contine Shopping</h2>
-      <div class="product-row">
-        <div class="product-item">
-          <img src="/images/i1.jpg" alt="Related Product 1">
-          <h3>iPhone 16 Pro</h3>
-          <p>₹119900.00</p>
+        <div class="container">
+            <h2>Related Products</h2>
+            <% if (relatedProducts && relatedProducts.length> 0) { %>
+                <div class="product-row">
+                    <% relatedProducts.forEach(relatedProduct=> { %>
+                        <div class="product-item">
+                            <a href="/product/<%= relatedProduct._id %>">
+                                <% if (relatedProduct.images && relatedProduct.images.length> 0) { %>
+                                    <img src="/uploads/<%= relatedProduct.images[0] %>"
+                                        alt="<%= relatedProduct.name %>">
+                                    <% } else { %>
+                                        <img src="/images/default-product.jpg" alt="<%= relatedProduct.name %>">
+                                        <% } %>
+                                            <h3>
+                                                <%= relatedProduct.name %>
+                                            </h3>
+                                            <p>₹<%= relatedProduct.salesPrice || relatedProduct.regularPrice %>
+                                            </p>
+                            </a>
+                        </div>
+                        <% }); %>
+                </div>
+                <% } else { %>
+                    <p>No related products found.</p>
+                    <% } %>
         </div>
-        <div class="product-item">
-          <img src="/images/i3.jpg" alt="Related Product 2">
-          <h3>iPhone 16 Plus</h3>
-          <p>₹90900.00</p>
-        </div>
-        <div class="product-item">
-          <img src="/images/s1.jpg" alt="Related Product 3">
-          <h3>Galaxy S24 Ultra</h3>
-          <p>₹121900.00</p>
-        </div>
-        <div class="product-item">
-          <img src="/images/s2.jpg" alt="Related Product 4">
-          <h3>Galaxy S24 Plus</h3>
-          <p>₹99900.00</p>
-        </div>
-      </div>
-    </div>
-  </section>
-  <section class="related-products">
-    <div class="container">
-      <div class="product-row">
-        <div class="product-item">
-          <img src="/images/i1.jpg" alt="Related Product 1">
-          <h3>iPhone 16 Pro</h3>
-          <p>₹119900.00</p>
-        </div>
-        <div class="product-item">
-          <img src="/images/i3.jpg" alt="Related Product 2">
-          <h3>iPhone 16 Plus</h3>
-          <p>₹90900.00</p>
-        </div>
-        <div class="product-item">
-          <img src="/images/s1.jpg" alt="Related Product 3">
-          <h3>Galaxy S24 Ultra</h3>
-          <p>₹121900.00</p>
-        </div>
-        <div class="product-item">
-          <img src="/images/s2.jpg" alt="Related Product 4">
-          <h3>Galaxy S24 Plus</h3>
-          <p>₹99900.00</p>
-        </div>
-      </div>
-    </div>
-  </section>
+    </section>
   <script>
     window.history.replaceState(null, null, '/user/confirm-payment');
   </script>  

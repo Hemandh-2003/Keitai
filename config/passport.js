@@ -14,6 +14,7 @@ passport.use(
       try {
         // Find or create a user
         let user = await User.findOne({ googleId: profile.id });
+        // console.log('user:17',user)
         if (!user) {
           user = new User({
             googleId: profile.id,

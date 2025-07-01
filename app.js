@@ -15,6 +15,7 @@ const Product = require('./models/Product');
 const cartRoutes = require('./routes/cartRoutes');
 const { createProduct } = require('./controllers/adminController');
 const checkBlockedUser = require('./middleware/checkBlocked');
+
 // Load environment variables
 dotenv.config();
 
@@ -22,6 +23,8 @@ dotenv.config();
 const authRoutes = require('./routes/authRoutes');
 const userRoutes = require('./routes/userRoutes');
 const adminRoutes = require('./routes/adminRoutes');
+const wishlistRoutes = require('./routes/wishlistRoutes');
+
 
 // Initialize the app
 const app = express();
@@ -137,11 +140,21 @@ app.use('/', authRoutes);       // Authentication-related routes
 app.use('/user', userRoutes);   // User-specific routes
 app.use('/admin', checkBlockedUser, adminRoutes); 
 app.use('/admin', checkBlockedUser, adminRoutes); //user blocking
+app.use('/wishlist', wishlistRoutes); //wish List
+
 // Home route
 app.get('/', (req, res) => {
   res.render('user/index', { activePage: 'index' });
 });
-
+app.get('/product/:productId', async (req, res) => {
+  try {
+    // Redirect to the user route version
+    res.redirect(`/user/product/${req.params.productId}`);
+  } catch (error) {
+    console.error('Redirect error:', error);
+    res.status(500).send('Server Error');
+  }
+});
 // Dynamic category route (Slug-based)
 app.get('/:slug', async (req, res) => {
   try {
@@ -183,6 +196,32 @@ app.get('/:slug', async (req, res) => {
   } catch (error) {
     console.error('Error loading category page:', error);
     res.status(500).send('Server Error');
+  }
+});
+
+// Search endpoint
+app.get('/api/search', async (req, res) => {
+  const { query } = req.query;
+  console.log('Search query:', query);
+
+  try {
+    const products = await Product.find({
+      $or: [
+        { name: { $regex: query, $options: 'i' } }, // Case-insensitive regex
+        { description: { $regex: query, $options: 'i' } },
+        { brand: { $regex: query, $options: 'i' } }
+      ],
+      isBlocked: false,
+      isDeleted: false
+    })
+      .limit(10)
+      .populate('category');
+
+    console.log('Products found:', products.map(p => ({ id: p._id, name: p.name })));
+    res.json(products);
+  } catch (error) {
+    console.error('Search error:', error);
+    res.status(500).json({ error: 'Search failed' });
   }
 });
 

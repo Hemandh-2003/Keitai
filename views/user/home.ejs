@@ -6,12 +6,19 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Keitai | Home</title>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <link rel="stylesheet" href="/css/search.css">
   <link rel="icon" href="/images/faibcon.jpg">
   <link rel="stylesheet" href="/css/home.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
 
 <body>
+  <div class="mobile-menu-toggle" id="mobileMenuToggle">
+    <div class="bar"></div>
+    <div class="bar"></div>
+    <div class="bar"></div>
+  </div>
   <!-- Header Section -->
   <header>
     <nav class="navbar">
@@ -21,20 +28,28 @@
         </a>
       </div>
       <ul class="nav-links">
-        <li><a href="/home" class="active">Store</a></li>
-        <li><a href="/laptop">Laptop</a></li>
-        <li><a href="/tablet">Tablet</a></li>
-        <li><a href="/phone">Phone</a></li>
-        <li><a href="/watch">Watch</a></li>
-        <li><a href="/earpods">EarPods</a></li>
-        <li><a href="/accessories">Accessories</a></li>
+        <li><a href="/home" class="active" data-translate="store">Store</a></li>
+        <li><a href="/laptop" data-translate="laptop">Laptop</a></li>
+        <li><a href="/tablet" data-translate="tablet">Tablet</a></li>
+        <li><a href="/phone" data-translate="phone">Phone</a></li>
+        <li><a href="/watch" data-translate="watch">Watch</a></li>
+        <li><a href="/earpods" data-translate="earpods">EarPods</a></li>
+        <li><a href="/accessories" data-translate="accessories">Accessories</a></li>
       </ul>
       <div class="nav-icons">
-        <input type="text" placeholder="Search">
+        <div class="search-container mobile-search">
+          <input type="text" id="search-input" placeholder="Search for products...">
+          <div id="search-results"></div>
+        </div>
+        <select id="language-selector">
+          <option value="en">English</option>
+          <option value="hi">हिंदी</option>
+          <option value="ml">മലയാളം</option>
+          <option value="kn">ಕನ್ನಡ</option>
+          <option value="te">తెలుగు</option>
+        </select>
         <a href="/cart"><i class="fas fa-shopping-cart"></i></a>
         <a href="/user/profile"><i class="fas fa-user"></i></a>
-        <!-- Logout Button -->
-        <!--a href="/logout" class="logout-btn">Logout</a-->
       </div>
     </nav>
   </header>
@@ -43,38 +58,38 @@
   <main>
     <!-- Hero Section -->
     <section class="hero">
-      <h1><span class="blue-text">Keitai.</span>The best place to start your shopping</h1>
+      <h1 data-translate="welcome"><span class="blue-text">Keitai.</span>The best place to start your shopping</h1>
       <div class="category-list">
         <div class="category-item">
           <a href="/laptop"><img src="/images/laptop logo.png" alt="Laptop"></a>
-          <p>Laptop</p>
+          <p data-translate="laptop">Laptop</p>
         </div>
         <div class="category-item">
           <a href="/tablet"><img src="/images/tablet.png" alt="Tablet"></a>
-          <p>Tablet</p>
+          <p data-translate="tablet">Tablet</p>
         </div>
         <div class="category-item">
           <a href="/phone"><img src="/images/phone.png" alt="Phone"></a>
-          <p>Phone</p>
+          <p data-translate="phone">Phone</p>
         </div>
         <div class="category-item">
           <a href="/watch"><img src="/images/watch.png" alt="Watch"></a>
-          <p>Watch</p>
+          <p data-translate="watch">Watch</p>
         </div>
         <div class="category-item">
           <a href="/earpods"><img src="/images/earpods.png" alt="EarPods"></a>
-          <p>EarPods</p>
+          <p data-translate="earpods">EarPods</p>
         </div>
         <div class="category-item">
           <a href="/accessories"><img src="/images/accessories.png" alt="Accessories"></a>
-          <p>Accessories</p>
+          <p data-translate="accessories">Accessories</p>
         </div>
-        <div class="brand-item">
+        <!--div class="brand-item">
           <img src="/images/samsung.png" alt="Samsung">
         </div>
         <div class="brand-item">
           <img src="/images/apple.png" alt="Apple">
-        </div>
+        </div-->
       </div>
     </section>
     <section class="filter-section">
@@ -136,8 +151,17 @@
       <div class="row">
         <% products.forEach(product=> { %>
           <div class="col-lg-3 col-md-4 col-sm-6 mb-4">
-            <a href="/admin/products/<%= product._id %>" style="text-decoration: none; color: inherit;">
-              <div class="product-card text-center">
+            <a href="<%= product.isBlocked ? '#' : '/admin/products/' + product._id %>" style="text-decoration: none; color: inherit; 
+                      <%= product.isBlocked ? 'pointer-events: none; cursor: not-allowed;' : '' %>">
+              <div class="product-card text-center <%= product.isBlocked ? 'blocked-product' : '' %>">
+                <!-- Heart Icon for Wishlist -->
+                <div class="wishlist-container">
+                  <button class="wishlist-icon" onclick="addToWishlist('<%= product._id %>', this, event)"
+                    style="background: none; border: none; cursor: pointer;">
+                    <i class="fas fa-heart <%= product.isInWishlist ? 'text-danger' : 'text-secondary' %>"></i>
+                  </button>
+                </div>
+
                 <img src="/uploads/<%= product.images[0] %>" alt="<%= product.name %>" class="img-fluid">
                 <p class="mt-2">
                   <%= product.name %>
@@ -147,6 +171,10 @@
                   <%= product.salesPrice ? '₹' + product.salesPrice.toLocaleString('en-IN') : '₹' +
                     product.regularPrice.toLocaleString('en-IN') %>
                 </p>
+
+                <% if (product.isBlocked) { %>
+                  <p class="text-danger"> Currently Unavailable</p>
+                  <% } %>
               </div>
             </a>
           </div>
@@ -158,10 +186,10 @@
   <!-- Footer Section -->
   <footer>
     <div class="footer-links">
-      <a href="/about">About</a>
-      <a href="/services">Services</a>
-      <a href="/support">Support</a>
-      <a href="/contact">Contact Us</a>
+      <a href="/about" data-translate="about">About</a>
+      <a href="/services" data-translate="services">Services</a>
+      <a href="/support" data-translate="support">Support</a>
+      <a href="/contact" data-translate="contact">Contact Us</a>
     </div>
     <div class="social-icons">
       <a href="#"><i class="fab fa-facebook"></i></a>
@@ -171,47 +199,60 @@
     </div>
     <p>&copy; 2024 Keitai. All rights reserved.</p>
   </footer>
-  <script>
-    function clearFilters() {
-      const currentUrl = window.location.pathname; // Retain the current category slug
-      window.location.href = currentUrl; // Reload without query parameters
+  <script>document.getElementById('language-selector').addEventListener('change', function () {
+      const selectedLanguage = this.value;
+      loadLanguage(selectedLanguage);
+    });
+
+    function loadLanguage(lang) {
+      fetch(`/js/${lang}.json`)
+        .then(response => response.json())
+        .then(data => {
+          translatePage(data);
+          localStorage.setItem('preferredLanguage', lang); // Store preference
+        })
+        .catch(error => console.error('Error loading language file:', error));
     }
-  </script>
-  <script>
-    // Get filter elements
-    const filterSidebar = document.getElementById('filter-sidebar');
-    const filterToggleButton = document.getElementById('filter-toggle-btn');
 
-    // Toggle the filter sidebar
-    filterToggleButton.addEventListener('click', () => {
-      const isVisible = filterSidebar.style.display === 'block';
-      filterSidebar.style.display = isVisible ? 'none' : 'block';
-    });
+    function translatePage(translations) {
+      document.querySelectorAll('[data-translate]').forEach(element => {
+        const key = element.getAttribute('data-translate');
+        if (translations[key]) {
+          element.textContent = translations[key];
+        }
+      });
+    }
 
-    // Close filter sidebar if clicked outside
-    document.addEventListener('click', (event) => {
-      if (!filterSidebar.contains(event.target) && !filterToggleButton.contains(event.target)) {
-        filterSidebar.style.display = 'none';
-      }
-    });
-  </script>
+    // Load default language on page load
+    document.addEventListener('DOMContentLoaded', () => {
+      const preferredLanguage = localStorage.getItem('preferredLanguage') || 'en';
+      document.getElementById('language-selector').value = preferredLanguage;
+      loadLanguage(preferredLanguage);
+    });</script>
+  <script src="/js/search.js"></script>
+  <script src="/js/home.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/js/bootstrap.bundle.min.js"
+    integrity="sha384-ENjdO4Dr2bkBIFxQpeo1zE63F5oY6pD8Cqh1zFHmZxEFSfoN3jD9RVBl+zR8KSk" crossorigin="anonymous"></script>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/js/bootstrap.bundle.min.js"
     integrity="sha384-ENjdO4Dr2bkBIFxQpeo1zE63F5oY6pD8Cqh1zFHmZxEFSfoN3jD9RVBl+zR8KSk" crossorigin="anonymous"></script>
   <script>
-    document.getElementById('user-icon').addEventListener('click', () => {
-      fetch('/auth/status')
-        .then(response => response.json())
-        .then(data => {
-          if (data.isLoggedIn) {
-            window.location.href = '/user/user-profile'; // Redirect to user profile
-          } else {
-            window.location.href = '/user/login'; // Redirect to login
-          }
-        })
-        .catch(err => console.error('Error checking login status:', err));
-    });
-  </script>
+    // Helper function to build pagination URLs with existing query parameters
+    function buildPaginationUrl(queryParams, page) {
+      const params = new URLSearchParams();
 
+      // Add existing query parameters
+      if (queryParams.search) params.append('search', queryParams.search);
+      if (queryParams.category) params.append('category', queryParams.category);
+      if (queryParams.sort) params.append('sort', queryParams.sort);
+
+      // Add page parameter
+      params.append('page', page);
+
+      return window.location.pathname + '?' + params.toString();
+    }
+  </script>
+   <script src="/js/page.js"></script>
+    <script src="/js/search.js"></script>
 </body>
 
 </html>
