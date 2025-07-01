@@ -1,99 +1,129 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Confirm Your Order</title>
-  <link rel="stylesheet" href="/css/checkout.css">
+  <link rel="stylesheet" href="/css/checkout2.css">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 </head>
 
 <body>
-  <header>
-    <h1>Order Confirmation</h1>
-    <a href="<%= checkoutUrl %>" class="back-link">&larr; Back to Checkout</a>
-  </header>
+  <div class="order-confirmation-container">
+    <!-- Header -->
+    <header class="order-confirmation-header">
+      <h1>Order Confirmation</h1>
+      <a href="<%= checkoutUrl %>" class="back-link"><i class="fas fa-arrow-left"></i> Back to Checkout</a>
+    </header>
 
-  <main>
-    <!-- Order Summary -->
-    <section class="order-summary">
-      <h2>Order Summary</h2>
-      <% orderItems.forEach((item)=> { %>
-        <div class="order-item">
-          <p><strong>Product Name:</strong>
-            <%= item.product.name %>
-          </p>
-          <p><strong>Price:</strong> ₹<%= item.product.salesPrice || item.product.regularPrice %>
-          </p>
-          <p><strong>Quantity:</strong>
-            <%= item.quantity %>
-          </p>
+    <main>
+      <!-- Order Summary -->
+      <section class="section order-summary">
+        <h2>Order Summary</h2>
+        <div class="order-items">
+          <% orderItems.forEach((item) => { %>
+            <div class="order-item">
+              <p class="item-name"><strong><%= item.product.name %></strong></p>
+              <p class="item-price">₹<%= item.product.salesPrice || item.product.regularPrice %></p>
+              <p class="item-quantity">Quantity: <%= item.quantity %></p>
+            </div>
+          <% }); %>
         </div>
-        <% }); %>
-          <p><strong>Delivery Charge:</strong> ₹<%= deliveryCharge %>
-          </p>
-          <p class="total-amount"><strong>Total Amount:</strong> ₹<%= totalAmount %>
-          </p>
-    </section>
-
-
-    <!-- Shipping Information -->
-    <section class="shipping-info">
-      <h2>Shipping Address</h2>
-      <% if (address) { %>
-        <div class="address-details">
-          <p><strong>Name:</strong>
-            <%= address.name %>
-          </p>
-          <p>
-            <strong>Address:</strong>
-            <%= address.street %>, <%= address.city %>, <%= address.state %> - <%= address.zip %>
-          </p>
-          <p><strong>Phone:</strong>
-            <%= address.phone %>
-          </p>
+        <div class="summary-total">
+          <p class="delivery-charge">Delivery Charge: ₹<%= deliveryCharge %></p>
+          <p class="total-amount">Total Amount: ₹<%= totalAmount %></p>
         </div>
-        <a href="/user/checkout" class="edit-link">Change Address</a>
+      </section>
+
+      <!-- Shipping Information -->
+      <section class="section shipping-info">
+        <h2>Shipping Address</h2>
+        <% if (address) { %>
+          <div class="address-details">
+            <p><strong>Name:</strong> <%= address.name %></p>
+            <p><strong>Address:</strong> <%= address.street %>, <%= address.city %>, <%= address.state %> - <%= address.zip %></p>
+            <p><strong>Phone:</strong> <%= address.phone %></p>
+          </div>
+          <a href="/user/checkout" class="edit-link"><i class="fas fa-edit"></i> Change Address</a>
         <% } else { %>
           <p class="error">No shipping address provided.</p>
-          <% } %>
-    </section>
+        <% } %>
+      </section>
 
-    <!-- Payment Method -->
-    <section class="payment-method">
-      <h2>Payment Method</h2>
-      <% if (paymentMethod) { %>
-        <p><strong>Selected Payment Method:</strong>
-          <%= paymentMethod %>
-        </p>
+      <!-- Payment Method -->
+      <section class="section payment-method">
+        <h2>Payment Method</h2>
+        <% if (paymentMethod) { %>
+          <p><strong>Selected Payment Method:</strong> <%= paymentMethod %></p>
         <% } else { %>
           <p class="error">No payment method selected.</p>
-          <% } %>
-    </section>
+        <% } %>
+      </section>
 
-    <!-- Place Order -->
-    <section class="confirm-order">
-      <form action="/user/confirm-payment" method="POST">
-        <% orderItems.forEach((item)=> { %>
-          <input type="hidden" name="productIds[]" value="<%= item.product._id %>">
-          <input type="hidden" name="quantities[]" value="<%= item.quantity %>">
+      <!-- Estimated Delivery -->
+      <section class="section delivery-date">
+        <h2>Estimated Delivery</h2>
+        <p>Your order will arrive by: <strong><%= estimatedDate.toDateString() %></strong></p>
+      </section>
+
+      <!-- Confirm Order -->
+      <section class="section confirm-order">
+        <form action="/user/confirm-payment" method="POST">
+          <% orderItems.forEach((item) => { %>
+            <input type="hidden" name="productIds[]" value="<%= item.product._id %>">
+            <input type="hidden" name="quantities[]" value="<%= item.quantity %>">
           <% }); %>
-            <input type="hidden" name="selectedAddress" value="<%= address._id %>">
-            <input type="hidden" name="totalAmount" value="<%= totalAmount %>">
-            <input type="hidden" name="paymentMethod" value="<%= paymentMethod %>">
-            <button type="submit" class="place-order-btn">Place Order</button>
-            <a href="/user/product-details" class="cancel-btn">Cancel</a>
-      </form>
-    </section>
-
-    <!-- Estimated Delivery -->
-    <section class="delivery-date">
-      <h2>Estimated Delivery</h2>
-      <p>Your order will arrive by: <strong>
-          <%= estimatedDate.toDateString() %>
-        </strong></p>
-    </section>
-  </main>
+          <input type="hidden" name="selectedAddress" value="<%= address._id %>">
+          <input type="hidden" name="totalAmount" value="<%= totalAmount %>">
+          <input type="hidden" name="paymentMethod" value="<%= paymentMethod %>">
+          <button type="submit" class="place-order-btn">Place Order</button>
+          <a href="/user/product-details" class="cancel-btn">Cancel</a>
+        </form>
+      </section>
+    </main>
+  </div>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+  document.getElementById('checkoutForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const submitBtn = document.getElementById('submitOrder');
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Processing...';
+    
+    try {
+      const formData = new FormData(this);
+      const response = await fetch(this.action, {
+        method: 'POST',
+        body: formData
+      });
+      
+      const result = await response.json();
+      
+      if (result.success) {
+        window.location.href = '/user/order-confirmation';
+      } else {
+        Swal.fire({
+          icon: 'error',
+          title: 'Order Failed',
+          text: result.message || 'There was a problem with your order',
+          confirmButtonColor: '#0018f0'
+        });
+      }
+    } catch (error) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: 'An unexpected error occurred',
+        confirmButtonColor: '#0018f0'
+      });
+      console.error('Error:', error);
+    } finally {
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Place Order';
+    }
+  });
+</script>
 </body>
-
 </html>

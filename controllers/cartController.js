@@ -48,8 +48,35 @@ exports.addToCart = async (req, res) => {
 
 exports.getCart = async (req, res) => {
   try {
-    const cart = await Cart.findOne({ user: req.session.user._id }).populate('items.product');
-    res.render("user/cart", { cart: cart || { items: [] } }); // Pass the cart data to the view
+    const page = parseInt(req.query.page) || 1; // Current page, default to 1
+    const perPage = 4; // Items per page
+    
+    const cart = await Cart.findOne({ user: req.session.user._id })
+      .populate({
+        path: 'items.product',
+        options: {
+          skip: (page - 1) * perPage,
+          limit: perPage
+        }
+      });
+
+    if (!cart) {
+      return res.render("user/cart", { 
+        cart: { items: [] },
+        currentPage: page,
+        totalPages: 0
+      });
+    }
+
+    // Calculate total pages
+    const totalItems = cart.items.length;
+    const totalPages = Math.ceil(totalItems / perPage);
+
+    res.render("user/cart", { 
+      cart,
+      currentPage: page,
+      totalPages
+    });
   } catch (error) {
     console.error(error);
     res.status(500).send('Server error');
@@ -100,5 +127,25 @@ exports.removeFromCart = async (req, res) => {
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'Server error' });
+  }
+};
+exports.getProductDetails = async (req, res) => {
+  try {
+    const productId = req.params.productId;
+
+    // Fetch the product, ensuring it's not blocked
+    const product = await Product.findOne({ _id: productId, isBlocked: false }).populate('category');
+
+    if (!product) {
+      return res.status(404).send('Product not found or is unavailable');
+    }
+
+    res.render('user/product-details', {
+      user: req.session.user,
+      product,
+    });
+  } catch (error) {
+    console.error('Error fetching product details:', error);
+    res.status(500).send('Internal Server Error');
   }
 };

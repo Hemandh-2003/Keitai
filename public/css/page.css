@@ -25,7 +25,6 @@ header {
     align-items: center;
     padding: 0.2rem 2rem;
 }
-
 .logo img {
     height: 60px;
 }
@@ -206,7 +205,40 @@ main {
 .filter-sidebar button[type="button"]:hover {
     background: #a71d2a;
 }
-
+.wishlist-container {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    display: none; /* Initially hidden */
+  }
+  
+  .product-card:hover .wishlist-container {
+    display: block; /* Show on hover */
+  }
+  
+  .wishlist-icon {
+    font-size: 20px;
+    color: grey;
+    transition: color 0.3s ease;
+  }
+  
+  .wishlist-icon:hover {
+    color: rgb(0, 0, 0); /* Change color when hovered */
+  }
+  
+  .blocked-product {
+    opacity: 0.6; /* Makes the card appear grayed out */
+    pointer-events: none; /* Disables interaction with the card */
+  }
+  
+  .blocked-product img {
+    filter: grayscale(100%); /* Optional: Makes the image appear in grayscale */
+  }
+  
+  .blocked-product .wishlist-icon {
+    pointer-events: none; /* Disables the wishlist button */
+    opacity: 0.5;
+  }
 /* Responsive Design */
 @media (max-width: 768px) {
     .filter-sidebar {

@@ -14,8 +14,10 @@ const {
   createProduct,
   editProduct,
   updateProduct,
-  deleteProduct,
+  blockProduct,
+  unblockProduct,
   viewProductDetails,
+getProductDetailsWithRelated ,  
   listOrders, // Add this method to list orders
   changeOrderStatus, // Add this for changing order status
   cancelOrder, // Add this for canceling orders
@@ -76,9 +78,9 @@ router.get('/products/add', isAdmin, addProduct);
 router.post('/products/create', isAdmin, multer({ dest: './public/uploads' }).array('images', 8), createProduct);
 router.get('/products/edit/:id', isAdmin, editProduct);
 router.post('/products/update/:id', isAdmin, multer({ dest: './public/uploads' }).array('images', 8), updateProduct);
-router.post('/products/delete/:id', isAdmin, deleteProduct);
-router.get('/products/:id',  viewProductDetails);
-
+router.post('/products/block/:id', isAdmin, blockProduct);
+router.post('/products/unblock/:id', isAdmin,unblockProduct);
+router.get('/products/:productId',  getProductDetailsWithRelated );
 // Admin Logout
 router.post('/logout', (req, res) => {
   req.session.destroy((err) => {

@@ -13,59 +13,81 @@
 <body>
     <div class="otp-container">
         <h1>Reset Your Password</h1>
-        <p>We have sent a OTP to your email.</p>
+        <p>We have sent an OTP to your email.</p>
         <% if (typeof error !=='undefined' && error) { %>
             <p class="error">
                 <%= error %>
             </p>
-            <% } %>
-                <form action="/user/verify-otp-reset" method="POST">
-                    <input type="hidden" name="email" value="<%= email %>">
-                    <label for="otp">Enter OTP:</label>
-                    <input type="text" id="otp" name="otp" required>
-                    <button type="submit">Verify OTP</button>
-                </form>
-                <p id="timer">Time remaining: 60s</p>
-                <button id="resend-btn" class="resend-btn" style="display:none;"
-                    onclick="location.href='/resend-otp?email=<%= email %>'">Resend OTP</button>
+        <% } %>
+        <form action="/user/verify-otp-reset" method="POST">
+            <input type="hidden" name="email" value="<%= email %>">
+            <label for="otp">Enter OTP:</label>
+            <input type="text" id="otp" name="otp" required>
+            <button type="submit">Verify OTP</button>
+        </form>
+        <p id="timer">Time remaining: 60s</p>
+        <button id="resend-btn" class="resend-btn" style="display:none;"
+            onclick="location.href='/resend-otp?email=<%= email %>'">Resend OTP</button>
     </div>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-          // Use typeof to ensure no runtime errors if variables are undefined
-          const message = "<%= typeof message !== 'undefined' ? message : '' %>";
-          const messageType = "<%= typeof messageType !== 'undefined' ? messageType : '' %>";
-      
-          // Only show SweetAlert if message and messageType are not empty
-          if (message && messageType) {
-            Swal.fire({
-              title: messageType === "success" ? "Success!" : "Error!",
-              text: message,
-              icon: messageType === "success" ? "success" : "error",
-              confirmButtonText: 'OK'
-            });
-          }
+            // Use typeof to ensure no runtime errors if variables are undefined
+            const message = "<%= typeof message !== 'undefined' ? message : '' %>";
+            const messageType = "<%= typeof messageType !== 'undefined' ? messageType : '' %>";
+
+            // Only show SweetAlert if message and messageType are not empty
+            if (message && messageType) {
+                Swal.fire({
+                    title: messageType === "success" ? "Success!" : "Error!",
+                    text: message,
+                    icon: messageType === "success" ? "success" : "error",
+                    confirmButtonText: 'OK'
+                });
+            }
         });
-      </script>      
+    </script>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            let timerElement = document.getElementById('timer');
-            let resendButton = document.getElementById('resend-btn');
-            let timeRemaining = 60; // 1 minute
+            const timerElement = document.getElementById('timer');
+            const resendButton = document.getElementById('resend-btn');
+            const TIMER_KEY = 'otp_timer_remaining'; // Key for localStorage
+            const DEFAULT_TIMER = 60; // Default timer duration in seconds
 
+            let timeRemaining;
+
+            // Function to start the timer
             const startTimer = () => {
                 const interval = setInterval(() => {
                     if (timeRemaining <= 0) {
                         clearInterval(interval);
                         resendButton.style.display = 'block'; // Show resend button
                         timerElement.textContent = 'OTP expired.';
+                        localStorage.removeItem(TIMER_KEY); // Clear timer from storage
                     } else {
                         timerElement.textContent = `Time remaining: ${timeRemaining}s`;
                         timeRemaining--;
+                        localStorage.setItem(TIMER_KEY, timeRemaining); // Save remaining time
                     }
                 }, 1000);
             };
 
-            startTimer();
+            // Initialize the timer
+            const initializeTimer = () => {
+                const storedTime = localStorage.getItem(TIMER_KEY);
+                if (storedTime) {
+                    timeRemaining = parseInt(storedTime, 10);
+                    if (timeRemaining <= 0) {
+                        timeRemaining = DEFAULT_TIMER;
+                        localStorage.removeItem(TIMER_KEY);
+                    }
+                } else {
+                    timeRemaining = DEFAULT_TIMER;
+                }
+                startTimer();
+            };
+
+            // Start the timer
+            initializeTimer();
         });
     </script>
 </body>

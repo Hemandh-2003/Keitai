@@ -1,0 +1,152 @@
+/* search.css */
+.search-container {
+    position: relative;
+    margin-right: 20px;
+}
+
+#search-input {
+    width: 300px;
+    padding: 10px 40px 10px 20px;
+    font-size: 14px;
+    border: 2px solid #e0e0e0;
+    border-radius: 30px;
+    background: #f8f9fa;
+    transition: all 0.3s ease;
+}
+
+#search-input:focus {
+    outline: none;
+    border-color: #007bff;
+    box-shadow: 0 2px 8px rgba(0, 123, 255, 0.2);
+    background: #ffffff;
+}
+
+#search-results {
+    position: absolute;
+    top: calc(100% + 8px); /* Position below the search bar with a small gap */
+    left: 0; /* Align with the left edge of the search bar */
+    width: 100%; /* Match the width of the search bar */
+    max-height: 400px;
+    overflow-y: auto;
+    background: #ffffff;
+    border-radius: 12px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+    z-index: 1000;
+    display: none;
+    opacity: 0;
+    transform: translateY(-10px);
+    transition: opacity 0.2s ease, transform 0.2s ease;
+    pointer-events: none;
+}
+
+#search-results.show {
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: all;
+    display: block;
+}
+
+.search-result-item {
+    padding: 16px;
+    border-bottom: 1px solid #f0f0f0;
+    transition: background-color 0.2s ease;
+    display: flex;
+    align-items: center;
+}
+
+.search-result-item:last-child {
+    border-bottom: none;
+}
+
+.search-result-item:hover {
+    background-color: #f8f9fa;
+}
+
+.search-result-item a {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    width: 100%;
+    text-decoration: none;
+    color: #333 !important;
+}
+
+.search-result-item img {
+    width: 60px;
+    height: 60px;
+    object-fit: contain;
+    border-radius: 8px;
+    border: 1px solid #eee;
+    padding: 4px;
+}
+
+.search-result-item .product-info {
+    flex-grow: 1;
+}
+
+.search-result-item h4 {
+    margin: 0;
+    font-size: 15px;
+    font-weight: 600;
+    color: #1a1a1a;
+}
+
+.search-result-item p {
+    margin: 4px 0 0;
+    font-size: 14px;
+    color: #666;
+    font-weight: 500;
+}
+
+.search-result-item .price {
+    color: #000000;
+    font-weight: 700;
+    font-size: 15px;
+}
+
+.no-results, .error {
+    padding: 20px;
+    text-align: center;
+    color: #666;
+    font-size: 14px;
+}
+
+/* Scrollbar styling */
+#search-results::-webkit-scrollbar {
+    width: 6px;
+}
+
+#search-results::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 0 12px 12px 0;
+}
+
+#search-results::-webkit-scrollbar-thumb {
+    background: #ccc;
+    border-radius: 4px;
+}
+
+#search-results::-webkit-scrollbar-thumb:hover {
+    background: #999;
+}
+
+/* Loading state */
+.search-loading::after {
+    content: '';
+    position: absolute;
+    right: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 16px;
+    height: 16px;
+    border: 2px solid #ccc;
+    border-top-color: #007bff;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: translateY(-50%) rotate(360deg);
+    }
+}

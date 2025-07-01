@@ -11,7 +11,21 @@ body {
   color: #333;
   line-height: 1.6;
 }
-
+  /* Sidebar */
+  .sidebar {
+    width: 220px;
+    background-color: #f2f2f2;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+    position: fixed;
+    top: 70px; /* Adjust based on header height */
+    left: 0;
+    height: calc(100vh - 70px); /* Full height minus header */
+    overflow-y: auto; /* Enable scrolling if content overflows */
+  }
 /* Ensure the header content is a flex container */
 .header-content {
   display: flex;
@@ -123,7 +137,7 @@ header h1 {
 /* Orders Section */
 .orders-section {
   max-width: 1200px;
-  margin: 20px 51px;
+  margin: 20px 14%;
   padding: 0 10px;
 }
 

@@ -21,10 +21,13 @@ const productSchema = new mongoose.Schema(
   },
   { 
     timestamps: true, // Includes createdAt and updatedAt fields
-    toJSON: { getters: true }, // Applies getters when returning JSON
-    toObject: { getters: true } // Applies getters when returning plain objects
+    toJSON: { getters: true, virtuals: true }, // Applies getters and virtuals when returning JSON
+    toObject: { getters: true, virtuals: true } // Applies getters and virtuals when returning plain objects
   }
 );
+
+// Add a text index for search functionality
+productSchema.index({ name: 'text', description: 'text', brand: 'text' });
 
 // Pre-save validation to ensure sales price is not higher than the regular price
 productSchema.pre('save', function (next) {
@@ -33,6 +36,30 @@ productSchema.pre('save', function (next) {
   } else {
     next();
   }
+});
+
+// Helper methods
+productSchema.methods.isInStock = function () {
+  return this.quantity > 0 && !this.isBlocked;
+};
+
+productSchema.methods.getDiscountPercentage = function () {
+  if (this.salesPrice && this.regularPrice) {
+    return Math.round(((this.regularPrice - this.salesPrice) / this.regularPrice) * 100);
+  }
+  return 0;
+};
+
+productSchema.methods.getFinalPrice = function () {
+  return this.salesPrice || this.regularPrice;
+};
+
+// Virtual fields
+productSchema.virtual('availability').get(function () {
+  if (this.isBlocked || this.isDeleted) {
+    return 'Unavailable';
+  }
+  return this.quantity > 0 ? 'In Stock' : 'Out of Stock';
 });
 
 module.exports = mongoose.model('Product', productSchema);

@@ -79,6 +79,7 @@
                       <button type="submit" class="btn btn-success">Unblock</button>
                     </form>
                     <% } %>
+                      <a href="/admin/reviews?user=<%= user._id %>" class="btn btn-info">View Reviews</a>
               </td>
             </tr>
             <% }); %>
@@ -87,17 +88,19 @@
     </div>
   </div>
   <div class="pagination">
-    <% if (currentPage > 1) { %>
+    <% if (currentPage> 1) { %>
       <a href="/admin/users?sort=<%= sortBy %>&page=<%= currentPage - 1 %>">Previous</a>
-    <% } %>
-  
-    <% for (let i = 1; i <= totalPages; i++) { %>
-      <a href="/admin/users?sort=<%= sortBy %>&page=<%= i %>" class="<%= currentPage === i ? 'active' : '' %>"><%= i %></a>
-    <% } %>
-  
-    <% if (currentPage < totalPages) { %>
-      <a href="/admin/users?sort=<%= sortBy %>&page=<%= currentPage + 1 %>">Next</a>
-    <% } %>
+      <% } %>
+
+        <% for (let i=1; i <=totalPages; i++) { %>
+          <a href="/admin/users?sort=<%= sortBy %>&page=<%= i %>" class="<%= currentPage === i ? 'active' : '' %>">
+            <%= i %>
+          </a>
+          <% } %>
+
+            <% if (currentPage < totalPages) { %>
+              <a href="/admin/users?sort=<%= sortBy %>&page=<%= currentPage + 1 %>">Next</a>
+              <% } %>
   </div>
   <script>
     function sortUsers() {

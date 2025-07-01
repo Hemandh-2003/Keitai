@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <title>Admin - Reviews</title>
+  <link rel="stylesheet" href="/css/admin-reviews.css">
+</head>
+
+<body>
+  <div class="dashboard-container">
+    <nav class="sidebar">
+      <div class="logo">
+        <img src="/images/logo1.png" alt="Logo">
+      </div>
+      <ul>
+        <li><a href="/admin/dashboard"><i class="icon-dashboard"></i> Dashboard</a></li>
+        <li><a href="/admin/orders"><i class="icon-orders"></i> Orders</a></li>
+        <li><a href="/admin/products"><i class="icon-products"></i> Products</a></li>
+        <li><a href="/admin/users"><i class="icon-users"></i> Users</a></li>
+        <li><a href="/admin/reviews" class="active"><i class="icon-reviews"></i> Reviews</a></li>
+        <li><a href="/admin/categories"><i class="icon-categories"></i> Categories</a></li>
+        <li><a href="/admin/coupons"><i class="icon-coupons"></i> Coupons</a></li>
+        <li><a href="/admin/banners"><i class="icon-banners"></i> Banners</a></li>
+        <li><a href="/admin/payments"><i class="icon-payments"></i> Payments</a></li>
+        <li><a href="/admin/offers"><i class="icon-offers"></i> Offers</a></li>
+      </ul>
+    </nav>
+
+    <div class="container">
+      <h1>Manage Reviews</h1>
+
+      <!-- Filter Options -->
+      <div class="filter-options">
+        <div class="filter-group">
+          <label for="filter-user">Filter by User:</label>
+          <select id="filter-user" onchange="filterReviews()">
+            <option value="all">All Users</option>
+            <% users.forEach(user => { %>
+              <option value="<%= user._id %>" <%= selectedUserId === user._id.toString() ? 'selected' : '' %>>
+                <%= user.name %> (<%= user.email %>)
+              </option>
+            <% }); %>
+          </select>
+        </div>
+        
+        <div class="filter-group">
+          <label for="filter-product">Filter by Product:</label>
+          <select id="filter-product" onchange="filterReviews()">
+            <option value="all">All Products</option>
+            <% products.forEach(product => { %>
+              <option value="<%= product._id %>" <%= selectedProductId === product._id.toString() ? 'selected' : '' %>>
+                <%= product.name %>
+              </option>
+            <% }); %>
+          </select>
+        </div>
+      </div>
+
+      <!-- Reviews Table -->
+      <table class="reviews-table">
+        <thead>
+          <tr>
+            <th>User</th>
+            <th>Product</th>
+            <th>Rating</th>
+            <th>Review</th>
+            <th>Images</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% reviews.forEach(review => { %>
+            <tr>
+              <td>
+                <div class="user-cell">
+                  <strong><%= review.user.name %></strong>
+                  <small><%= review.user.email %></small>
+                </div>
+              </td>
+              <td>
+                <a href="/product/<%= review.product._id %>" target="_blank">
+                  <%= review.product.name %>
+                </a>
+              </td>
+              <td>
+                <div class="rating">
+                  <% for (let i=1; i<=5; i++) { %>
+                    <% if (i <= review.rating) { %>
+                      <i class="fas fa-star"></i>
+                    <% } else { %>
+                      <i class="far fa-star"></i>
+                    <% } %>
+                  <% } %>
+                </div>
+              </td>
+              <td>
+                <div class="review-content">
+                  <strong><%= review.title %></strong>
+                  <p><%= review.comment %></p>
+                  <% if (review.adminReply) { %>
+                    <div class="admin-reply">
+                      <strong>Your Reply:</strong>
+                      <p><%= review.adminReply.text %></p>
+                    </div>
+                  <% } %>
+                </div>
+              </td>
+              <td>
+                <% if (review.images && review.images.length > 0) { %>
+                  <div class="review-images">
+                    <% review.images.forEach(image => { %>
+                      <img src="/uploads/reviews/<%= image %>" alt="Review image" 
+                           onclick="openImageModal('/uploads/reviews/<%= image %>')">
+                    <% }); %>
+                  </div>
+                <% } else { %>
+                  <span class="no-images">No images</span>
+                <% } %>
+              </td>
+              <td>
+                <% if (!review.adminReply) { %>
+                  <button class="btn-reply" onclick="openReplyModal('<%= review._id %>')">Reply</button>
+                <% } else { %>
+                  <button class="btn-edit-reply" onclick="openReplyModal('<%= review._id %>', '<%= review.adminReply.text %>')">
+                    Edit Reply
+                  </button>
+                <% } %>
+                <button class="btn-delete" onclick="deleteReview('<%= review._id %>')">Delete</button>
+              </td>
+            </tr>
+          <% }); %>
+        </tbody>
+      </table>
+      
+      <div class="pagination">
+        <% if (currentPage > 1) { %>
+          <a href="/admin/reviews?page=<%= currentPage - 1 %><%= queryString %>">Previous</a>
+        <% } %>
+        
+        <% for (let i = 1; i <= totalPages; i++) { %>
+          <a href="/admin/reviews?page=<%= i %><%= queryString %>" class="<%= currentPage === i ? 'active' : '' %>">
+            <%= i %>
+          </a>
+        <% } %>
+        
+        <% if (currentPage < totalPages) { %>
+          <a href="/admin/reviews?page=<%= currentPage + 1 %><%= queryString %>">Next</a>
+        <% } %>
+      </div>
+    </div>
+  </div>
+
+  <!-- Reply Modal -->
+  <div id="reply-modal" class="modal">
+    <div class="modal-content">
+      <span class="close" onclick="closeModal()">&times;</span>
+      <h2>Reply to Review</h2>
+      <form id="reply-form">
+        <input type="hidden" id="review-id">
+        <textarea id="reply-text" placeholder="Write your reply..." required></textarea>
+        <button type="submit" class="btn-submit">Submit Reply</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Image Modal -->
+  <div id="image-modal" class="modal">
+    <div class="modal-content">
+      <span class="close" onclick="closeModal()">&times;</span>
+      <img id="modal-image" src="" alt="Review image">
+    </div>
+  </div>
+
+  <script>
+    function filterReviews() {
+      const userId = document.getElementById('filter-user').value;
+      const productId = document.getElementById('filter-product').value;
+      
+      let query = '';
+      if (userId !== 'all') query += `&user=${userId}`;
+      if (productId !== 'all') query += `&product=${productId}`;
+      
+      window.location.href = `/admin/reviews?${query.substring(1)}`;
+    }
+    
+    function openReplyModal(reviewId, existingReply = '') {
+      document.getElementById('review-id').value = reviewId;
+      document.getElementById('reply-text').value = existingReply;
+      document.getElementById('reply-modal').style.display = 'block';
+    }
+    
+    function openImageModal(imageSrc) {
+      document.getElementById('modal-image').src = imageSrc;
+      document.getElementById('image-modal').style.display = 'block';
+    }
+    
+    function closeModal() {
+      document.getElementById('reply-modal').style.display = 'none';
+      document.getElementById('image-modal').style.display = 'none';
+    }
+    
+    async function deleteReview(reviewId) {
+      const confirmDelete = await Swal.fire({
+        title: 'Are you sure?',
+        text: "You won't be able to revert this!",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#3085d6',
+        confirmButtonText: 'Yes, delete it!'
+      });
+      
+      if (confirmDelete.isConfirmed) {
+        try {
+          const response = await fetch(`/admin/reviews/${reviewId}`, {
+            method: 'DELETE'
+          });
+          
+          const result = await response.json();
+          
+          if (response.ok) {
+            Swal.fire({
+              icon: 'success',
+              title: 'Deleted!',
+              text: 'The review has been deleted.',
+              timer: 2000,
+              showConfirmButton: false
+            }).then(() => {
+              window.location.reload();
+            });
+          } else {
+            Swal.fire({
+              icon: 'error',
+              title: 'Error',
+              text: result.error || 'Failed to delete review.'
+            });
+          }
+        } catch (error) {
+          console.error('Error deleting review:', error);
+          Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: 'Something went wrong. Please try again.'
+          });
+        }
+      }
+    }
+    
+    document.getElementById('reply-form').addEventListener('submit', async function(e) {
+      e.preventDefault();
+      
+      const reviewId = document.getElementById('review-id').value;
+      const replyText = document.getElementById('reply-text').value;
+      
+      try {
+        const response = await fetch(`/admin/reviews/${reviewId}/reply`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ reply: replyText })
+        });
+        
+        const result = await response.json();
+        
+        if (response.ok) {
+          Swal.fire({
+            icon: 'success',
+            title: 'Reply Submitted!',
+            text: 'Your reply has been saved.',
+            timer: 2000,
+            showConfirmButton: false
+          }).then(() => {
+            window.location.reload();
+          });
+        } else {
+          Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: result.error || 'Failed to submit reply.'
+          });
+        }
+      } catch (error) {
+        console.error('Error submitting reply:', error);
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: 'Something went wrong. Please try again.'
+        });
+      }
+    });
+    
+    // Close modal when clicking outside
+    window.onclick = function(event) {
+      const replyModal = document.getElementById('reply-modal');
+      const imageModal = document.getElementById('image-modal');
+      
+      if (event.target === replyModal) {
+        replyModal.style.display = 'none';
+      }
+      if (event.target === imageModal) {
+        imageModal.style.display = 'none';
+      }
+    };
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+</body>
+
+</html>

@@ -63,18 +63,47 @@ router.get('/login', (req, res) => {
 // });
 
 
-// Google Callback
+// // Google Callback
+// router.get(
+//   '/auth/google/callback',
+//   passport.authenticate('google', {
+//     failureRedirect: '/login',
+//     successRedirect: '/home',
+//   }),
+//   (req, res) => {
+//     console.log('/auth/google/callback')
+//     debug('Authenticated user:', req.user);  // Logs to the console under the 'app:auth' namespace
+//     res.redirect('/home');
+//     req.session.user = user;  // Save the entire user object in session
+//     res.redirect('/home');
+//   }
+// );
+
 router.get(
   '/auth/google/callback',
-  passport.authenticate('google', {
-    failureRedirect: '/login',
-    successRedirect: '/user/home',
-  }),
+  passport.authenticate('google', { failureRedirect: '/login' }),
   (req, res) => {
-    debug('Authenticated user:', req.user);  // Logs to the console under the 'app:auth' namespace
-    res.redirect('/user/home');
+    // console.log('/auth/google/callback');
+    // console.log('Authenticated user:', req.user);
+
+    // Optional: Save the user to session manually (already done by Passport, but can be custom)
+    req.session.user = req.user;
+
+    // Optional: Block login if user is blocked
+    if (req.user.isBlocked) {
+      req.logout(err => {
+        if (err) console.error('Logout error:', err);
+        return res.redirect('/blocked');
+      });
+    } else {
+      res.redirect('/home');
+    }
   }
 );
+
+
+
+
 // Resend OTP route
 router.get('/resend-otp', async (req, res) => {
   const { email } = req.query; // Extract email from query parameters

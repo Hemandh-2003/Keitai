@@ -9,24 +9,23 @@ exports.adminDashboard = (req, res) => {
 // User management
 exports.listUsers = async (req, res) => {
   try {
-    const sortBy = req.query.sort || 'all'; // Default is 'all'
-    const page = parseInt(req.query.page) || 1; // Get the current page or default to 1
-    const limit = 10; // Number of users per page
-    const skip = (page - 1) * limit; // Skip the appropriate number of users for the current page
+    const sortBy = req.query.sort || 'all'; 
+    const page = parseInt(req.query.page) || 1;
+    const limit = 10; 
+    const skip = (page - 1) * limit;
 
     // Build the query filter based on the selected sort option
     let filter = {};
-    let sort = { createdAt: -1 }; // Default sort by newest (descending)
+    let sort = { createdAt: -1 }; 
 
     switch (sortBy) {
       case 'blocked':
-        filter.isBlocked = true; // Filter only blocked users
+        filter.isBlocked = true; 
         break;
       case 'unblocked':
-        filter.isBlocked = false; // Filter only unblocked users
+        filter.isBlocked = false; 
         break;
       default:
-        // 'all' - Show all users, no additional filtering
         break;
     }
 
@@ -404,14 +403,70 @@ exports.updateProduct = async (req, res) => {
 };
 
 
-// Soft delete a product
-exports.deleteProduct = async (req, res) => {
-  await Product.findByIdAndUpdate(req.params.id, { isDeleted: true });
-  res.redirect('/admin/products');
+// Block Product
+exports.blockProduct = async (req, res) => {
+  try {
+    const productId = req.params.id;
+    await Product.findByIdAndUpdate(productId, { isBlocked: true });
+    res.redirect('/admin/products');
+  } catch (error) {
+    console.error('Error blocking product:', error);
+    res.status(500).send('Internal Server Error');
+  }
+};
+
+// Unblock Product
+exports.unblockProduct = async (req, res) => {
+  try {
+    const productId = req.params.id;
+    await Product.findByIdAndUpdate(productId, { isBlocked: false });
+    res.redirect('/admin/products');
+  } catch (error) {
+    console.error('Error unblocking product:', error);
+    res.status(500).send('Internal Server Error');
+  }
+};
+
+
+
+exports.getProductDetailsWithRelated = async (req, res) => {
+  try {
+    console.log('getProductsDetail')
+    const productId = req.params.productId// Make sure this matches your route parameter
+    console.log(productId)
+    const product = await Product.findOne({
+      _id: productId,
+      isBlocked: false
+    }).populate('category');
+    // console.log(product)
+
+    if (!product) {
+      return res.status(404).send('Product not found');
+    }
+
+    const relatedProducts = await Product.find({
+      category: product.category._id,
+      _id: { $ne: productId },//
+      isBlocked: false
+    }).limit(4);
+    console.log("related:",relatedProducts)
+
+    res.render('user/Product-details', { 
+      user: req.session.user, 
+      product,
+      relatedProducts 
+    });
+
+  } catch (error) {
+    console.error('Error:', error);
+    res.status(500).send('Server Error');
+  }
 };
 
 exports.viewProductDetails = async (req, res) => {
   try {
+    // console.log('viewProductDetail')
+
       const product = await Product.findById(req.params.id).populate('category');
       if (!product) {
           return res.status(404).send('Product not found');
