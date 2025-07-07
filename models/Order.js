@@ -1,6 +1,13 @@
 const mongoose = require('mongoose');
+const shortid = require('shortid');
 
 const orderSchema = new mongoose.Schema({
+  orderId: {
+    type: String,
+    default: shortid.generate,
+    unique: true,
+    index: true,
+  },
   user: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
@@ -16,12 +23,51 @@ const orderSchema = new mongoose.Schema({
       quantity: {
         type: Number,
         required: true,
+        min: 1,
       },
     },
   ],
+  cancellationReason: {
+    type: String,
+    default: '',
+  },
+  returnRequested: {
+    type: Boolean,
+    default: false,
+  },
+  returnReason: {
+    type: String,
+    default: '',
+  },
+  returnedItems: [
+    {
+      product: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Product',
+      },
+      quantity: {
+        type: Number,
+        min: 1,
+      },
+      reason: String,
+    }
+  ],
+  returnStatus: {
+    type: String,
+    enum: ['None', 'Requested', 'Approved', 'Rejected'],
+    default: 'None',
+  },
   deliveryCharge: {
     type: Number,
-    default: 80, // Default delivery charge
+    default: 80,
+  },
+  discountAmount: {
+    type: Number,
+    default: 0
+  },
+  couponDiscount: {
+    type: Number,
+    default: 0
   },
   totalAmount: {
     type: Number,
@@ -43,21 +89,43 @@ const orderSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ['Pending', 'Shipped', 'Delivered', 'Cancelled', 'User Cancelled'],
+    enum: ['Pending', 'Placed', 'Shipped', 'Delivered', 'Cancelled', 'User Cancelled'],
     default: 'Pending',
   },
+  statusHistory: [
+    {
+      status: {
+        type: String,
+        enum: ['Pending', 'Placed', 'Shipped', 'Delivered', 'Cancelled', 'User Cancelled'],
+      },
+      updatedAt: {
+        type: Date,
+        default: Date.now,
+      },
+    }
+  ],
   createdAt: {
+    type: Date,
+    default: Date.now,
+  },
+  updatedAt: {
     type: Date,
     default: Date.now,
   },
 });
 
-// Populate product name and quantity when fetching orders
+// Update updatedAt on save
+orderSchema.pre('save', function (next) {
+  this.updatedAt = new Date();
+  next();
+});
+
+// Method to populate product name
 orderSchema.methods.populateProductDetails = function () {
-  return this.populate('products.product', 'name'); // Populate product name
+  return this.populate('products.product', 'name');
 };
 
-// Check if the model already exists to avoid recompiling
+// Check if model already exists to avoid recompilation
 const Order = mongoose.models.Order || mongoose.model('Order', orderSchema);
 
 module.exports = Order;

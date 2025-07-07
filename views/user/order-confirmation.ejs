@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -18,89 +19,120 @@
     </header>
 
     <main>
-      <!-- Order Summary -->
-      <section class="section order-summary">
-        <h2>Order Summary</h2>
-        <div class="order-items">
-          <% orderItems.forEach((item) => { %>
-            <div class="order-item">
-              <p class="item-name"><strong><%= item.product.name %></strong></p>
-              <p class="item-price">₹<%= item.product.salesPrice || item.product.regularPrice %></p>
-              <p class="item-quantity">Quantity: <%= item.quantity %></p>
+      <% if (paymentMethod==='Online' && !paymentVerified) { %>
+        <div class="payment-processing">
+          <h2>Verifying Your Payment...</h2>
+          <div class="spinner"></div>
+          <p>Please wait while we verify your payment details.</p>
+        </div>
+        <% } %>
+
+          <!-- Order Summary -->
+          <section class="section order-summary">
+            <h2>Order Summary</h2>
+            <div class="order-items">
+              <% orderItems.forEach((item)=> { %>
+                <div class="order-item">
+                  <p class="item-name"><strong>
+                      <%= item.product.name %>
+                    </strong></p>
+                  <p class="item-price">₹<%= item.product.salesPrice || item.product.regularPrice %>
+                  </p>
+                  <p class="item-price">₹<%= item.offerPrice %>
+                  </p>
+                  <p class="item-quantity">Quantity: <%= item.quantity %>
+                  </p>
+                </div>
+                <% }); %>
             </div>
-          <% }); %>
-        </div>
-        <div class="summary-total">
-          <p class="delivery-charge">Delivery Charge: ₹<%= deliveryCharge %></p>
-          <p class="total-amount">Total Amount: ₹<%= totalAmount %></p>
-        </div>
-      </section>
+            <div class="summary-total">
+              <p class="delivery-charge">Delivery Charge: ₹<%= deliveryCharge %>
+              </p>
 
-      <!-- Shipping Information -->
-      <section class="section shipping-info">
-        <h2>Shipping Address</h2>
-        <% if (address) { %>
-          <div class="address-details">
-            <p><strong>Name:</strong> <%= address.name %></p>
-            <p><strong>Address:</strong> <%= address.street %>, <%= address.city %>, <%= address.state %> - <%= address.zip %></p>
-            <p><strong>Phone:</strong> <%= address.phone %></p>
-          </div>
-          <a href="/user/checkout" class="edit-link"><i class="fas fa-edit"></i> Change Address</a>
-        <% } else { %>
-          <p class="error">No shipping address provided.</p>
-        <% } %>
-      </section>
+              <% if (typeof couponDiscount !=='undefined' && couponDiscount> 0) { %>
+                <p class="discount-line">Coupon Discount: - ₹<%= couponDiscount %>
+                </p>
+                <% } %>
 
-      <!-- Payment Method -->
-      <section class="section payment-method">
-        <h2>Payment Method</h2>
-        <% if (paymentMethod) { %>
-          <p><strong>Selected Payment Method:</strong> <%= paymentMethod %></p>
-        <% } else { %>
-          <p class="error">No payment method selected.</p>
-        <% } %>
-      </section>
+                  <p class="total-amount"><strong>Total Amount: ₹<%= totalAmount %></strong></p>
+            </div>
+          </section>
 
-      <!-- Estimated Delivery -->
-      <section class="section delivery-date">
-        <h2>Estimated Delivery</h2>
-        <p>Your order will arrive by: <strong><%= estimatedDate.toDateString() %></strong></p>
-      </section>
+          <!-- Shipping Information -->
+          <section class="section shipping-info">
+            <h2>Shipping Address</h2>
+            <% if (address) { %>
+              <div class="address-details">
+                <p><strong>Name:</strong>
+                  <%= address.name %>
+                </p>
+                <p><strong>Address:</strong>
+                  <%= address.street %>, <%= address.city %>, <%= address.state %> - <%= address.zip %>
+                </p>
+                <p><strong>Phone:</strong>
+                  <%= address.phone %>
+                </p>
+              </div>
+              <a href="/user/checkout" class="edit-link"><i class="fas fa-edit"></i> Change Address</a>
+              <% } else { %>
+                <p class="error">No shipping address provided.</p>
+                <% } %>
+          </section>
 
-      <!-- Confirm Order -->
-      <section class="section confirm-order">
-        <form action="/user/confirm-payment" method="POST">
-          <% orderItems.forEach((item) => { %>
-            <input type="hidden" name="productIds[]" value="<%= item.product._id %>">
-            <input type="hidden" name="quantities[]" value="<%= item.quantity %>">
-          <% }); %>
-          <input type="hidden" name="selectedAddress" value="<%= address._id %>">
-          <input type="hidden" name="totalAmount" value="<%= totalAmount %>">
-          <input type="hidden" name="paymentMethod" value="<%= paymentMethod %>">
-          <button type="submit" class="place-order-btn">Place Order</button>
-          <a href="/user/product-details" class="cancel-btn">Cancel</a>
-        </form>
-      </section>
+          <!-- Payment Method -->
+          <section class="section payment-method">
+            <h2>Payment Method</h2>
+            <% if (paymentMethod) { %>
+              <p><strong>Selected Payment Method:</strong>
+                <%= paymentMethod %>
+              </p>
+              <% } else { %>
+                <p class="error">No payment method selected.</p>
+                <% } %>
+          </section>
+
+          <!-- Estimated Delivery -->
+          <section class="section delivery-date">
+            <h2>Estimated Delivery</h2>
+            <p>Your order will arrive by: <strong>
+                <%= estimatedDate.toDateString() %>
+              </strong></p>
+          </section>
+
+          <!-- Confirm Order -->
+          <section class="section confirm-order">
+            <form action="/user/confirm-payment" method="POST" id="checkoutForm">
+              <% orderItems.forEach((item)=> { %>
+                <input type="hidden" name="productIds[]" value="<%= item.product._id %>">
+                <input type="hidden" name="quantities[]" value="<%= item.quantity %>">
+                <input type="hidden" name="offerPrices[]" value="<%= item.offerPrice %>">
+                <% }); %>
+                  <input type="hidden" name="selectedAddress" value="<%= address._id %>">
+                  <input type="hidden" name="totalAmount" value="<%= totalAmount %>">
+                  <input type="hidden" name="paymentMethod" value="<%= paymentMethod %>">
+                  <button type="submit" class="place-order-btn" id="submitOrder">Place Order</button>
+                  <a href="/user/product-details" class="cancel-btn">Cancel</a>
+            </form>
+          </section>
     </main>
   </div>
+
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-<script>
-  document.getElementById('checkoutForm').addEventListener('submit', async function(e) {
-    e.preventDefault();
-    
+  <script>
+
     const submitBtn = document.getElementById('submitOrder');
     submitBtn.disabled = true;
     submitBtn.textContent = 'Processing...';
-    
+
     try {
       const formData = new FormData(this);
       const response = await fetch(this.action, {
         method: 'POST',
         body: formData
       });
-      
+
       const result = await response.json();
-      
+
       if (result.success) {
         window.location.href = '/user/order-confirmation';
       } else {
@@ -123,7 +155,37 @@
       submitBtn.disabled = false;
       submitBtn.textContent = 'Place Order';
     }
-  });
-</script>
+    });
+
+    // Only run payment verification if needed
+    <% if (paymentMethod === 'Online' && !paymentVerified) { %>
+      document.addEventListener('DOMContentLoaded', async () => {
+        try {
+          const response = await fetch('/payment/verify', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              razorpay_payment_id: '<%= paymentDetails?.razorpay_payment_id %>',
+              razorpay_order_id: '<%= paymentDetails?.razorpay_order_id %>',
+              razorpay_signature: '<%= paymentDetails?.razorpay_signature %>'
+            })
+          });
+
+          const result = await response.json();
+          if (result.success) {
+            window.location.href = `/order/success/<%= orderId %>`;
+          } else {
+            window.location.href = `/payment/failed?orderId=<%= orderId %>&error=${encodeURIComponent(result.error)}`;
+          }
+        } catch (error) {
+          console.error('Payment verification error:', error);
+          window.location.href = `/payment/failed?orderId=<%= orderId %>&error=Verification failed`;
+        }
+      });
+    <% } %>
+  </script>
 </body>
+
 </html>

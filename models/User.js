@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
 
-// Define Address Schema
+// Address Schema
 const addressSchema = new mongoose.Schema({
   name: { type: String, required: true },
   street: { type: String, required: true },
@@ -12,14 +12,49 @@ const addressSchema = new mongoose.Schema({
   default: { type: Boolean, default: false },
 });
 
-// Define User Schema
+const walletTransactionSchema = new mongoose.Schema({
+  type: {
+    type: String,
+    enum: ['Credit', 'Debit'],
+    required: true,
+  },
+  amount: {
+    type: Number,
+    required: true,
+  },
+  reason: {
+    type: String,
+    required: true,
+  },
+  orderId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Order',
+  },
+  date: {
+    type: Date,
+    default: Date.now,
+  }
+});
+
+// User Schema
 const userSchema = new mongoose.Schema({
   name: { type: String, required: true },
   email: { type: String, required: true, unique: true },
-  password: { type: String, required: false },
+  password: { type: String },
   isBlocked: { type: Boolean, default: false },
   googleId: { type: String },
-  addresses: { type: [addressSchema], default: [] }, // Embed Address Schema
+  addresses: { type: [addressSchema], default: [] },
+
+  // ✅ Wallet Section
+  wallet: {
+    balance: { type: Number, default: 0 },
+    transactions: [walletTransactionSchema],
+  },
+ // ✅ Track used coupons
+  usedCoupons: {
+    type: [String],
+    default: []
+  }
 });
 
 module.exports = mongoose.model('User', userSchema);

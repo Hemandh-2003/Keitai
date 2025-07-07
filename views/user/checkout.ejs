@@ -1,12 +1,14 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Checkout</title>
-  <link rel="stylesheet" href="/css/checkout.css">
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <link rel="stylesheet" href="/css/checkout.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
+  <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
 </head>
 
 <body>
@@ -25,19 +27,27 @@
       <section class="section shipping-address">
         <h2>Shipping Address</h2>
         <div class="address-list">
-          <% addresses.forEach((address) => { %>
+          <% addresses.forEach((address)=> { %>
             <label class="address-item">
-              <input type="radio" name="selectedAddress" value="<%= address._id %>" <%= address.default ? 'checked' : '' %>>
+              <input type="radio" name="selectedAddress" value="<%= address._id %>" <%=address.default ? 'checked' : ''
+                %>>
               <div class="address-details">
-                <p class="address-name"><strong><%= address.name %></strong></p>
-                <p class="address-info"><%= address.street %>, <%= address.city %>, <%= address.state %> - <%= address.zip %></p>
-                <p class="address-country"><%= address.country %></p>
-                <p class="address-phone">Phone: <%= address.phone %></p>
+                <p class="address-name"><strong>
+                    <%= address.name %>
+                  </strong></p>
+                <p class="address-info">
+                  <%= address.street %>, <%= address.city %>, <%= address.state %> - <%= address.zip %>
+                </p>
+                <p class="address-country">
+                  <%= address.country %>
+                </p>
+                <p class="address-phone">Phone: <%= address.phone %>
+                </p>
                 <a href="/user/address/edit/<%= address._id %>" class="edit-link"><i class="fas fa-edit"></i> Edit</a>
               </div>
             </label>
-          <% }); %>
-          <a href="/user/address" class="add-address"><i class="fas fa-plus-circle"></i> Add New Address</a>
+            <% }); %>
+              <a href="/user/address" class="add-address"><i class="fas fa-plus-circle"></i> Add New Address</a>
         </div>
       </section>
 
@@ -45,22 +55,69 @@
       <section class="section order-summary">
         <h2>Order Summary</h2>
         <ul class="order-list">
-          <% let totalPrice = 0; %>
-          <% cart.forEach(item => { %>
-            <% let itemPrice = item.product.salesPrice || item.product.regularPrice; %>
-            <% let itemTotal = itemPrice * item.quantity; %>
-            <% totalPrice += itemTotal; %>
-            <li class="order-item">
-              <p class="item-name"><%= item.product.name %> (x<%= item.quantity %>)</p>
-              <p class="item-price">₹<%= itemTotal %></p>
-            </li>
-          <% }); %>
+          <% let totalPrice=0; %>
+            <% cart.forEach(item=> { %>
+              <% let itemPrice=item.product.offerDetails?.price || item.product.salesPrice || item.product.regularPrice;
+                %>
+                <% let originalPrice=item.product.offerDetails?.originalPrice || item.product.regularPrice; %>
+                  <% let itemTotal=itemPrice * item.quantity; %>
+                    <% totalPrice +=itemTotal; %>
+                      <li class="order-item">
+                        <p class="item-name">
+                          <%= item.product.name %> (x<%= item.quantity %>)
+                              <% if (originalPrice> itemPrice) { %>
+                                <span class="discount-label">(Discount Applied)</span>
+                                <% } %>
+                        </p>
+                        <p class="item-price">
+                          ₹<%= itemTotal %>
+                            <% if (originalPrice> itemPrice) { %>
+                              <span class="original-price">₹<%= (originalPrice * item.quantity) %></span>
+                              <% } %>
+                        </p>
+                      </li>
+                      <% }); %>
         </ul>
-        <% const deliveryCharge = totalPrice < 50000 ? 80 : 0; %>
-        <div class="summary-total">
-          <p class="delivery-charge">Delivery Charge: ₹<%= deliveryCharge %></p>
-          <p class="total"><strong>Total: ₹<%= totalPrice + deliveryCharge %></strong></p>
-        </div>
+
+        <% const deliveryCharge=totalPrice < 50000 ? 80 : 0; %>
+          <% let grandTotal=totalPrice + deliveryCharge; %>
+            <% if (session.coupon) { grandTotal -=session.coupon.discountAmount; } %>
+
+              <div class="summary-total">
+                <p class="delivery-charge">Delivery Charge: ₹<%= deliveryCharge %>
+                </p>
+
+                <!-- Coupon Section -->
+                <div class="coupon-section">
+                  <% if (!session.coupon) { %>
+                    <select id="couponCode" class="coupon-select">
+                      <option value="">-- Select Coupon --</option>
+                      <% if (coupons && coupons.length> 0) { %>
+                        <% coupons.forEach(coupon=> { %>
+                          <option value="<%= coupon.code %>">
+                            <%= coupon.code %> - <%= coupon.discount %>% off ...
+                          </option>
+                          <% }) %>
+                            <% } else { %>
+                              <option disabled>No available coupons</option>
+                              <% } %>
+                    </select>
+                    <button type="button" id="applyCouponBtn" class="btn-primary">Apply Coupon</button>
+                    <% } else { %>
+                      <p class="applied-coupon">
+                        Coupon "<%= session.coupon.code %>" applied - ₹<%= session.coupon.discountAmount %>
+                            <button type="button" id="removeCouponBtn" class="btn-delete">Remove</button>
+                      </p>
+                      <% } %>
+                </div>
+
+                <% if (session.coupon) { %>
+                  <p class="discount-line">Coupon Discount: - ₹<%= session.coupon.discountAmount %>
+                  </p>
+                  <% } %>
+
+                    <p class="total"><strong>Grand Total: ₹<%= grandTotal %></strong></p>
+              </div>
       </section>
 
       <!-- Payment Method Section -->
@@ -69,27 +126,115 @@
         <label class="payment-option">
           <input type="radio" name="paymentMethod" value="COD" checked> Cash on Delivery
         </label>
+        <label class="payment-option">
+          <input type="radio" name="paymentMethod" value="Online"> Online Payment (Credit/Debit/UPI)
+        </label>
+        <div id="razorpay-container" style="display:none; margin-top:15px;">
+          <button type="button" id="rzp-button" class="razorpay-btn">
+            <i class="fas fa-credit-card"></i> Pay with Razorpay
+          </button>
+        </div>
       </section>
 
       <!-- Hidden Inputs for Order Details -->
-      <% cart.forEach(item => { %>
+      <% cart.forEach(item=> { %>
         <input type="hidden" name="productIds[]" value="<%= item.product._id %>">
         <input type="hidden" name="quantities[]" value="<%= item.quantity %>">
-      <% }); %>
+        <input type="hidden" name="offerPrices[]"
+          value="<%= item.product.offerDetails ? item.product.offerDetails.price : (item.product.salesPrice || item.product.regularPrice) %>">
+        <% }); %>
 
-      <!-- Submit Button -->
-      <button type="submit" class="submit-btn">Continue</button>
+          <!-- Submit Button -->
+          <button type="submit" class="submit-btn">Continue</button>
     </form>
   </div>
 
-  <!-- SweetAlert2 for Validation -->
+  <!-- SweetAlert2 -->
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
   <script>
-    document.querySelector('.submit-btn').addEventListener('click', (e) => {
-      if (!validateAddress()) {
-        e.preventDefault();
-      }
-    });
+   document.querySelector('.submit-btn').addEventListener('click', async (e) => {
+  e.preventDefault();
+
+  if (!validateAddress()) return;
+
+  const paymentMethod = document.querySelector('input[name="paymentMethod"]:checked')?.value;
+  const grandTotal = <%= grandTotal %>; // already in ₹
+
+  if (paymentMethod === 'COD') {
+    if (grandTotal > 20000) {
+      return Swal.fire({
+        icon: 'warning',
+        title: 'COD Not Allowed',
+        text: 'Cash on Delivery is only available for orders up to ₹20,000. Please choose Online Payment.'
+      });
+    }
+
+    document.querySelector('.checkout-form').submit();
+
+  } else if (paymentMethod === 'Online') {
+
+    if (grandTotal > 450000) {
+      return Swal.fire({
+        icon: 'error',
+        title: 'Payment Limit Exceeded',
+        text: 'Online payment is only allowed for orders up to ₹4.5 lakhs. Please reduce your cart total.'
+      });
+    }
+
+    try {
+      const response = await fetch('/payment/create-order', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          amount: grandTotal,
+          currency: 'INR',
+          receipt: 'order_' + Date.now()
+        })
+      });
+
+      const paymentData = await response.json();
+
+      const options = {
+        key: '<%= process.env.RAZORPAY_KEY_ID %>',
+        amount: paymentData.amount,
+        currency: paymentData.currency,
+        name: "Keitai",
+        description: "Order Payment",
+        order_id: paymentData.id,
+        handler: function (response) {
+          const form = document.querySelector('.checkout-form');
+          const paymentInput = document.createElement('input');
+          paymentInput.type = 'hidden';
+          paymentInput.name = 'paymentDetails';
+          paymentInput.value = JSON.stringify(response);
+          form.appendChild(paymentInput);
+          form.submit();
+        },
+        prefill: {
+          name: '<%= user.name %>',
+          email: '<%= user.email %>',
+          contact: '<%= user.phone || "9999999999" %>'
+        },
+        theme: { color: "#3399cc" }
+      };
+
+      const rzp = new Razorpay(options);
+      rzp.on('payment.failed', function (response) {
+        window.location.href = `/payment/failed?error=${encodeURIComponent(response.error.description)}`;
+      });
+      rzp.open();
+
+    } catch (err) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Payment Error',
+        text: 'Something went wrong while initiating payment. Please try again.'
+      });
+    }
+  }
+});
+
 
     function validateAddress() {
       const selectedAddress = document.querySelector('input[name="selectedAddress"]:checked');
@@ -98,12 +243,187 @@
           icon: 'warning',
           title: 'Shipping Address Required',
           text: 'Please select a shipping address before continuing with your order.',
-          confirmButtonText: 'OK',
         });
         return false;
       }
       return true;
     }
+
+    // Razorpay logic
+    document.querySelectorAll('input[name="paymentMethod"]').forEach(radio => {
+      radio.addEventListener('change', function () {
+        document.getElementById('razorpay-container').style.display =
+          this.value === 'Online' ? 'block' : 'none';
+      });
+    });
+
+    document.getElementById('rzp-button')?.addEventListener('click', async function (e) {
+      e.preventDefault();
+      if (!validateAddress()) return;
+
+      // ✅ Safely parse the grandTotal and log it
+      const amountInRupees = parseFloat("<%= grandTotal %>");
+      console.log("🧾 Grand Total (₹):", amountInRupees);
+
+      try {
+        const response = await fetch('/payment/create-order', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            amount: amountInRupees,  // ✅ Only rupees here!
+            currency: 'INR',
+            receipt: 'order_' + Date.now()
+          })
+        });
+
+        const paymentData = await response.json();
+
+        const options = {
+          key: '<%= process.env.RAZORPAY_KEY_ID %>',
+          amount: paymentData.amount, // 👈 already in paise from backend
+          currency: paymentData.currency,
+          name: "Your Store Name",
+          description: "Order Payment",
+          order_id: paymentData.id,
+          handler: function (response) {
+            console.log("✅ Razorpay Success:", response);
+            const form = document.querySelector('.checkout-form');
+            const paymentInput = document.createElement('input');
+            paymentInput.type = 'hidden';
+            paymentInput.name = 'paymentDetails';
+            paymentInput.value = JSON.stringify(response);
+            form.appendChild(paymentInput);
+            form.submit();
+          },
+          prefill: {
+            name: '<%= user.name %>',
+            email: '<%= user.email %>',
+            contact: '<%= user.phone || "9999999999" %>'
+          },
+          theme: { color: "#3399cc" }
+        };
+
+        const rzp = new Razorpay(options);
+        rzp.on('payment.failed', function (response) {
+          console.error("❌ Razorpay Failed:", response);
+          window.location.href = `/payment/failed?error=${encodeURIComponent(response.error.description)}`;
+        });
+        rzp.open();
+
+      } catch (err) {
+        console.error("🔥 Error creating Razorpay order:", err);
+        Swal.fire({
+          icon: 'error',
+          title: 'Payment Error',
+          text: 'Something went wrong while initiating payment. Please try again.'
+        });
+      }
+    });
+
+    // Coupon Apply
+   document.getElementById('applyCouponBtn')?.addEventListener('click', async () => {
+    const code = document.getElementById('couponCode').value.trim();
+    const total = <%= totalPrice + deliveryCharge %>;
+
+    if (!code) {
+      return Swal.fire({
+        icon: 'warning',
+        title: 'Select a Coupon',
+        text: 'Please choose a coupon to apply.'
+      });
+    }
+
+  if (total < 200000) {
+  return Swal.fire({
+    icon: 'info',
+    title: 'Not Eligible',
+    text: 'You need to spend ₹2,00,000 or more to apply a coupon.'
+  });
+}
+
+    const confirm = await Swal.fire({
+      title: 'Apply Coupon?',
+      text: `Do you want to apply the coupon "${code}"?`,
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonText: 'Yes, Apply',
+      cancelButtonText: 'Cancel',
+      reverseButtons: true
+    });
+
+    if (!confirm.isConfirmed) return;
+
+    try {
+      const res = await fetch('/user/apply-coupon', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code, total })
+      });
+
+      const data = await res.json();
+
+      if (data.success) {
+        await Swal.fire({
+          icon: 'success',
+          title: 'Coupon Applied!',
+          text: `You saved ₹${data.discountAmount}`,
+          timer: 2000,
+          showConfirmButton: false
+        });
+        window.location.reload();
+      } else {
+        Swal.fire({
+          icon: 'error',
+          title: 'Coupon Error',
+          text: data.message || 'Failed to apply coupon.'
+        });
+      }
+    } catch (err) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Server Error',
+        text: 'Something went wrong. Please try again.'
+      });
+    }
+  });
+
+    // Coupon Remove
+    document.getElementById('removeCouponBtn')?.addEventListener('click', async () => {
+      await fetch('/user/remove-coupon', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+      });
+      location.reload();
+    });
+    document.getElementById('applyCouponBtn')?.addEventListener('click', async () => {
+      const code = document.getElementById('couponCode').value.trim();
+      const total = <%= totalPrice + deliveryCharge %>;
+
+      if (!code) {
+        Swal.fire({ icon: 'warning', title: 'Select a Coupon', text: 'Please choose a coupon to apply.' });
+        return;
+      }
+
+      const res = await fetch('/user/apply-coupon', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code, total })
+      });
+
+      const data = await res.json();
+
+      if (data.success) {
+        location.reload();
+      } else {
+        Swal.fire({
+          icon: 'error',
+          title: 'Coupon Error',
+          text: data.message || 'Failed to apply coupon'
+        });
+      }
+    });
+
   </script>
 </body>
+
 </html>

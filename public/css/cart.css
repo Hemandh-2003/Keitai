@@ -189,6 +189,9 @@ body {
     font-size: 14px; 
   }*/
   /* Quantity Section */
+  .quantity-controls{
+    padding-bottom: 9px;
+  }
   .quantity-input {
     width: 60px;
     text-align: center;
@@ -211,7 +214,7 @@ body {
   }
   /* Action Buttons */
   .item-actions button {
-    padding: 8px 12px;
+    padding: 5px 12px;
     font-size: 14px;
     font-weight: bold;
     border: none;
@@ -321,4 +324,41 @@ body {
   background-color: #007bff;
   color: white;
   border-color: #007bff;
+}
+/* Disabled Proceed Button Styles */
+.proceed-button.disabled-btn,
+.proceed-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  background-color: #cccccc !important;
+  pointer-events: none; /* Prevents hover effects */
+}
+
+/* Optional: Add transition for smooth state changes */
+.proceed-button {
+  transition: all 0.3s ease;
+}
+[debug-cart] .cart-item[out-of-stock] {
+  border: 2px dashed red !important;
+}
+
+/* Success message styling */
+.empty-cart-message, 
+.order-success-message {
+  text-align: center;
+  padding: 2rem;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  margin: 1rem 0;
+}
+
+.success-icon {
+  color: #28a745;
+  font-size: 3rem;
+  margin-bottom: 1rem;
+}
+
+.order-success-message h4 {
+  color: #28a745;
+  margin: 0.5rem 0;
 }

@@ -19,5 +19,5 @@ router.post('/update', isLoggedIn, cartController.updateCart);
 
 // Remove item from cart
 router.post('/remove', isLoggedIn, cartController.removeFromCart);
-
+router.post('/cart/clear', cartController.clearCart);
 module.exports = router;

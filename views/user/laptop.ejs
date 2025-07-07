@@ -132,11 +132,42 @@
                                     <p class="mt-2">
                                         <%= product.name %>
                                     </p>
-                                    <p>
-                                        <!-- Show salesPrice if available, else regularPrice -->
-                                        <%= product.salesPrice ? '₹' + product.salesPrice.toLocaleString('en-IN') : '₹'
-                                            + product.regularPrice.toLocaleString('en-IN') %>
-                                    </p>
+                                   <p>
+  <% 
+  // Calculate the final price to display
+  var finalPrice = product.salesPrice || product.regularPrice;
+  var originalPrice = product.regularPrice;
+  var showDiscount = false;
+  
+  // Check for offer price if available
+  if (typeof product.offerDetails !== 'undefined' && product.offerDetails && product.offerDetails.hasOffer) {
+    finalPrice = product.offerDetails.price;
+    originalPrice = product.offerDetails.originalPrice;
+    showDiscount = true;
+  }
+  // Or check for sale price
+  else if (product.salesPrice) {
+    showDiscount = true;
+  }
+  %>
+  
+  <!-- Display current price -->
+  <span class="current-price">₹<%= finalPrice.toLocaleString('en-IN') %></span>
+  
+  <% if (showDiscount) { %>
+    <span class="original-price" style="text-decoration: line-through; color: #999; margin-left: 5px;">
+      ₹<%= originalPrice.toLocaleString('en-IN') %>
+    </span>
+    <% 
+    // Calculate discount percentage
+    var discountPercent = Math.round((originalPrice - finalPrice) / originalPrice * 100);
+    if (discountPercent > 0) { %>
+      <span class="discount-badge" style="background: #ff6b6b; color: white; padding: 2px 5px; border-radius: 3px; font-size: 12px; margin-left: 5px;">
+        <%= discountPercent %>% OFF
+      </span>
+    <% } %>
+  <% } %>
+</p>
 
                                     <% if (product.isBlocked) { %>
                                         <p class="text-danger"> Currently Unavailable</p>

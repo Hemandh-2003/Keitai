@@ -81,19 +81,25 @@
                         Out of Stock
                         <% } %>
                 </p>
-                <% if (item.product.salesPrice) { %>
-                  <p class="item-discount"><strong>₹<%= item.product.salesPrice %></strong></p>
-                  <% } else { %>
-                    <p class="item-price">₹<%= item.product.regularPrice %>
-                    </p>
-                    <% } %>
+                <% const original=item.product.regularPrice; %>
+                  <% const final=item.product.offerPrice || item.product.salesPrice || original; %>
+                    <% const discount=Math.round(((original - final) / original) * 100); %>
+
+                      <p class="item-price">
+                        <strong>₹<%= final %></strong>
+                      </p>
+
+                      <% if (discount> 0) { %>
+                        <p class="original-price"><del>₹<%= original %></del></p>
+                        <p class="discount-percent">
+                          <%= discount %>% OFF
+                        </p>
+                        <% } %>
               </div>
               <div class="item-actions">
-                <form action="/cart/update" method="POST" class="item-actions">
-                  <!-- Hidden field for the product ID -->
+                <form class="item-actions-form" data-product-id="<%= item.product._id %>">
                   <input type="hidden" name="productId" value="<%= item.product._id %>">
 
-                  <!-- Quantity control -->
                   <div class="quantity-controls">
                     <button type="button" class="quantity-btn decrease-btn" <%=item.product.quantity===0 ? 'disabled'
                       : '' %>>-</button>
@@ -104,13 +110,11 @@
                       : '' %>>+</button>
                   </div>
 
-                  <!-- Delete button -->
-                  <button type="submit" formaction="/cart/remove" class="delete-btn">Delete</button>
-
-                  <!-- Buy Now button -->
-                  <button type="submit" formaction="/user/checkout" class="buy-btn" <%=item.product.quantity===0
-                    ? 'disabled' : '' %>>
-                    Buy Now
+                  <button type="button" class="delete-btn"
+                    onclick="removeItem('<%= item.product._id %>')">Delete</button>
+                  <button type="button" class="buy-btn" <%=item.product.quantity===0 ? 'disabled' : '' %>
+                    onclick="buyNow('<%= item.product._id %>', <%= item.quantity %>)">
+                        Buy Now
                   </button>
                 </form>
               </div>

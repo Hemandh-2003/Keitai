@@ -446,3 +446,74 @@ input[type="checkbox"]:checked, input[type="radio"]:checked {
         grid-template-columns: 1fr;
     }
 }
+
+.product-card {
+  border: 1px solid #eee;
+  border-radius: 8px;
+  padding: 15px;
+  transition: all 0.3s ease;
+  position: relative;
+}
+
+.product-card:hover {
+  box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+  transform: translateY(-5px);
+}
+
+.wishlist-icon {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 2;
+}
+
+.wishlist-icon button {
+  background: white;
+  border: none;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+.price-container {
+  margin: 10px 0;
+}
+
+.current-price {
+  color: #e63946;
+  font-weight: bold;
+  font-size: 1.1rem;
+}
+
+.original-price {
+  text-decoration: line-through;
+  color: #999;
+  margin-left: 8px;
+  font-size: 0.9rem;
+}
+
+.discount-badge {
+  display: inline-block;
+  background: #e63946;
+  color: white;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  margin-left: 8px;
+}
+
+.regular-price {
+  font-weight: bold;
+  color: #333;
+}
+
+.out-of-stock {
+  color: #dc3545;
+  font-size: 0.9rem;
+  margin-top: 5px;
+}

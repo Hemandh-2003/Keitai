@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Order Confirmation</title>
   <link rel="stylesheet" href="/css/confirm-payment.css">
-   <link rel="stylesheet" href="/css/products.css">
+  <link rel="stylesheet" href="/css/products.css">
 </head>
 
 <body>
@@ -19,7 +19,7 @@
     <h2>Order Summary</h2>
     <% orderItems.forEach(item=> { %>
       <div class="product-info">
-        <img src="/uploads/<%= item.product.images[0] %>"  alt="<%= item.product.name %>" class="product-image">
+        <img src="/uploads/<%= item.product.images[0] %>" alt="<%= item.product.name %>" class="product-image">
         <div>
           <p><strong>Product:</strong>
             <%= item.product.name %>
@@ -27,17 +27,40 @@
           <p><strong>Brand:</strong>
             <%= item.product.brand %>
           </p>
-          <p><strong>Price:</strong> ₹<%= item.product.salesPrice || item.product.regularPrice %>
+          <p><strong>Price:</strong> ₹<%= item.offerPrice %>
           </p>
-          <p><strong>Quantity:</strong>
-            <%= item.quantity %>
-          </p>
-          <div>
-            <p>Delivery Charge: ₹<%= deliveryCharge %>
-            </p>
-            <strong><p>Grand Total: ₹<%= totalAmount %>
-            </p></strong>
-          </div>
+
+          <% const original=item.product.regularPrice; %>
+            <% const discount=Math.round(((original - item.offerPrice) / original) * 100); %>
+
+              <% if (discount> 0) { %>
+                <p><strong>Original Price:</strong> <del>₹<%= original %></del></p>
+                <p><strong>Discount:</strong>
+                  <%= discount %>% OFF
+                </p>
+                <% } %>
+
+                  <p><strong>Quantity:</strong>
+                    <%= item.quantity %>
+                  </p>
+                  </p>
+                  <!--p><strong>Quantity:</strong>
+                    <%= item.quantity %>
+                  </p-->
+                  <div>
+                    <p>Delivery Charge: ₹<%= deliveryCharge %>
+                    </p>
+
+                    <% if (typeof couponDiscount !=='undefined' && couponDiscount> 0) { %>
+                      <p><strong>Coupon Discount:</strong> - ₹<%= couponDiscount %>
+                      </p>
+                      <% } %>
+
+                        <strong>
+                          <p>Grand Total: ₹<%= totalAmount %>
+                          </p>
+                        </strong>
+                  </div>
         </div>
       </div>
       <% }); %>
@@ -51,36 +74,98 @@
     <button onclick="window.location.href='/home';">Go Back to Home</button>
   </section>
   <section class="related-products">
-        <div class="container">
-            <h2>Related Products</h2>
-            <% if (relatedProducts && relatedProducts.length> 0) { %>
-                <div class="product-row">
-                    <% relatedProducts.forEach(relatedProduct=> { %>
-                        <div class="product-item">
-                            <a href="/product/<%= relatedProduct._id %>">
-                                <% if (relatedProduct.images && relatedProduct.images.length> 0) { %>
-                                    <img src="/uploads/<%= relatedProduct.images[0] %>"
-                                        alt="<%= relatedProduct.name %>">
-                                    <% } else { %>
-                                        <img src="/images/default-product.jpg" alt="<%= relatedProduct.name %>">
-                                        <% } %>
-                                            <h3>
-                                                <%= relatedProduct.name %>
-                                            </h3>
-                                            <p>₹<%= relatedProduct.salesPrice || relatedProduct.regularPrice %>
-                                            </p>
-                            </a>
-                        </div>
-                        <% }); %>
-                </div>
-                <% } else { %>
-                    <p>No related products found.</p>
+    <div class="container">
+      <h2>Related Products</h2>
+      <% if (relatedProducts && relatedProducts.length> 0) { %>
+        <div class="product-row">
+          <% relatedProducts.forEach(relatedProduct=> { %>
+            <div class="product-item">
+              <a href="/product/<%= relatedProduct._id %>">
+                <% if (relatedProduct.images && relatedProduct.images.length> 0) { %>
+                  <img src="/uploads/<%= relatedProduct.images[0] %>" alt="<%= relatedProduct.name %>">
+                  <% } else { %>
+                    <img src="/images/default-product.jpg" alt="<%= relatedProduct.name %>">
                     <% } %>
+                      <h3>
+                        <%= relatedProduct.name %>
+                      </h3>
+                      <p>₹<%= relatedProduct.salesPrice || relatedProduct.regularPrice %>
+                      </p>
+              </a>
+            </div>
+            <% }); %>
         </div>
-    </section>
+        <% } else { %>
+          <p>No related products found.</p>
+          <% } %>
+    </div>
+  </section>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   <script>
-    window.history.replaceState(null, null, '/user/confirm-payment');
-  </script>  
+    document.addEventListener('DOMContentLoaded', async function () {
+      console.log('Confirm payment page loaded - attempting to clear cart');
+
+      try {
+        const response = await fetch('/cart/clear', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest' // Helps identify AJAX requests
+          },
+          credentials: 'include' // Changed from 'same-origin' for broader compatibility
+        });
+
+        console.log('Clear cart response status:', response.status);
+
+        const result = await response.json();
+        console.log('Clear cart result:', result);
+
+        if (!response.ok) {
+          throw new Error(result.message || 'Failed to clear cart');
+        }
+
+        // Show success message
+        Swal.fire({
+          title: 'Order Confirmed!',
+          html: `
+          <div style="text-align:center;">
+            <i class="fas fa-check-circle" style="color:#4CAF50;font-size:48px;"></i>
+            <p>${result.message}</p>
+            <p class="debug-info" style="font-size:12px;color:#888;">
+              Cleared ${result.clearedCount || 0} items
+            </p>
+          </div>
+        `,
+          showConfirmButton: false,
+          timer: 2000,
+          willClose: () => {
+            // Optional: Refresh cart data if needed
+            if (window.updateCartUI) {
+              updateCartUI();
+            }
+          }
+        });
+
+      } catch (error) {
+        console.error('Error clearing cart:', error);
+        Swal.fire({
+          icon: 'warning',
+          title: 'Notice',
+          text: 'Your order was successful, but we couldn\'t clear your cart. Please clear it manually.',
+          timer: 3000
+        });
+      }
+
+      // Prevent back navigation
+      window.history.replaceState(null, null, window.location.href);
+
+      // Debug: Force session check
+      await fetch('/api/check-session', { credentials: 'include' })
+        .then(res => res.json())
+        .then(data => console.log('Session check:', data))
+        .catch(err => console.error('Session check failed:', err));
+    });
+  </script>
 </body>
 
 </html>

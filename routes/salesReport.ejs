@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Sales Report</title>
+  <link rel="stylesheet" href="/css/admin.css">
+  <style>
+    .report-container {
+      padding: 20px;
+    }
+    .summary-cards {
+      display: flex;
+      gap: 1.5rem;
+      margin-bottom: 20px;
+    }
+    .card {
+      padding: 15px 25px;
+      background: #f4f4f4;
+      border-radius: 10px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+      flex: 1;
+    }
+    .filters, .downloads {
+      margin-bottom: 25px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 30px;
+    }
+    th, td {
+      padding: 10px;
+      border: 1px solid #ccc;
+      text-align: center;
+    }
+    th {
+      background-color: #eee;
+    }
+  </style>
+</head>
+<body>
+  <div class="report-container">
+    <h2>Sales Report</h2>
+
+    <!-- Filters -->
+    <div class="filters">
+      <form action="/admin/sales-report/filter" method="POST">
+        <label for="startDate">Start Date:</label>
+        <input type="date" name="startDate" required>
+        <label for="endDate">End Date:</label>
+        <input type="date" name="endDate" required>
+        <button type="submit">Apply Filter</button>
+      </form>
+    </div>
+
+    <!-- Summary -->
+    <div class="summary-cards">
+      <div class="card">
+        <strong>Total Sales:</strong>
+        <p><%= summary.totalSales %></p>
+      </div>
+      <div class="card">
+        <strong>Total Amount:</strong>
+        <p>₹<%= summary.totalAmount.toLocaleString() %></p>
+      </div>
+      <div class="card">
+        <strong>Total Discount:</strong>
+        <p>₹<%= summary.totalDiscount.toLocaleString() %></p>
+      </div>
+    </div>
+
+    <!-- Order Table -->
+    <table>
+      <thead>
+        <tr>
+          <th>Order ID</th>
+          <th>Date</th>
+          <th>User</th>
+          <th>Amount</th>
+          <th>Discount</th>
+          <th>Coupon Discount</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% if (orders.length > 0) { %>
+          <% orders.forEach(order => { %>
+            <tr>
+              <td><%= order.orderId %></td>
+              <td><%= order.createdAt.toISOString().split('T')[0] %></td>
+              <td><%= order.user?.name || 'Guest' %></td>
+              <td>₹<%= order.totalAmount %></td>
+              <td>₹<%= order.discountAmount || 0 %></td>
+              <td>₹<%= order.couponDiscount || 0 %></td>
+              <td><%= order.status %></td>
+            </tr>
+          <% }) %>
+        <% } else { %>
+          <tr><td colspan="7">No orders found for selected range.</td></tr>
+        <% } %>
+      </tbody>
+    </table>
+
+    <!-- Download -->
+    <div class="downloads">
+      <form action="/admin/sales-report/download/pdf" method="POST" style="display:inline;">
+        <input type="hidden" name="startDate" value="<%= startDate %>">
+        <input type="hidden" name="endDate" value="<%= endDate %>">
+        <button type="submit">Download PDF</button>
+      </form>
+
+      <form action="/admin/sales-report/download/excel" method="POST" style="display:inline;">
+        <input type="hidden" name="startDate" value="<%= startDate %>">
+        <input type="hidden" name="endDate" value="<%= endDate %>">
+        <button type="submit">Download Excel</button>
+      </form>
+    </div>
+  </div>
+</body>
+</html>

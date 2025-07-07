@@ -26,7 +26,7 @@ const { isAdmin } = require('../middleware/adminMiddleware');
 const checkBlockedUser = require('../middleware/checkBlocked');
 const multer = require('multer');
 const path = require('path');
-
+const adminController = require('../controllers/adminController');
 const router = express.Router();
 // Admin Login Route (GET)
 router.get('/adminlog', (req, res) => {
@@ -94,7 +94,7 @@ router.post('/logout', (req, res) => {
 });
 //order Management Routes
 router.get('/orders', isAdmin, listOrders);
-router.post('/orders/update-status/:orderId', isAdmin, changeOrderStatus); 
+router.post('/orders/update-status/:orderId', isAdmin, adminController.changeOrderStatus); 
 router.post('/orders/cancel/:orderId', isAdmin, cancelOrder); 
 router.get('/admin/orders', async (req, res) => {
   try {
@@ -108,6 +108,24 @@ router.get('/admin/orders', async (req, res) => {
     res.status(500).send('Internal Server Error');
   }
 });
+// Offer Management Routes
+router.get('/offers', isAdmin, adminController.listOffers);
+router.get('/offers/add', isAdmin, adminController.addOfferForm);
+router.post('/offers/create', isAdmin, adminController.createOffer);
+router.get('/offers/edit/:id', isAdmin, adminController.editOfferForm);
+router.post('/offers/update/:id', isAdmin, adminController.updateOffer);
+router.post('/offers/toggle-status/:id', isAdmin, adminController.toggleOfferStatus);
+router.get('/offers/delete/:id', isAdmin, adminController.deleteOffer);
 
+//Coupons management Routes
+router.get('/coupons', adminController.getCoupons);
+router.post('/coupons/create', adminController.createCoupon);
+router.post('/coupons/delete/:id', adminController.deleteCoupon);
+
+// Sales Report Routes
+router.get('/sales-report', adminController.renderSalesReportPage);
+router.post('/sales-report/filter', adminController.filterSalesReport);
+router.post('/sales-report/download/excel', adminController.downloadSalesReportExcel);
+router.post('/sales-report/download/pdf', adminController.downloadSalesReportPDF);
 
 module.exports = router;

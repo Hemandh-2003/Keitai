@@ -770,3 +770,72 @@ footer {
     text-decoration: none;
     color: inherit;
 }
+
+   /* Add these new styles */
+        .price-container {
+            margin: 15px 0;
+        }
+        
+        .current-price {
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: #e63946;
+        }
+        
+        .original-price {
+            text-decoration: line-through;
+            color: #6c757d;
+            margin-left: 10px;
+            font-size: 1.2rem;
+        }
+        
+        .discount-percentage {
+            display: inline-block;
+            background-color: #e63946;
+            color: white;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 0.9rem;
+            margin-left: 10px;
+            font-weight: bold;
+        }
+        
+        .offer-badge {
+            background-color: #f8f9fa;
+            color: #e63946;
+            padding: 8px 12px;
+            border-radius: 4px;
+            display: inline-block;
+            margin: 10px 0;
+            font-weight: bold;
+            border: 1px solid #e63946;
+            font-size: 0.9rem;
+        }
+        
+        .offer-badge i {
+            margin-right: 5px;
+        }
+        
+        .offer-timer {
+            background-color: #fff3cd;
+            color: #856404;
+            padding: 8px 12px;
+            border-radius: 4px;
+            margin: 10px 0;
+            font-size: 0.9rem;
+        }
+        
+        .offer-timer i {
+            margin-right: 5px;
+        }
+        
+        .offer-tag {
+            display: inline-block;
+            background-color: #28a745;
+            color: white;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            margin-right: 5px;
+            margin-bottom: 5px;
+        }

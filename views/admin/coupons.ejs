@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <title>Coupon Management</title>
+  <link rel="stylesheet" href="/css/offer.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+
+<body>
+  <div class="dashboard-container">
+    <!-- Sidebar -->
+    <nav class="sidebar">
+      <div class="logo">
+        <img src="/images/logo1.png" alt="Logo">
+      </div>
+      <ul>
+        <li><a href="/admin/dashboard"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
+        <li><a href="/admin/orders"><i class="fas fa-box"></i> Orders</a></li>
+        <li><a href="/admin/products"><i class="fas fa-laptop"></i> Products</a></li>
+        <li><a href="/admin/users"><i class="fas fa-users"></i> Users</a></li>
+        <li><a href="/admin/categories"><i class="fas fa-th-large"></i> Categories</a></li>
+        <li><a href="/admin/coupons" class="active"><i class="fas fa-ticket-alt"></i> Coupons</a></li>
+        <li><a href="/admin/offers"><i class="fas fa-tags"></i> Offers</a></li>
+      </ul>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="main-content">
+      <header class="top-bar">
+        <input type="text" placeholder="Search coupons...">
+        <div class="admin-controls">
+          <span>Admin</span>
+          <form action="/admin/logout" method="POST">
+            <button type="submit" class="icon-logout"><i class="fas fa-sign-out-alt"></i> Logout</button>
+          </form>
+        </div>
+      </header>
+
+      <section class="offer-management">
+        <div class="section-header">
+          <h2>Manage Coupons</h2>
+        </div>
+
+        <!-- Flash Messages -->
+        <% if (messages.success) { %>
+          <div class="alert alert-success">
+            <i class="fas fa-check-circle"></i>
+            <%= messages.success %>
+              <button type="button" class="close" onclick="this.parentElement.style.display='none'">&times;</button>
+          </div>
+          <% } %>
+            <% if (messages.error) { %>
+              <div class="alert alert-danger">
+                <i class="fas fa-exclamation-circle"></i>
+                <%= messages.error %>
+                  <button type="button" class="close" onclick="this.parentElement.style.display='none'">&times;</button>
+              </div>
+              <% } %>
+
+                <!-- Create New Coupon Form -->
+                <form action="/admin/coupons/create" method="POST" style="margin-bottom: 30px;">
+                  <div style="display: flex; flex-wrap: wrap; gap: 15px;">
+                    <input type="text" name="code" placeholder="Coupon Code" required style="flex: 1; padding: 10px;">
+
+                    <select name="discountType" required style="flex: 1; padding: 10px;">
+                      <option value="">-- Select Type --</option>
+                      <option value="percentage">Percentage (%)</option>
+                      <option value="fixed">Fixed Amount</option>
+                    </select>
+
+                    <input type="number" name="discount" placeholder="Discount Value" min="1" required
+                      style="flex: 1; padding: 10px;">
+
+                    <input type="date" name="startDate" required style="flex: 1; padding: 10px;">
+                    <input type="date" name="endDate" required style="flex: 1; padding: 10px;">
+
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-plus"></i> Add Coupon</button>
+                  </div>
+                </form>
+
+
+                <!-- Coupons Table -->
+                <div class="table-responsive">
+                  <table class="offer-table">
+                    <thead>
+                      <tr>
+                        <th>Code</th>
+                        <th>Type</th>
+                        <th>Discount</th>
+                        <th>Start Date</th>
+                        <th>End Date</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <% coupons.forEach(coupon=> { %>
+                        <tr>
+                          <td>
+                            <%= coupon.code %>
+                          </td>
+                          <td>
+                            <%= coupon.discountType==='percentage' ? 'Percentage' : 'Fixed' %>
+                          </td>
+                          <td>
+                            <%= coupon.discountType==='percentage' ? coupon.discount + ' %' : '₹' + coupon.discount %>
+                          </td>
+                          <td>
+                            <%= new Date(coupon.startDate).toLocaleDateString() %>
+                          </td>
+                          <td>
+                            <%= new Date(coupon.endDate).toLocaleDateString() %>
+                          </td>
+                          <td>
+                            <%= new Date(coupon.endDate)> new Date() ? 'Active' : 'Expired' %>
+                          </td>
+                          <td class="actions">
+                            <form action="/admin/coupons/delete/<%= coupon._id %>" method="POST"
+                              onsubmit="return confirm('Delete this coupon?')">
+                              <button class="btn btn-sm btn-delete"><i class="fas fa-trash"></i></button>
+                            </form>
+                          </td>
+                        </tr>
+                        <% }) %>
+                    </tbody>
+                  </table>
+                </div>
+      </section>
+    </div>
+  </div>
+</body>
+
+</html>

@@ -15,6 +15,7 @@ const Product = require('./models/Product');
 const cartRoutes = require('./routes/cartRoutes');
 const { createProduct } = require('./controllers/adminController');
 const checkBlockedUser = require('./middleware/checkBlocked');
+const paymentRoutes = require('./routes/paymentRoutes');
 
 // Load environment variables
 dotenv.config();
@@ -55,6 +56,16 @@ app.use(passport.session());
 
 // Flash messages middleware
 app.use(flash());
+app.use((req, res, next) => {
+  res.locals.messages = {
+    success: req.flash('success'),
+    error: req.flash('error'),
+    warning: req.flash('warning'),
+    info: req.flash('info')
+  };
+  next();
+});
+
 app.use('/cart', cartRoutes);
 
 // Set EJS as the view engine
@@ -65,6 +76,7 @@ app.set('views', path.join(__dirname, 'views'));
 
 // Static files middleware (for CSS, JS, images, etc.)
 app.use(express.static(path.join(__dirname, 'public')));
+app.use('/payment', paymentRoutes);
 
 // Ensure the 'public/uploads' directory exists
 const uploadDir = './public/uploads';
@@ -185,14 +197,24 @@ app.get('/:slug', async (req, res) => {
     else if (sort === 'name-asc') sortCondition.name = 1;
     else if (sort === 'name-desc') sortCondition.name = -1;
  console.log("sort cond:",sortCondition)
-    const products = await Product.find(filterConditions).sort(sortCondition);
+   const products = await Product.find(filterConditions)
+  .sort(sortCondition)
+  .populate('offers')
+  .populate('category');
 
+const productsWithOffers = await Promise.all(products.map(async (product) => {
+  const offerDetails = await product.getBestOfferPrice(); // This calculates product + category offers
+  return {
+    ...product.toObject(),
+    offerDetails
+  };
+}));
     res.render(`user/${category.slug}`, {
-      activePage: category.slug,
-      category,
-      products,
-      query: req.query, // Pass the query parameters to the view
-    });
+  activePage: category.slug,
+  category,
+  products: productsWithOffers, // ✅ Updated list with offerDetails
+  query: req.query
+});
   } catch (error) {
     console.error('Error loading category page:', error);
     res.status(500).send('Server Error');

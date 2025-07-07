@@ -1,0 +1,133 @@
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background-color: #f4f6f9;
+  margin: 0;
+}
+
+.dashboard-container {
+  display: flex;
+}
+
+.sidebar {
+  width: 220px;
+  background-color: #1f2937;
+  color: white;
+  height: 100vh;
+  padding: 20px 10px;
+}
+
+.sidebar .logo img {
+  width: 100%;
+  margin-bottom: 20px;
+}
+
+.sidebar ul {
+  list-style: none;
+  padding: 0;
+}
+
+.sidebar ul li {
+  margin: 15px 0;
+}
+
+.sidebar ul li a {
+  text-decoration: none;
+  color: white;
+  display: block;
+  padding: 8px 12px;
+  border-radius: 5px;
+  transition: background-color 0.2s;
+}
+
+.sidebar ul li a.active,
+.sidebar ul li a:hover {
+  background-color: #4b5563;
+}
+
+.main-content {
+  flex-grow: 1;
+  padding: 20px;
+}
+
+.top-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.alert {
+  padding: 10px;
+  border-radius: 5px;
+  margin-bottom: 10px;
+  font-weight: bold;
+}
+
+.alert.success {
+  background-color: #d1e7dd;
+  color: #0f5132;
+}
+
+.alert.error {
+  background-color: #f8d7da;
+  color: #842029;
+}
+
+.coupon-section {
+  margin-top: 20px;
+}
+
+.coupon-form {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.coupon-form input[type="text"],
+.coupon-form input[type="number"],
+.coupon-form input[type="date"] {
+  padding: 8px;
+  width: 200px;
+  border-radius: 4px;
+  border: 1px solid #ccc;
+}
+
+.btn-create {
+  background-color: #10b981;
+  color: white;
+  padding: 8px 15px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.btn-create:hover {
+  background-color: #059669;
+}
+
+.coupon-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.coupon-table th,
+.coupon-table td {
+  padding: 12px;
+  border: 1px solid #ddd;
+  text-align: left;
+}
+
+.coupon-table th {
+  background-color: #e5e7eb;
+}
+
+.btn-delete {
+  background: none;
+  border: none;
+  color: #dc2626;
+  cursor: pointer;
+  font-size: 16px;
+}
+
+.btn-delete:hover {
+  color: #b91c1c;
+}

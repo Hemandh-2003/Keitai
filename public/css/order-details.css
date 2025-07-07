@@ -4,7 +4,13 @@
   padding: 0;
   box-sizing: border-box;
 }
-
+.product-img {
+  width: 110px;
+  height: 65px;
+  object-fit: cover;
+  border-radius: 8px;
+  margin-bottom: 8px;
+}
 body {
   font-family: 'Arial', sans-serif;
   background-color: #f6f6f6;
