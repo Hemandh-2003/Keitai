@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add New Offer</title>
+    <link rel="stylesheet" href="/css/offer2.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+
+<body>
+    <div class="dashboard-container">
+        <nav class="sidebar">
+            <div class="logo">
+                <img src="/images/logo1.png" alt="Logo">
+            </div>
+            <ul>
+                <li><a href="/admin/dashboard"><i class="icon-dashboard"></i> Dashboard</a></li>
+                <li><a href="/admin/orders"><i class="icon-orders"></i> Orders</a></li>
+                <li><a href="/admin/products"><i class="icon-products"></i> Products</a></li>
+                <li><a href="/admin/users"><i class="icon-users"></i> Users</a></li>
+                <li><a href="/admin/categories"><i class="icon-categories"></i> Categories</a></li>
+                <li><a href="/admin/coupons"><i class="icon-coupons"></i> Coupons</a></li>
+                <li><a href="/admin/banners"><i class="icon-banners"></i> Banners</a></li>
+                <li><a href="/admin/payments"><i class="icon-payments"></i> Payments</a></li>
+                <li><a href="/admin/offers" class="active"><i class="fas fa-tags"></i> Offers</a></li>
+            </ul>
+        </nav>
+        <div class="main-content">
+            <header class="top-bar">
+                <div class="admin-controls">
+                    <span>Admin</span>
+                    <form action="/admin/logout" method="POST">
+                        <button type="submit" class="icon-logout">Logout</button>
+                    </form>
+                </div>
+            </header>
+
+            <section class="offer-management">
+                <div class="section-header">
+                    <h2>Add New Offer</h2>
+                    <a href="/admin/offers" class="btn btn-primary">
+                        <i class="fas fa-arrow-left"></i> Back to Offers
+                    </a>
+                </div>
+
+                <!-- Flash messages -->
+                <% if (success_msg) { %>
+                    <div class="alert alert-success">
+                        <%= success_msg %>
+                    </div>
+                    <% } %>
+                        <% if (error_msg) { %>
+                            <div class="alert alert-danger">
+                                <%= error_msg %>
+                            </div>
+                            <% } %>
+
+                                <form action="/admin/offers/create" method="POST" class="offer-form">
+                                    <div class="form-group">
+                                        <label for="name">Offer Name</label>
+                                        <input type="text" id="name" name="name" required>
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label for="description">Description</label>
+                                        <textarea id="description" name="description" rows="3"></textarea>
+                                    </div>
+
+                                    <div class="form-row">
+                                        <div class="form-group">
+                                            <label for="offerType">Offer Type</label>
+                                            <select id="offerType" name="offerType" required>
+                                                <option value="">Select Offer Type</option>
+                                                <option value="product">Product Offer</option>
+                                                <option value="category">Category Offer</option>
+                                                <option value="referral">Referral Offer</option>
+                                            </select>
+                                        </div>
+
+                                        <div class="form-group">
+                                            <label for="discountType">Discount Type</label>
+                                            <select id="discountType" name="discountType" required>
+                                                <option value="">Select Discount Type</option>
+                                                <option value="percentage">Percentage</option>
+                                                <option value="fixed">Fixed Amount</option>
+                                            </select>
+                                        </div>
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label for="discountValue">Discount Value</label>
+                                        <input type="number" id="discountValue" name="discountValue" min="0" required>
+                                    </div>
+
+                                    <div class="form-row">
+                                        <div class="form-group">
+                                            <label for="startDate">Start Date</label>
+                                            <input type="datetime-local" id="startDate" name="startDate" required>
+                                        </div>
+
+                                        <div class="form-group">
+                                            <label for="endDate">End Date</label>
+                                            <input type="datetime-local" id="endDate" name="endDate" required>
+                                        </div>
+                                    </div>
+
+                                    <!-- Dynamic fields based on offer type -->
+                                    <div id="productFields" class="offer-type-fields" style="display: none;">
+                                        <div class="form-group">
+                                            <label>Select Products</label>
+                                          <select name="products[]" multiple class="select-multiple">
+                                                <% products.forEach(product=> { %>
+                                                    <option value="<%= product._id %>">
+                                                        <%= product.name %>
+                                                    </option>
+                                                    <% }); %>
+                                            </select>
+                                        </div>
+                                    </div>
+
+                                    <div id="categoryFields" class="offer-type-fields" style="display: none;">
+                                        <div class="form-group">
+                                            <label>Select Categories</label>
+                                            <% if (categories && categories.length> 0) { %>
+                                                <select name="categories" multiple class="select-multiple">
+                                                    <% categories.forEach(category=> { %>
+                                                        <option value="<%= category._id %>">
+                                                            <%= category.name %>
+                                                        </option>
+                                                        <% }); %>
+                                                </select>
+                                                <% } else { %>
+                                                    <p class="text-warning">No categories available</p>
+                                                    <% } %>
+                                        </div>
+                                    </div>
+
+
+                                    <div id="referralFields" class="offer-type-fields" style="display: none;">
+                                        <div class="form-group">
+                                            <label for="referralCode">Referral Code</label>
+                                            <input type="text" id="referralCode" name="referralCode">
+                                        </div>
+
+                                        <div class="form-row">
+                                            <div class="form-group">
+                                                <label for="referrerBonus">Referrer Bonus</label>
+                                                <input type="number" id="referrerBonus" name="referrerBonus" min="0">
+                                            </div>
+
+                                            <div class="form-group">
+                                                <label for="refereeBonus">Referee Bonus</label>
+                                                <input type="number" id="refereeBonus" name="refereeBonus" min="0">
+                                            </div>
+                                        </div>
+
+                                        <div class="form-group">
+                                            <label for="minPurchaseAmount">Minimum Purchase Amount</label>
+                                            <input type="number" id="minPurchaseAmount" name="minPurchaseAmount"
+                                                min="0">
+                                        </div>
+                                    </div>
+
+                                    <div class="form-group">
+                                        <button type="submit" class="btn btn-primary">
+                                            <i class="fas fa-save"></i> Create Offer
+                                        </button>
+                                    </div>
+                                </form>
+            </section>
+        </div>
+    </div>
+
+    <script>
+        
+        // document.getElementById('offerType').addEventListener('change', function () {
+        //     const offerType = this.value;
+        //     document.querySelectorAll('.offer-type-fields').forEach(field => {
+        //         field.style.display = 'none';
+        //     });
+
+        //     if (offerType) {
+        //         document.getElementById(`${offerType}Fields`).style.display = 'block';
+        //     }
+        // });
+
+        // Show/hide fields based on offer type selection
+        document.getElementById('offerType').addEventListener('change', function () {
+            const offerType = this.value;
+            console.log(offerType)
+            document.querySelectorAll('.offer-type-fields').forEach(field => {
+                field.style.display = 'none';
+            });
+
+            if (offerType) {
+                document.getElementById(`${offerType}Fields`).style.display = 'block';
+            }
+        });
+    </script>
+    <script>
+        // Form validation before submission
+        // document.querySelector('.offer-form').addEventListener('submit', function (e) {
+        //     const startDate = document.getElementById('startDate').value;
+        //     const endDate = document.getElementById('endDate').value;
+
+        //     if (!startDate || !endDate) {
+        //         e.preventDefault();
+        //         alert('Please select both start and end dates');
+        //         return false;
+        //     }
+
+        //     if (new Date(startDate) >= new Date(endDate)) {
+        //         e.preventDefault();
+        //         alert('End date must be after start date');
+        //         return false;
+        //     }
+        // });
+
+        // Show/hide fields based on offer type selection
+    </script>
+    <script>
+        // Format dates properly for the input
+        function formatDateForInput(date) {
+            const d = new Date(date);
+            const pad = num => num.toString().padStart(2, '0');
+            return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+        }
+
+        // Set current date/time as default
+        document.addEventListener('DOMContentLoaded', function () {
+            const now = new Date();
+            document.getElementById('startDate').value = formatDateForInput(now);
+            document.getElementById('endDate').value = formatDateForInput(new Date(now.getTime() + 24 * 60 * 60 * 1000)); // Tomorrow
+        });
+
+        // Validate dates before submission
+        document.querySelector('.offer-form').addEventListener('submit', function (e) {
+            const startDate = new Date(document.getElementById('startDate').value);
+            const endDate = new Date(document.getElementById('endDate').value);
+
+            if (startDate >= endDate) {
+                e.preventDefault();
+                alert('End date must be after start date');
+                document.getElementById('endDate').focus();
+            }
+        });
+    </script>
+    
+</body>
+
+</html>

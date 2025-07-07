@@ -17,12 +17,12 @@
       <div class="sorting-container">
         <label for="sort-orders">Sort by:</label>
         <select id="sort-orders" onchange="sortOrders()">
-          <option value="newest" <%= sortBy === 'newest' ? 'selected' : '' %>>Newest First</option>
-          <option value="oldest" <%= sortBy === 'oldest' ? 'selected' : '' %>>Oldest First</option>
+          <option value="newest" <%=sortBy==='newest' ? 'selected' : '' %>>Newest First</option>
+          <option value="oldest" <%=sortBy==='oldest' ? 'selected' : '' %>>Oldest First</option>
         </select>
       </div>
     </div>
-  </header>  
+  </header>
   <!-- Main Content Section -->
   <div class="main-container">
     <!-- Sidebar -->
@@ -39,7 +39,7 @@
         <i class="fas fa-shopping-cart"></i>
         Your Cart
       </a>
-      <a href="/user/orders"  class="active">
+      <a href="/user/orders" class="active">
         <i class="fas fa-box"></i>
         Your Orders
       </a>
@@ -67,67 +67,75 @@
 
     <!-- Orders Section -->
     <section class="orders-section">
-      <% if (orders.length === 0) { %>
+      <% if (orders.length===0) { %>
         <p class="no-orders">No orders found.</p>
-      <% } else { %>
-        <% orders.forEach(order => { %>
-          <article class="order-card">
-            <div class="order-header">
-              <span class="order-status">
-                <%= order.status %>
-              </span>
-              <span class="order-date">
-                <%= new Date(order.createdAt).toLocaleDateString() %>
-              </span>
-            </div>
-            <div class="order-products">
-              <% order.products.forEach(item => { %>
-                <div class="order-product">
-                  <p><strong>Product:</strong> <%= item.product.name %> (<%= item.quantity %>)</p>
+        <% } else { %>
+          <% orders.forEach(order=> { %>
+            <article class="order-card">
+              <div class="order-header">
+                <div class="order-id">Order #<%= order.orderId %>
                 </div>
-              <% }) %>
-            </div>
-            <div class="order-info">
-              <p><strong>Total Amount:</strong> ₹<%= new Intl.NumberFormat('en-IN').format(order.totalAmount.toFixed(2)) %></p>
-            </div>
-            <footer>
-              <button class="view-details-btn">
-                <a href="/user/order/<%= order._id %>">View Details</a>
-              </button>
-            </footer>
-          </article>
-        <% }) %>
-      <% } %>
-      <div class="pagination-container">
-        <div class="pagination">
-          <% if (currentPage > 1) { %>
-            <a href="/user/orders?page=<%= currentPage - 1 %>&sortBy=<%= sortBy %>" class="page-link">Previous</a>
-          <% } %>
-      
-          <% for (let i = 1; i <= totalPages; i++) { %>
-            <a href="/user/orders?page=<%= i %>&sortBy=<%= sortBy %>"
-               class="page-link <%= i === currentPage ? 'active' : '' %>">
-              <%= i %>
-            </a>
-          <% } %>
-      
-          <% if (currentPage < totalPages) { %>
-            <a href="/user/orders?page=<%= currentPage + 1 %>&sortBy=<%= sortBy %>" class="page-link">Next</a>
-          <% } %>
-        </div>
-      </div>   
+                <span class="order-status">
+                  <%= order.status %>
+                </span>
+                <span class="order-date">
+                  <%= new Date(order.createdAt).toLocaleDateString() %>
+                </span>
+              </div>
+              <div class="order-products">
+                <% order.products.forEach(item=> { %>
+                  <div class="order-product">
+                    <p><strong>Product:</strong>
+                      <%= item.product.name %> (<%= item.quantity %>)
+                    </p>
+                  </div>
+                  <% }) %>
+              </div>
+              <div class="order-info">
+                <p><strong>Total Amount:</strong> ₹<%= new
+                    Intl.NumberFormat('en-IN').format(order.totalAmount.toFixed(2)) %>
+                </p>
+              </div>
+              <footer>
+                <button class="view-details-btn">
+                  <a href="/user/order/<%= order._id %>">View Details</a>
+                </button>
+              </footer>
+            </article>
+            <% }) %>
+              <% } %>
+                <div class="pagination-container">
+                  <div class="pagination">
+                    <% if (currentPage> 1) { %>
+                      <a href="/user/orders?page=<%= currentPage - 1 %>&sortBy=<%= sortBy %>"
+                        class="page-link">Previous</a>
+                      <% } %>
+
+                        <% for (let i=1; i <=totalPages; i++) { %>
+                          <a href="/user/orders?page=<%= i %>&sortBy=<%= sortBy %>"
+                            class="page-link <%= i === currentPage ? 'active' : '' %>">
+                            <%= i %>
+                          </a>
+                          <% } %>
+
+                            <% if (currentPage < totalPages) { %>
+                              <a href="/user/orders?page=<%= currentPage + 1 %>&sortBy=<%= sortBy %>"
+                                class="page-link">Next</a>
+                              <% } %>
+                  </div>
+                </div>
     </section>
 
-    <!-- Pagination Section --> 
+    <!-- Pagination Section -->
 
-  <!-- Scripts -->
-  <script>
-    // Sort Orders
-    function sortOrders() {
-      const sortBy = document.getElementById('sort-orders').value;
-      window.location.href = `/user/orders?sortBy=${sortBy}`;
-    }
-  </script>
+    <!-- Scripts -->
+    <script>
+      // Sort Orders
+      function sortOrders() {
+        const sortBy = document.getElementById('sort-orders').value;
+        window.location.href = `/user/orders?sortBy=${sortBy}`;
+      }
+    </script>
 </body>
 
 </html>

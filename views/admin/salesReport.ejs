@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <title>Sales Report</title>
+  <link rel="stylesheet" href="/css/salesReport.css">
+
+</head>
+
+<body>
+  <div class="container">
+    <nav class="sidebar">
+      <div class="logo">
+        <img src="/images/logo1.png" alt="Logo">
+      </div>
+      <ul>
+        <li><a href="/admin/dashboard"><i class="icon-dashboard"></i> Dashboard</a></li>
+        <li><a href="/admin/sales-report" class="active"><i class="icon-report"></i> Sales Report</a></li>
+        <li><a href="/admin/orders"><i class="icon-orders"></i> Orders</a></li>
+        <li><a href="/admin/products"><i class="icon-products"></i> Products</a></li>
+        <li><a href="/admin/users"><i class="icon-users"></i> Users</a></li>
+        <li><a href="/admin/categories"><i class="icon-categories"></i> Categories</a></li>
+        <li><a href="/admin/coupons"><i class="icon-coupons"></i> Coupons</a></li>
+        <li><a href="/admin/banners"><i class="icon-banners"></i> Banners</a></li>
+        <li><a href="/admin/payments"><i class="icon-payments"></i> Payments</a></li>
+        <li><a href="/admin/offers"><i class="icon-offers"></i> Offers</a></li>
+      </ul>
+    </nav>
+    <h1>Sales Report</h1>
+
+    <!-- Filter Form -->
+    <form action="/admin/sales-report/filter" method="POST">
+      <label for="startDate">Start Date:</label>
+      <input type="date" name="startDate" id="startDate" value="<%= startDate %>" required>
+
+      <label for="endDate">End Date:</label>
+      <input type="date" name="endDate" id="endDate" value="<%= endDate %>" required>
+
+      <button type="submit">Apply Filter</button>
+    </form>
+
+    <!-- Summary -->
+    <section class="summary">
+      <h3>Summary</h3>
+      <ul>
+        <li>Total Orders: <%= summary.totalSales %>
+        </li>
+        <li>Total Amount: ₹<%= summary.totalAmount.toFixed(2) %>
+        </li>
+        <li>Total Discount: ₹<%= summary.totalDiscount.toFixed(2) %>
+        </li>
+      </ul>
+    </section>
+
+    <!-- Orders Table -->
+    <table>
+      <thead>
+        <tr>
+          <th>User</th>
+          <th>Date</th>
+          <th>Amount</th>
+          <th>Discount</th>
+          <th>Coupon</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% orders.forEach(order=> { %>
+          <tr>
+            <td>
+              <%= order.user?.name || 'N/A' %>
+            </td>
+            <td>
+              <%= order.createdAt.toISOString().split('T')[0] %>
+            </td>
+            <td>₹<%= order.totalAmount %>
+            </td>
+            <td>₹<%= order.discountAmount || 0 %>
+            </td>
+            <td>₹<%= order.couponDiscount || 0 %>
+            </td>
+          </tr>
+          <% }) %>
+      </tbody>
+    </table>
+
+    <!-- Download Buttons -->
+    <form action="/admin/sales-report/download/excel" method="POST" style="display: inline;">
+      <input type="hidden" name="startDate" value="<%= startDate %>">
+      <input type="hidden" name="endDate" value="<%= endDate %>">
+      <button type="submit">Download Excel</button>
+    </form>
+
+    <form action="/admin/sales-report/download/pdf" method="POST" style="display: inline;">
+      <input type="hidden" name="startDate" value="<%= startDate %>">
+      <input type="hidden" name="endDate" value="<%= endDate %>">
+      <button type="submit">Download PDF</button>
+    </form>
+  </div>
+</body>
+
+</html>

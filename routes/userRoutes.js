@@ -2,6 +2,7 @@ const express = require('express');
 const { isLoggedIn } = require('../middleware/authMiddleware');
 const userController = require('../controllers/userController');
 const checkBlockedUser = require('../middleware/checkBlocked');
+const couponController = require('../controllers/couponController');
 const multer = require('multer');
 const upload = multer();
 const router = express.Router();
@@ -21,6 +22,9 @@ router.get('/address/remove/:addressId', ...protect, userController.removeAddres
 router.get('/orders', ...protect, userController.viewOrders);
 router.get('/order/:id', ...protect, userController.viewOrderDetails);
 router.post('/orders/cancel/:id', ...protect, userController.cancelOrder);
+router.post('/orders/:id/cancel', userController.cancelEntireOrder);
+router.post('/orders/:orderId/return/:productId', userController.returnProduct);
+router.post('/orders/return/:id', userController.returnOrder);
 
 // Product Routes
 router.get('/home', userController.getProducts);
@@ -49,5 +53,12 @@ router.post('/reset-password', userController.handleResetPassword);
 console.log(userController.verifyOtp);
 router.post('/verify-otp-reset', userController.verifyOtp);
 router.get('/product/:id/related', userController.getProductDetailsWithRelated);
+
+//coupon Routes
+router.post('/apply-coupon', ...protect, couponController.applyCoupon);
+router.post('/remove-coupon', ...protect, couponController.removeCoupon);
+
+//wallet
+router.get('/wallet', userController.renderWalletPage);
 
 module.exports = router;

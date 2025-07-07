@@ -27,5 +27,23 @@ cartSchema.methods.calculateTotal = async function () {
     return total + price * item.quantity;
   }, 0);
 };
+cartSchema.methods.calculateTotal = async function () {
+  const productIds = this.items.map(item => item.product);
 
+  const products = await mongoose.model('Product').find({ _id: { $in: productIds } });
+
+  // Build a map of offer prices using dynamic logic
+  const productMap = {};
+  for (const product of products) {
+    const offer = product.getBestOfferPrice ? await product.getBestOfferPrice() : null;
+    const price = offer?.price || product.salesPrice || product.regularPrice;
+    productMap[product._id.toString()] = price;
+  }
+
+  // Calculate total using best offer prices
+  this.totalPrice = this.items.reduce((total, item) => {
+    const price = productMap[item.product.toString()] || 0;
+    return total + price * item.quantity;
+  }, 0);
+};
 module.exports = mongoose.model('Cart', cartSchema);

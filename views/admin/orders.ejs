@@ -57,13 +57,15 @@
             </tr>
           </thead>
           <tbody>
-            <% orders.forEach(order => { %>
+            <% orders.forEach(order=> { %>
               <tr>
                 <td>
                   <div class="order-id">
-                    <strong><%= order._id %></strong>
+                    <strong>#<%= order.orderId %></strong>
                     <br>
-                    <small class="date"><%= new Date(order.createdAt).toLocaleDateString() %></small>
+                    <small class="date">
+                      <%= new Date(order.createdAt).toLocaleDateString() %>
+                    </small>
                   </div>
                 </td>
                 <td>
@@ -83,44 +85,48 @@
                 </td>
                 <td>
                   <div class="total-price">
-                    $<%= order.totalAmount.toFixed(2) %>
+                    ₹<%= order.totalAmount.toLocaleString('en-IN', {maximumFractionDigits: 2}) %>
                   </div>
                 </td>
                 <td>
                   <ul class="product-list">
-                    <% order.products.forEach(item => { %>
+                    <% order.products.forEach(item=> { %>
                       <li>
                         <%= item.product.name %> (Qty: <%= item.quantity %>)
                       </li>
-                    <% }) %>
+                      <% }) %>
                   </ul>
                 </td>
                 <td>
                   <div class="action-buttons">
-                    <form action="/admin/orders/update-status/<%= order._id %>" method="POST">
-                      <select name="status" <%= (order.status.includes('Cancelled')) ? 'disabled' : '' %>>
-                        <option value="Pending" <%= order.status === 'Pending' ? 'selected' : '' %>>Pending</option>
-                        <option value="Shipped" <%= order.status === 'Shipped' ? 'selected' : '' %>>Shipped</option>
-                        <option value="Delivered" <%= order.status === 'Delivered' ? 'selected' : '' %>>Delivered</option>
-                        <option value="Cancelled" <%= order.status === 'Cancelled' ? 'selected' : '' %>>Cancelled</option>
-                        <option value="User Cancelled" <%= order.status === 'User Cancelled' ? 'selected' : '' %>>User Cancelled</option>
+                    <form action="/admin/orders/update-status/<%= order.orderId %>" method="POST">
+                      <select name="status" <%=(order.status.includes('Cancelled')) ? 'disabled' : '' %>>
+                        <option value="Pending" <%=order.status==='Pending' ? 'selected' : '' %>>Pending</option>
+                        <option value="Shipped" <%=order.status==='Shipped' ? 'selected' : '' %>>Shipped</option>
+                        <option value="Delivered" <%=order.status==='Delivered' ? 'selected' : '' %>>Delivered</option>
+                        <option value="Cancelled" <%=order.status==='Cancelled' ? 'selected' : '' %>>Cancelled</option>
+                        <option value="User Cancelled" <%=order.status==='User Cancelled' ? 'selected' : '' %>>User
+                          Cancelled</option>
                       </select>
-                      <button type="submit" class="update-status" <%= (order.status.includes('Cancelled')) ? 'disabled' : '' %>>
+                      <button type="submit" class="update-status" <%=(order.status.includes('Cancelled')) ? 'disabled'
+                        : '' %>>
                         Update
                       </button>
                     </form>
-                    <form action="/admin/orders/cancel/<%= order._id %>" method="POST" onsubmit="return confirm('Are you sure you want to cancel this order?');">
-                      <button type="submit" class="cancel-order" <%= (order.status.includes('Cancelled')) ? 'disabled' : '' %>>
+                    <form action="/admin/orders/cancel/<%= order.orderId %>" method="POST">
+
+                      <button type="submit" class="cancel-order" <%=(order.status.includes('Cancelled')) ? 'disabled'
+                        : '' %>>
                         Cancel
                       </button>
                     </form>
                   </div>
                 </td>
               </tr>
-            <% }) %>
+              <% }) %>
           </tbody>
         </table>
-        
+
         <div class="pagination">
           <% if (currentPage> 1) { %>
             <a href="/admin/orders?sort=<%= sort %>&page=<%= currentPage - 1 %>">Previous</a>

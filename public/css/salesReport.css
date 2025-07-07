@@ -1,0 +1,214 @@
+/* ================= BASE ================= */
+body {
+  margin: 0;
+  font-family: 'Segoe UI', sans-serif;
+  background-color: #1e1e2f;
+  color: #ffffff;
+}
+
+/* ================= CONTAINER ================= */
+.container {
+  margin-left: 160px; /* Match sidebar width */
+  padding: 30px;
+  background-color: #181828;
+  min-height: 100vh;
+}
+
+/* ================= SIDEBAR ================= */
+.sidebar {
+  width: 155px;
+  background: linear-gradient(to right, #232526, #414345);
+  height: 100vh;
+  position: fixed;
+  top: 0;
+  left: 0;
+  padding-top: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.sidebar .logo img {
+  width: 100px;
+  margin-bottom: 30px;
+}
+
+.sidebar ul {
+  list-style: none;
+  padding: 0;
+  width: 100%;
+}
+
+.sidebar ul li {
+  width: 100%;
+}
+
+.sidebar ul li a {
+  display: block;
+  padding: 12px 20px;
+  color: #ffffff;
+  text-decoration: none;
+  font-size: 14px;
+  transition: background 0.3s ease;
+}
+
+.sidebar ul li a:hover {
+  background-color: rgba(0, 123, 255, 0.3);
+}
+
+.sidebar ul li a.active {
+  background-color: #007bff;
+  color: #fff;
+}
+
+/* ================= HEADER ================= */
+h1 {
+  color: #ffcc00;
+  margin-bottom: 25px;
+}
+
+/* ================= FILTER FORM ================= */
+form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 15px;
+  margin-bottom: 30px;
+}
+
+form label {
+  font-size: 14px;
+}
+
+form input[type="date"] {
+  padding: 10px;
+  background-color: #2c2c44;
+  color: #ffffff;
+  border: none;
+  border-radius: 4px;
+}
+
+form button {
+  padding: 10px 20px;
+  background-color: #007bff;
+  border: none;
+  border-radius: 4px;
+  color: #ffffff;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+form button:hover {
+  background-color: #0056b3;
+}
+
+/* ================= SUMMARY SECTION ================= */
+.summary {
+  background-color: #29294a;
+  padding: 20px;
+  border-radius: 8px;
+  margin-bottom: 30px;
+  box-shadow: 0 0 10px rgba(0,0,0,0.3);
+}
+
+.summary h3 {
+  color: #ff9900;
+  margin-bottom: 10px;
+}
+
+.summary ul {
+  list-style: none;
+  padding-left: 0;
+}
+
+.summary li {
+  margin-bottom: 8px;
+  font-size: 16px;
+}
+
+/* ================= TABLE ================= */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  background-color: #2c2c44;
+  border-radius: 8px;
+  overflow: hidden;
+  margin-bottom: 30px;
+}
+
+table th, table td {
+  padding: 12px;
+  text-align: left;
+}
+
+table thead {
+  background-color: #414345;
+}
+
+table thead th {
+  color: #ffcc00;
+  text-transform: uppercase;
+  font-size: 14px;
+}
+
+table tbody tr {
+  border-bottom: 1px solid #444;
+}
+
+table tbody tr:hover {
+  background-color: #3a3a5a;
+}
+
+/* ================= DOWNLOAD BUTTONS ================= */
+form[action*="download"] {
+  display: inline-block;
+  margin-right: 15px;
+}
+
+form[action*="download"] button {
+  padding: 10px 16px;
+  font-size: 14px;
+  background-color: #28a745;
+  color: #ffffff;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+form[action*="download"] button:hover {
+  background-color: #218838;
+}
+
+/* PDF Button */
+form[action$="/pdf"] button {
+  background-color: #dc3545;
+}
+
+form[action$="/pdf"] button:hover {
+  background-color: #c82333;
+}
+
+/* ================= RESPONSIVE ================= */
+@media (max-width: 768px) {
+  .container {
+    margin-left: 0;
+    padding: 20px;
+  }
+
+  .sidebar {
+    display: none;
+  }
+
+  form {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  table th, table td {
+    font-size: 13px;
+  }
+
+  form[action*="download"] {
+    margin-bottom: 10px;
+  }
+}

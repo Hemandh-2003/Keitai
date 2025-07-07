@@ -22,21 +22,33 @@
                 <a href="/"><img src="/images/logo1.png" alt="Keitai Logo"></a>
             </div>
             <ul class="nav-links">
-                <li><a href="/home" class="<%= product.category.name === 'Store' ? 'active' : '' %>">Store</a></li>
-                <li><a href="/laptop" class="<%= product.category.name === 'Laptop' ? 'active' : '' %>">Laptop</a></li>
-                <li><a href="/tablet" class="<%= product.category.name === 'Tablet' ? 'active' : '' %>">Tablet</a></li>
-                <li><a href="/phone" class="<%= product.category.name === 'Phone' ? 'active' : '' %>">Phone</a></li>
-                <li><a href="/watch" class="<%= product.category.name === 'Watch' ? 'active' : '' %>">Watch</a></li>
-                <li><a href="/earpod" class="<%= product.category.name === 'EarPods' ? 'active' : '' %>">EarPods</a>
+                <li><a href="/home"
+                        class="<%= product.category && product.category.name === 'Store' ? 'active' : '' %>">Store</a>
+                </li>
+                <li><a href="/laptop"
+                        class="<%= product.category && product.category.name === 'Laptop' ? 'active' : '' %>">Laptop</a>
+                </li>
+                <li><a href="/tablet"
+                        class="<%= product.category && product.category.name === 'Tablet' ? 'active' : '' %>">Tablet</a>
+                </li>
+                <li><a href="/phone"
+                        class="<%= product.category && product.category.name === 'Phone' ? 'active' : '' %>">Phone</a>
+                </li>
+                <li><a href="/watch"
+                        class="<%= product.category && product.category.name === 'Watch' ? 'active' : '' %>">Watch</a>
+                </li>
+                <li><a href="/earpod"
+                        class="<%= product.category && product.category.name === 'EarPods' ? 'active' : '' %>">EarPods</a>
                 </li>
                 <li><a href="/accessorie"
-                        class="<%= product.category.name === 'Accessories' ? 'active' : '' %>">Accessories</a></li>
+                        class="<%= product.category && product.category.name === 'Accessories' ? 'active' : '' %>">Accessories</a>
+                </li>
             </ul>
             <div class="nav-icons">
                 <div class="search-container">
                     <input type="text" id="search-input" placeholder="Search for products...">
                     <i class="fas fa-search"></i>
-                    <div id="search-results"></div> <!-- Dropdown inside the search container -->
+                    <div id="search-results"></div>
                 </div>
                 <a href="/cart"><i class="fas fa-shopping-cart"></i></a>
                 <a href="/user/profile"><i class="fas fa-user"></i></a>
@@ -48,8 +60,8 @@
     <nav aria-label="breadcrumb">
         <ol class="breadcrumb">
             <li class="breadcrumb-item">
-                <a href="/<%= product.category.name.toLowerCase() %>">
-                    <%= product.category.name %>
+                <a href="/<%= product.category && product.category.name.toLowerCase() %>">
+                    <%= product.category && product.category.name %>
                 </a>
             </li>
             <li class="breadcrumb-item active" aria-current="page">
@@ -62,13 +74,16 @@
     <section class="product-main">
         <div class="container">
             <div class="main-image-container">
-                <img src="/uploads/<%= product.images[0] %>" alt="<%= product.name %>" id="main-product-image">
+                <img src="/uploads/<%= product.images && product.images[0] %>" alt="<%= product.name %>"
+                    id="main-product-image">
                 <div class="zoom-lens" id="zoom-lens"></div>
             </div>
             <div class="thumbnails">
-                <% product.images.slice(0, 4).forEach((image)=> { %>
-                    <img src="/uploads/<%= image %>" alt="Thumbnail" onclick="changeImage(this)">
-                    <% }); %>
+                <% if (product.images) { %>
+                    <% product.images.slice(0, 4).forEach((image)=> { %>
+                        <img src="/uploads/<%= image %>" alt="Thumbnail" onclick="changeImage(this)">
+                        <% }); %>
+                            <% } %>
             </div>
         </div>
 
@@ -84,57 +99,95 @@
                 <%= product.name %>
             </h1>
             <p>⭐⭐⭐⭐☆ (<%= Math.floor(Math.random() * 100) + 50 %> Reviews)</p>
-            <p>₹<%= product.salesPrice || product.regularPrice %>
-                    <% if (product.salesPrice) { %>
-                        <span class="discount">₹<%= product.regularPrice %></span>
-                        <% } %>
-            </p>
-            <% if (product.productOffer) { %>
-                <p class="offer">Limited Offer: <%= product.productOffer %>
-                </p>
-                <% } %>
 
-                    <!-- Stock Availability -->
-                    <p class="stock-status" style="
+            <!-- Updated Price Display Section -->
+       <div class="price-container">
+  <% 
+  // Safely handle offerDetails with defaults
+  const offer = typeof offerDetails !== 'undefined' ? offerDetails : {
+    price: product.salesPrice || product.regularPrice,
+    originalPrice: product.regularPrice,
+    discount: 0,
+    hasOffer: false
+  };
+  
+  const finalPrice = offer.price;
+  const originalPrice = offer.originalPrice;
+  const showDiscount = offer.hasOffer || product.salesPrice;
+  const discountPercent = showDiscount ? 
+    Math.round((originalPrice - finalPrice) / originalPrice * 100) : 0;
+  %>
+
+  <!-- Current Price -->
+  <span class="current-price">₹<%= finalPrice.toFixed(2) %></span>
+
+  <!-- Original Price (shown when discounted) -->
+  <% if (showDiscount && discountPercent > 0) { %>
+    <span class="original-price">₹<%= originalPrice.toFixed(2) %></span>
+    <span class="discount-percentage">
+      <%= discountPercent %>% OFF
+    </span>
+  <% } %>
+
+  <!-- Offer Badges -->
+  <% if (offer.hasOffer) { %>
+    <div class="offer-badge">
+      <i class="fas fa-tag"></i> Special Offer Applied!
+    </div>
+    <% if (offer.endDate) { %>
+      <div class="offer-timer">
+        <i class="fas fa-clock"></i> Offer ends in:
+        <span id="offer-countdown"></span>
+      </div>
+    <% } %>
+  <% } else if (product.productOffer) { %>
+    <p class="offer-badge">
+      <i class="fas fa-bolt"></i>
+      <%= product.productOffer %>
+    </p>
+  <% } %>
+</div>
+            <!-- Stock Availability -->
+            <p class="stock-status" style="
                 color: <%= product.quantity > 10 ? 'green' : product.quantity > 0 ? 'orange' : 'red' %>;
                 font-weight: bold;">
-                        <% if (product.quantity> 10) { %>
-                            In Stock
-                            <% } else if (product.quantity> 0) { %>
-                                Limited Stock: Only <%= product.quantity %> left
-                                    <% } else { %>
-                                        Out of Stock
-                                        <% } %>
-                    </p>
+                <% if (product.quantity> 10) { %>
+                    In Stock
+                    <% } else if (product.quantity> 0) { %>
+                        Limited Stock: Only <%= product.quantity %> left
+                            <% } else { %>
+                                Out of Stock
+                                <% } %>
+            </p>
 
-                    <form action="/user/checkout" method="POST" id="action-form">
-                        <input type="hidden" name="productId" value="<%= product._id %>">
-                        <input type="hidden" name="productUrl" value="/product/<%= product._id %>">
-                        <!-- Add product URL -->
-                        <label for="quantity">Quantity:</label>
-                        <div class="quantity-control">
-                            <button type="button" class="btn-quantity" id="decrease-qty" <%=product.quantity===0
-                                ? 'disabled' : '' %>>-</button>
-                            <input type="number" name="quantity" class="quantity-input" value="1" min="1"
-                                max="<%= product.quantity %>" id="quantity" oninput="validateQuantity(this)"
-                                <%=product.quantity===0 ? 'disabled' : '' %>>
-                            <button type="button" class="btn-quantity" id="increase-qty" <%=product.quantity===0
-                                ? 'disabled' : '' %>>+</button>
-                        </div>
-                        <div class="button-container">
-                            <button type="submit" class="btn-buy" id="buy-now-btn" <%=product.quantity===0 ? 'disabled'
-                                : '' %>>Buy Now</button>
-                            <button type="button" class="btn-cart" id="add-to-cart-btn" <%=product.quantity===0
-                                ? 'disabled' : '' %>>Add to Cart</button>
-                        </div>
-                    </form>
-                    <!-- Add to Cart Form -->
-                    <form id="add-to-cart-form">
-                        <input type="hidden" name="productId" value="<%= product._id %>">
-                    </form>
+            <form action="/user/checkout" method="POST" id="action-form">
+                <input type="hidden" name="productId" value="<%= product._id %>">
+                <input type="hidden" name="productUrl" value="/product/<%= product._id %>">
+                <label for="quantity">Quantity:</label>
+                <div class="quantity-control">
+                    <button type="button" class="btn-quantity" id="decrease-qty" <%=product.quantity===0 ? 'disabled'
+                        : '' %>>-</button>
+                    <input type="number" name="quantity" class="quantity-input" value="1" min="1"
+                        max="<%= product.quantity %>" id="quantity" oninput="validateQuantity(this)"
+                        <%=product.quantity===0 ? 'disabled' : '' %>>
+                    <button type="button" class="btn-quantity" id="increase-qty" <%=product.quantity===0 ? 'disabled'
+                        : '' %>>+</button>
+                </div>
+                <div class="button-container">
+                    <button type="submit" class="btn-buy" id="buy-now-btn" <%=product.quantity===0 ? 'disabled' : ''
+                        %>>Buy
+                        Now</button>
+                    <button type="button" class="btn-cart" id="add-to-cart-btn" <%=product.quantity===0 ? 'disabled'
+                        : '' %>>Add to Cart</button>
+                </div>
+            </form>
+            <!-- Add to Cart Form -->
+            <form id="add-to-cart-form">
+                <input type="hidden" name="productId" value="<%= product._id %>">
+            </form>
         </div>
-
     </section>
+
     <div class="product-description">
         <h3>Description</h3>
         <p>
@@ -143,12 +196,31 @@
         <h3>About the Product</h3>
         <p>Brand: <%= product.brand %>
         </p>
-        <p>Category: <%= product.category.name %>
+        <p>Category: <%= product.category && product.category.name %>
         </p>
         <p>Available Quantity: <%= product.quantity %>
         </p>
+
+        <% if (typeof offerDetails !='undefined' && offerDetails && offerDetails.hasOffer) { %>
+            <h3>Active Offers</h3>
+            <ul class="offer-list">
+                <% if (product.offers && product.offers.length> 0) { %>
+                    <% product.offers.forEach(offer=> { %>
+                        <li>
+                            <strong>
+                                <%= offer.name %>
+                            </strong>:
+                            <%= offer.discountType==='percentage' ? `${offer.discountValue}% off` :
+                                `₹${offer.discountValue} off` %>
+                                (Valid until <%= new Date(offer.endDate).toLocaleDateString() %>)
+                        </li>
+                        <% }); %>
+                            <% } %>
+            </ul>
+            <% } %>
     </div>
-    <!-- Highlights Section -->
+
+
     <section class="highlights">
         <div class="container">
             <h2>Product Highlights</h2>
@@ -165,8 +237,9 @@
                     <% } %>
         </div>
     </section>
-    <section class="reviews">
 
+    <!-- Reviews Section -->
+    <section class="reviews">
         <div class="container">
             <h2>Customer Reviews</h2>
             <div class="review">
@@ -193,20 +266,9 @@
                 <p>"Switched from Windows, and I couldn't be happier. MacOS runs incredibly smoothly on this machine."
                 </p>
             </div>
-            <div class="review">
-                <p><strong>Alice Wang</strong> ⭐⭐⭐⭐☆</p>
-                <p>"Great laptop for video editing and rendering. Would recommend to creatives."</p>
-            </div>
-            <div class="review">
-                <p><strong>Mohamed Ali</strong> ⭐⭐⭐⭐☆</p>
-                <p>"Excellent design and build quality. However, delivery was delayed."</p>
-            </div>
-            <div class="review">
-                <p><strong>Samantha Green</strong> ⭐⭐⭐⭐⭐</p>
-                <p>"An incredible laptop with unmatched speed and reliability. Worth every penny."</p>
-            </div>
         </div>
     </section>
+
     <!-- Related Products Section -->
     <section class="related-products">
         <div class="container">
@@ -225,8 +287,23 @@
                                             <h3>
                                                 <%= relatedProduct.name %>
                                             </h3>
-                                            <p>₹<%= relatedProduct.salesPrice || relatedProduct.regularPrice %>
-                                            </p>
+                                            <div class="related-price">
+                                                <% if (relatedProduct.offerDetails &&
+                                                    relatedProduct.offerDetails.hasOffer) { %>
+                                                    <span class="current-price">₹<%=
+                                                            relatedProduct.offerDetails.price.toFixed(2) %></span>
+                                                    <span class="original-price">₹<%=
+                                                            relatedProduct.offerDetails.originalPrice.toFixed(2) %>
+                                                    </span>
+                                                    <% } else { %>
+                                                        <span class="current-price">₹<%= (relatedProduct.salesPrice ||
+                                                                relatedProduct.regularPrice).toFixed(2) %></span>
+                                                        <% if (relatedProduct.salesPrice) { %>
+                                                            <span class="original-price">₹<%=
+                                                                    relatedProduct.regularPrice.toFixed(2) %></span>
+                                                            <% } %>
+                                                                <% } %>
+                                            </div>
                             </a>
                         </div>
                         <% }); %>
@@ -236,6 +313,7 @@
                     <% } %>
         </div>
     </section>
+
     <!-- Footer -->
     <footer>
         <div class="container">
@@ -246,260 +324,151 @@
     <script>
         function changeImage(thumbnail) {
             document.getElementById("main-product-image").src = thumbnail.src;
-        }
-    </script>
-
-
-    <script>
-        async function addToCart() {
-            const form = document.getElementById('add-to-cart-form');
-            const productId = form.querySelector('input[name="productId"]').value;
-            const quantity = form.querySelector('input[name="quantity"]').value;
-
-            try {
-                const response = await fetch('/cart/add', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ productId, quantity }),
-                });
-
-                const result = await response.json();
-
-                if (response.ok) {
-                    Swal.fire({
-                        icon: 'success',
-                        title: 'Added to Cart',
-                        text: `Quantity updated to ${quantity}.`,
-                        timer: 3000,
-                        timerProgressBar: true,
-                        showConfirmButton: false,
-                    });
-
-                    // Dynamically update cart total here
-                    const cartTotal = document.getElementById('cart-total');
-                    if (cartTotal && result.newTotal) {
-                        cartTotal.textContent = `₹${result.newTotal}`;
-                    }
-                } else {
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Failed',
-                        text: result.error || 'Failed to add the item to your cart.',
-                        showConfirmButton: true,
-                    });
-                }
-            } catch (error) {
-                console.error('Error adding to cart:', error);
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Error',
-                    text: 'Something went wrong. Please try again.',
-                    showConfirmButton: true,
-                });
-            }
-        }
-    </script>
-    <script>
-        document.getElementById('add-to-cart-btn').addEventListener('click', async () => {
-            const form = document.getElementById('action-form');
-            const productId = form.querySelector('input[name="productId"]').value;
-            const quantity = form.querySelector('input[name="quantity"]').value;
-
-            try {
-                const response = await fetch('/cart/add', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ productId, quantity }),
-                });
-
-                const result = await response.json();
-
-                if (response.ok) {
-                    Swal.fire({
-                        icon: 'success',
-                        title: 'Added to Cart',
-                        text: `Quantity updated to ${quantity}.`,
-                        timer: 3000,
-                        timerProgressBar: true,
-                        showConfirmButton: false,
-                    });
-
-                    // Update cart total dynamically
-                    const cartTotal = document.getElementById('cart-total');
-                    if (cartTotal && result.newTotal) {
-                        cartTotal.textContent = `₹${result.newTotal}`;
-                    }
-                } else {
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Failed',
-                        text: result.error || 'Failed to add the item to your cart.',
-                        showConfirmButton: true,
-                    });
-                }
-            } catch (error) {
-                console.error('Error adding to cart:', error);
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Error',
-                    text: 'You Forgot to login',
-                    showConfirmButton: true,
-                });
-            }
-        });
-
-        function validateQuantity(input) {
-            const min = parseInt(input.min, 10);
-            const max = 5; // Limit to 5
-            const availableStock = '<%= product.quantity %>'; // Inject stock dynamically
-            const value = input.value;
-
-            if (value === "") {
-                return; // Allow empty temporarily
-            }
-
-            const numericValue = parseInt(value, 10);
-
-            if (isNaN(numericValue)) {
-                input.value = min; // Reset to minimum if value is not a number
-            } else if (numericValue < min) {
-                input.value = min; // Enforce minimum value
-            } else if (numericValue > Math.min(availableStock, max)) {
-                input.value = Math.min(availableStock, max); // Enforce the smaller limit (stock or 5)
-                Swal.fire({
-                    icon: 'warning',
-                    title: 'Limit Exceeded',
-                    text: `You can only purchase up to ${Math.min(availableStock, max)} units.`,
-                    timer: 3000,
-                    timerProgressBar: true,
-                    showConfirmButton: false,
-                });
-            }
-
-            toggleButtons(input, availableStock, max);
-        }
-
-        function toggleButtons(input, availableStock, max) {
-            const quantity = parseInt(input.value, 10);
-            const decreaseBtn = document.getElementById('decrease-qty');
-            const increaseBtn = document.getElementById('increase-qty');
-
-            // Disable the Increase button if quantity > 5
-            increaseBtn.disabled = quantity >= max;
-
-            // Enable the Increase button if quantity < 5
-            if (quantity < max) {
-                increaseBtn.disabled = false;
-            }
-
-            // Keep the Decrease button always enabled
-            decreaseBtn.disabled = false;
-        }
-
-        // Event listeners for quantity buttons
-        document.getElementById('decrease-qty').addEventListener('click', () => {
-            const quantityInput = document.getElementById('quantity');
-            const currentValue = parseInt(quantityInput.value, 10);
-
-            if (currentValue > 1) {
-                quantityInput.value = currentValue - 1;
-                validateQuantity(quantityInput);
-            }
-        });
-
-        document.getElementById('increase-qty').addEventListener('click', () => {
-            const quantityInput = document.getElementById('quantity');
-            const currentValue = parseInt(quantityInput.value, 10);
-            const max = 5; // Limit to 5
-            const availableStock = '<%= product.quantity %>'; // Inject stock dynamically
-
-            if (currentValue < Math.min(availableStock, max)) {
-                quantityInput.value = currentValue + 1;
-                validateQuantity(quantityInput);
-            } else {
-                Swal.fire({
-                    icon: 'warning',
-                    title: 'Limit Reached',
-                    text: `You can only purchase up to ${Math.min(availableStock, max)} units.`,
-                    timer: 3000,
-                    timerProgressBar: true,
-                    showConfirmButton: false,
-                });
-            }
-        });
-
-        // Input validation on typing
-        document.getElementById('quantity').addEventListener('input', (event) => {
-            validateQuantity(event.target);
-        });
-
-        // Initial button state on page load
-        document.addEventListener('DOMContentLoaded', () => {
-            const quantityInput = document.getElementById('quantity');
-            const max = 5; // Limit to 5
-            const availableStock = ' <%= product.quantity %>'; // Inject stock dynamically
-
-            toggleButtons(quantityInput, availableStock, max);
-        });
-
-
-
-        // Input validation
-        function validateQuantity(input) {
-            const min = parseInt(input.min, 10);
-            const max = parseInt(input.max, 10);
-            const availableStock = <%= product.quantity %>; // Inject stock dynamically
-            const value = input.value;
-            const increaseBtn = document.getElementById('increase-qty');
-
-            if (value === "") {
-                return; // Allow empty temporarily
-            }
-
-            const numericValue = parseInt(value, 10);
-
-            // Check if the input is not a number
-            if (isNaN(numericValue)) {
-                input.value = min; // Reset to minimum if value is not a number
-            }
-            // Check if the value is less than the minimum
-            else if (numericValue < min) {
-                input.value = min; // Enforce minimum value
-            }
-            // Check if the value exceeds available stock or maximum limit
-            else if (numericValue > availableStock || numericValue > 5) {
-                input.value = Math.min(availableStock, 5); // Set to the smaller limit
-                Swal.fire({
-                    icon: 'warning',
-                    title: 'Limit Exceeded',
-                    text: `You can only purchase up to ${Math.min(availableStock, 5)} units.`,
-                    timer: 3000,
-                    timerProgressBar: true,
-                    showConfirmButton: false,
-                });
-                increaseBtn.disabled = true; // Disable the Increase button
-            } else {
-                increaseBtn.disabled = false; // Re-enable the Increase button
-            }
-        }
-
-    </script>
-    <script>
-        function changeImage(thumbnail) {
-            document.getElementById("main-product-image").src = thumbnail.src;
             document.querySelectorAll('.thumbnails img').forEach(img => img.classList.remove('active'));
             thumbnail.classList.add('active');
         }
     </script>
+
+    <script>
+        // Countdown timer for offers
+        function initializeCountdown(endDate, elementId) {
+            const countdownElement = document.getElementById(elementId);
+            if (!countdownElement || !endDate) return;
+
+            const offerEndDate = new Date(endDate);
+
+            function updateCountdown() {
+                const now = new Date();
+                const diff = offerEndDate - now;
+
+                if (diff <= 0) {
+                    countdownElement.textContent = "Offer expired";
+                    return;
+                }
+
+                const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+                const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+                const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+
+                countdownElement.textContent = `${days}d ${hours}h ${minutes}m ${seconds}s`;
+            }
+
+            updateCountdown();
+            setInterval(updateCountdown, 1000);
+        }
+    </script>
+
     <script src="/js/search.js"></script>
     <script src="/js/qty.js"></script>
     <script src="/js/zomm.js"></script>
     <script src="/js/wish.js"></script>
+    <script src="/js/cart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        // Countdown timer for offers
+        function initializeCountdown(endDate, elementId) {
+            const countdownElement = document.getElementById(elementId);
+            if (!countdownElement || !endDate) return;
+
+            const offerEndDate = new Date(endDate);
+
+            function updateCountdown() {
+                const now = new Date();
+                const diff = offerEndDate - now;
+
+                if (diff <= 0) {
+                    countdownElement.textContent = "Offer expired";
+                    return;
+                }
+
+                const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+                const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+                const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+
+                countdownElement.textContent = `${days}d ${hours}h ${minutes}m ${seconds}s`;
+            }
+
+            updateCountdown();
+            setInterval(updateCountdown, 1000);
+        }
+
+    // Initialize if we have an offer with end date
+    <% if (typeof offerDetails !== 'undefined' && offerDetails && offerDetails.endDate) { %>
+            initializeCountdown('<%= offerDetails.endDate %>', 'offer-countdown');
+    <% } %>
+    </script>
+    <script>
+document.getElementById("add-to-cart-btn").addEventListener("click", async function () {
+    const productId = "<%= product._id %>";
+    const quantity = document.getElementById("quantity").value;
+
+    try {
+        const res = await fetch("/cart/add", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ productId, quantity })
+        });
+
+        if (res.ok) {
+            Swal.fire({
+                icon: "success",
+                title: "Added to cart",
+                showConfirmButton: false,
+                timer: 1500
+            });
+        } else {
+            const data = await res.json();
+            Swal.fire({
+                icon: "error",
+                title: "Failed to add",
+                text: data.message || "Something went wrong"
+            });
+        }
+    } catch (err) {
+        console.error(err);
+        Swal.fire({
+            icon: "error",
+            title: "Error",
+            text: "Could not add to cart"
+        });
+    }
+});
+</script>
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+    const decreaseBtn = document.getElementById("decrease-qty");
+    const increaseBtn = document.getElementById("increase-qty");
+    const quantityInput = document.getElementById("quantity");
+
+    const min = parseInt(quantityInput.min) || 1;
+    const max = parseInt(quantityInput.max) || 99;
+
+    decreaseBtn.addEventListener("click", () => {
+        let qty = parseInt(quantityInput.value);
+        if (qty > min) {
+            quantityInput.value = qty - 1;
+        }
+    });
+
+    increaseBtn.addEventListener("click", () => {
+        let qty = parseInt(quantityInput.value);
+        if (qty < max) {
+            quantityInput.value = qty + 1;
+        }
+    });
+
+    quantityInput.addEventListener("input", () => {
+        let qty = parseInt(quantityInput.value);
+        if (isNaN(qty) || qty < min) quantityInput.value = min;
+        if (qty > max) quantityInput.value = max;
+    });
+});
+</script>
+
 </body>
 
 </html>

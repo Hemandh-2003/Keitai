@@ -317,3 +317,31 @@ form {
     margin-bottom: 10px;
 }
 }
+
+/* Add this to your existing CSS */
+.order-id {
+  font-family: 'Courier New', monospace;
+  color: #333;
+  font-weight: bold;
+}
+
+.order-id small.date {
+  color: #666;
+  font-size: 0.8em;
+  font-weight: normal;
+}
+
+/* For user-order.css */
+.order-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+
+.order-id {
+  font-weight: bold;
+  color: #2c3e50;
+  margin-right: 15px;
+}

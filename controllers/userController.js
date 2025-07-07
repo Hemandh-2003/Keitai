@@ -3,6 +3,8 @@ const Category = require('../models/Category');
 const User = require('../models/User');
 const Order = require('../models/Order');
 const Cart = require('../models/Cart');
+const Coupon = require('../models/Coupon')
+const mongoose = require('mongoose');
 const otpController = require('../controllers/otpController');
 const bcrypt = require('bcryptjs');
 //Profile
@@ -21,7 +23,7 @@ exports.getProfile = async (req, res) => {
       : null;
 
     const recentOrder = await Order.findOne({ user: userId })
-      .sort({ createdAt: -1 })
+      .sort({ CdAt: -1 })
       .populate('products.product', 'name price');
 
     res.render('user/user-profile', {
@@ -278,41 +280,74 @@ exports.cancelOrder = async (req, res) => {
 exports.getProducts = async (req, res) => {
   try {
     const { search, category, sort, page = 1 } = req.query;
-    const perPage = 12; // 12 products per page
-    const query = { isBlocked: false }; // Only show non-blocked products
+    const perPage = 12;
+    const query = { isBlocked: false };
 
-    if (search) {
-      query.name = { $regex: search, $options: 'i' };
-    }
+    // ... (your existing query logic)
 
-    if (category) {
-      query.category = category;
-    }
-
-    const sortOption = {};
-    if (sort === 'price-asc') sortOption.salesPrice = 1;
-    if (sort === 'price-desc') sortOption.salesPrice = -1;
-    if (sort === 'name-asc') sortOption.name = 1;
-    if (sort === 'name-desc') sortOption.name = -1;
-
-    const skip = (page - 1) * perPage;
-
-    const products = await Product.find(query)
+    let products = await Product.find(query)
+      .populate('category')
+      .populate('offers')
       .sort(sortOption)
       .skip(skip)
       .limit(perPage);
 
+    // Ensure every product has pricing information
+    products = await Promise.all(products.map(async (product) => {
+      const offerDetails = await product.getBestOfferPrice();
+      
+      // Default pricing structure
+      const pricing = {
+        finalPrice: product.salesPrice || product.regularPrice,
+        originalPrice: product.regularPrice,
+        hasOffer: false,
+        discountPercentage: 0
+      };
+
+      // If there's an offer, update pricing
+      if (offerDetails && offerDetails.hasOffer) {
+        pricing.finalPrice = offerDetails.price;
+        pricing.hasOffer = true;
+        pricing.discountPercentage = Math.round(
+          (offerDetails.originalPrice - offerDetails.price) / 
+          offerDetails.originalPrice * 100
+        );
+      } 
+      // If no offer but sales price exists
+      else if (product.salesPrice) {
+        pricing.finalPrice = product.salesPrice;
+        pricing.discountPercentage = Math.round(
+          (product.regularPrice - product.salesPrice) / 
+          product.regularPrice * 100
+        );
+      }
+
+      return {
+        ...product.toObject(),
+        pricing // Ensure pricing object always exists
+      };
+    }));
+
+    // Re-sort if sorting by price (since we need to consider offer prices)
+    if (sort === 'price-asc' || sort === 'price-desc') {
+      products.sort((a, b) => {
+        return sort === 'price-asc' 
+          ? a.pricing.finalPrice - b.pricing.finalPrice 
+          : b.pricing.finalPrice - a.pricing.finalPrice;
+      });
+    }
+
     const totalProducts = await Product.countDocuments(query);
     const totalPages = Math.ceil(totalProducts / perPage);
 
-    res.render('user/home', {
+      res.render('user/accessories', {
       products,
       currentPage: parseInt(page),
       totalPages,
       search,
       category,
       sort,
-      query: req.query // Pass all query parameters for pagination links
+      query: req.query
     });
   } catch (err) {
     console.error('Error fetching products:', err);
@@ -327,12 +362,15 @@ exports.getProductDetails = async (req, res) => {
     const product = await Product.findOne({
       _id: productId,
       isBlocked: false
-    }).populate('category');
+    }).populate('category').populate('offers'); // Add populate('offers')
 
     if (!product) {
       return res.status(404).send('Product not found or is unavailable');
     }
 
+    // Calculate offer details
+    const offerDetails = await product.getBestOfferPrice();
+    
     // Add related products fetch
     const relatedProducts = await Product.find({
       category: product.category._id,
@@ -343,13 +381,19 @@ exports.getProductDetails = async (req, res) => {
     res.render('user/product-details', { 
       user: req.session.user, 
       product,
-      relatedProducts  // Make sure to pass this to the view
+      relatedProducts,
+      offerDetails: offerDetails || { // Provide default values
+        hasOffer: false,
+        price: product.salesPrice || product.regularPrice,
+        originalPrice: product.regularPrice,
+        discountPercentage: 0
+      }
     });
   } catch (error) {
+    console.error('Error:', error);
     res.status(500).send('Internal Server Error');
   }
 };
-
 /* In userController.js
 exports.searchProducts = async (req, res) => {
   try {
@@ -365,132 +409,256 @@ exports.searchProducts = async (req, res) => {
     res.status(500).json({ error: 'Search failed' });
   }
 };*/
-// Checkout
+// Combined checkout method
 exports.checkout = async (req, res) => {
   try {
-    const { productIds, quantities, productId, quantity, productUrl } = req.body;
-
-    let cart = [];
-    let totalAmount = 0;
-
-    // Fetch user addresses
-    const user = await User.findById(req.session.user._id);
-    const addresses = user ? user.addresses || [] : [];
-
-    if (productIds && quantities) {
-      if (!Array.isArray(productIds) || !Array.isArray(quantities)) {
-        return res.status(400).send('Invalid product or quantity format.');
-      }
-
-      const products = await Product.find({ _id: { $in: productIds } });
-      if (products.length !== productIds.length) {
-        return res.status(404).send('One or more products not found.');
-      }
-
-      cart = products.map((product, index) => {
-        const itemQuantity = parseInt(quantities[index], 10);
-        totalAmount += (product.salesPrice || product.regularPrice) * itemQuantity;
-        return { product, quantity: itemQuantity };
-      });
-    } else if (productId && quantity) {
-      const product = await Product.findById(productId);
-      if (!product) {
-        return res.status(404).send('Product not found');
-      }
-
-      totalAmount = quantity * (product.salesPrice || product.regularPrice);
-      cart = [{ product, quantity }];
-    } else {
-      return res.status(400).send('Invalid input. Provide productId and quantity or productIds and quantities.');
+    if (!req.session.user) {
+      return res.redirect('/login');
     }
 
-    // Save cart and total to session
-    req.session.cart = cart;
-    req.session.totalAmount = totalAmount;
+    const { productIds, quantities, productId, quantity, productUrl } = req.body;
+    const user = await User.findById(req.session.user._id);
+    let cart = [];
+    let totalAmount = 0;
+    let offerPrices = [];
 
-    // Render checkout page
-    res.render('user/checkout', { cart, addresses, totalAmount, productUrl });
+    // 🔥 Fetch active coupons
+  const now = new Date();
+const coupons = await Coupon.find({
+  isActive: true,
+  startDate: { $lte: now },
+  endDate: { $gte: now }
+}).sort({ createdAt: -1 });
+
+    //multi items handle
+  if (productIds && quantities && Array.isArray(productIds) && Array.isArray(quantities)) {
+  for (let i = 0; i < productIds.length; i++) {
+    const product = await Product.findById(productIds[i]);
+    if (product) {
+      const qty = parseInt(quantities[i]);
+      const offerDetails = await product.getBestOfferPrice();
+      const price = offerDetails.price;
+
+      offerPrices.push(price); // 👈 Correct
+
+      cart.push({
+        product: {
+          _id: product._id,
+          name: product.name,
+          salesPrice: product.salesPrice,
+          regularPrice: product.regularPrice,
+          images: product.images,
+          offerDetails
+        },
+        quantity: qty
+      });
+
+      totalAmount += qty * price;
+    }
+  }
+
+  // 💾 Save to session
+  req.session.checkout = {
+    productIds,
+    quantities,
+    offerPrices,
+    totalAmount,
+    isFromCart: true
+  };
+} else if (productId && quantity) {
+  const product = await Product.findById(productId);
+  if (!product) return res.status(404).send('Product not found');
+
+  const offerDetails = await product.getBestOfferPrice();
+  const price = offerDetails.price;
+  const qty = parseInt(quantity);
+
+  cart = [{
+    product: {
+      _id: product._id,
+      name: product.name,
+      salesPrice: product.salesPrice,
+      regularPrice: product.regularPrice,
+      images: product.images,
+      offerDetails
+    },
+    quantity: qty
+  }];
+
+  totalAmount = qty * price;
+
+  req.session.checkout = {
+    productIds: [productId],
+    quantities: [quantity],
+    offerPrices: [price],
+    totalAmount,
+    isFromCart: false
+  };
+} else {
+  return res.redirect('/cart');
+}
+
+
+    // ✅ Render checkout with accurate total
+    res.render('user/checkout', {
+      user: req.session.user,
+      cart,
+      addresses: user.addresses || [],
+      totalAmount,
+      session: req.session,
+      productUrl: productUrl || '',
+      coupons,
+      razorpayKeyId: process.env.RAZORPAY_KEY_ID 
+    });
   } catch (err) {
-    console.error('Checkout Route - Error:', err.message);
+    console.error('Checkout Error:', err);
     res.status(500).send('Internal Server Error');
   }
 };
+
 
 exports.getCheckout = async (req, res) => {
   try {
-    const cart = req.session.cart || [];
-    const totalAmount = req.session.totalAmount || 0;
+    const user = req.session.user;
+    const addresses = await Address.find({ user: user._id });
+    const cart = await getUserCart(user._id);
+    const totalAmount = calculateTotal(cart);
 
-    const user = await User.findById(req.session.user._id);
-    const addresses = user ? user.addresses || [] : [];
+const now = new Date();
+const coupons = await Coupon.find({
+  isActive: true,
+  startDate: { $lte: now },
+  endDate: { $gte: now }
+}).sort({ createdAt: -1 });
 
-    res.render('user/checkout', { cart, addresses, totalAmount, productUrl: '' });
-  } catch (err) {
-    console.error('GET Checkout Route - Error:', err.message);
-    res.status(500).send('Internal Server Error');
+
+    res.render('user/checkout', {
+      user,
+      addresses,
+      cart,
+      totalAmount,
+      session: req.session,
+      coupons // ✅ Pass coupons here
+    });
+  } catch (error) {
+    console.error('Checkout page error:', error);
+    res.status(500).render('user/error', { message: 'Failed to load checkout' });
   }
 };
+function calculateDiscountAmount(products, quantities, offerPrices = []) {
+  let totalDiscount = 0;
+
+  products.forEach((product, index) => {
+    const quantity = parseInt(quantities[index]);
+    const regular = product.regularPrice;
+    const price = offerPrices[index] || product.salesPrice || regular;
+
+    if (regular > price) {
+      totalDiscount += (regular - price) * quantity;
+    }
+  });
+
+  return totalDiscount;
+}
+
+
+
 // Place Order
 exports.placeOrder = async (req, res) => {
   try {
-    console.log('Place Order initiated with request body:', req.body);
+    const { selectedAddress, paymentMethod } = req.body;
 
-    const { selectedAddress, productIds, quantities, paymentMethod } = req.body;
-
-    if (!Array.isArray(productIds) || !Array.isArray(quantities)) {
-      console.error('Invalid product or quantity format.');
-      return res.status(400).send('Invalid product or quantity format.');
+    const checkoutData = req.session.checkout;
+    if (
+      !checkoutData ||
+      !Array.isArray(checkoutData.productIds) ||
+      !Array.isArray(checkoutData.quantities)
+    ) {
+      return res.status(400).send('Checkout session missing or invalid.');
     }
+
+    const { productIds, quantities, offerPrices } = checkoutData;
 
     const user = await User.findById(req.session.user._id);
-    if (!user) {
-      console.error('User not found for ID:', req.session.user._id);
-      return res.status(404).send('User not found');
-    }
-
-    console.log('User found:', user);
+    if (!user) return res.status(404).send('User not found');
 
     const address = user.addresses.id(selectedAddress);
-    if (!address) {
-      console.error('Address not found for ID:', selectedAddress);
-      return res.status(404).send('Address not found');
-    }
-
-    console.log('Selected address:', address);
+    if (!address) return res.status(404).send('Address not found');
 
     const products = await Product.find({ _id: { $in: productIds } });
     if (products.length !== productIds.length) {
-      console.error('Mismatch in products retrieved. Expected:', productIds.length, 'Found:', products.length);
       return res.status(404).send('One or more products not found');
     }
 
-    console.log('Products retrieved:', products);
-
     let totalAmount = 0;
+    const orderItems = [];
 
-    const orderItems = products.map((product, index) => {
-      const quantity = parseInt(quantities[index], 10);
-      const price = product.salesPrice || product.regularPrice;
+    for (let i = 0; i < products.length; i++) {
+      const quantity = parseInt(quantities[i], 10);
+      const price = parseFloat(offerPrices[i]);
+
+      if (isNaN(quantity) || isNaN(price)) {
+        return res.status(400).send('Invalid quantity or price');
+      }
+
       totalAmount += price * quantity;
 
-      console.log(`Product: ${product.name}, Quantity: ${quantity}, Price: ${price}, Total Amount: ${totalAmount}`);
-      return {
-        product,
+      orderItems.push({
+        product: products[i],
         quantity,
-      };
-    });
-
-    let deliveryCharge = 0;
-    if (totalAmount < 50000) {
-      deliveryCharge = 80; // Flat delivery charge for orders under ₹50,000
+        offerPrice: price
+      });
     }
 
+    const discountAmount = calculateDiscountAmount(products, quantities, offerPrices);
+    let deliveryCharge = totalAmount < 50000 ? 80 : 0;
     totalAmount += deliveryCharge;
 
-    console.log('Delivery charge:', deliveryCharge, 'Final Total Amount:', totalAmount);
+    let couponDiscount = 0;
+    if (req.session.coupon?.discountAmount) {
+      const discount = parseFloat(req.session.coupon.discountAmount);
+      if (!isNaN(discount) && discount > 0 && discount <= totalAmount) {
+        couponDiscount = discount;
+        totalAmount -= discount;
+      }
+    }
+
+    // 🔒 COD Limit Check
+    if (paymentMethod === 'COD' && totalAmount > 20000) {
+      return res.status(400).send(
+        'Cash on Delivery is only available for orders up to ₹20,000. Please choose Online Payment.'
+      );
+    }
+
+    // 🔒 Razorpay Limit Check
+    if (paymentMethod === 'Online' && totalAmount > 450000) {
+      return res.status(400).send(
+        'Online payments above ₹4.5 Lakhs are not supported. Please reduce your cart total.'
+      );
+    }
+
+    if (totalAmount <= 0) {
+      return res.status(400).send('Invalid total amount.');
+    }
 
     const estimatedDate = new Date();
     estimatedDate.setDate(estimatedDate.getDate() + 6);
+
+    const createdOrder = await Order.create({
+      user: user._id,
+      selectedAddress: address._id,
+      products: orderItems.map(item => ({
+        product: item.product._id,
+        quantity: item.quantity
+      })),
+      totalAmount,
+      paymentMethod,
+      deliveryCharge,
+      estimatedDelivery: estimatedDate,
+      status: paymentMethod === 'COD' ? 'Placed' : 'Pending',
+      discountAmount,
+      couponDiscount
+    });
 
     req.session.orderItems = orderItems;
     req.session.address = address;
@@ -498,8 +666,8 @@ exports.placeOrder = async (req, res) => {
     req.session.totalAmount = totalAmount;
     req.session.deliveryCharge = deliveryCharge;
     req.session.arrivalDate = estimatedDate;
-
-    console.log('Order session details set:', req.session);
+    req.session.couponDiscount = couponDiscount;
+    req.session.orderId = createdOrder._id;
 
     res.render('user/order-confirmation', {
       orderItems,
@@ -508,10 +676,15 @@ exports.placeOrder = async (req, res) => {
       totalAmount,
       deliveryCharge,
       estimatedDate,
+      orderId: createdOrder._id,
+      paymentVerified: false,
+      paymentDetails: null,
       checkoutUrl: '/user/checkout',
+      couponDiscount
     });
+
   } catch (err) {
-    console.error('Error during order confirmation:', err.message);
+    console.error('❌ Error placing order:', err.message);
     res.status(500).send(err.message || 'Internal Server Error');
   }
 };
@@ -519,38 +692,29 @@ exports.placeOrder = async (req, res) => {
 // Confirm Payment
 exports.confirmPayment = async (req, res) => {
   try {
-    console.log('Confirm Payment initiated with request body:', req.body);
+    const checkoutData = req.session.checkout;
+    const { selectedAddress, paymentMethod } = req.body;
 
-    const { productIds, quantities, selectedAddress, paymentMethod } = req.body;
-
-    if (!Array.isArray(productIds) || !Array.isArray(quantities)) {
-      console.error('Invalid product or quantity format.');
-      return res.status(400).send('Invalid product or quantity format.');
+    if (
+      !checkoutData ||
+      !Array.isArray(checkoutData.productIds) ||
+      !Array.isArray(checkoutData.quantities)
+    ) {
+      return res.status(400).send('Checkout session missing or invalid.');
     }
+
+    const { productIds, quantities, offerPrices } = checkoutData;
 
     const user = await User.findById(req.session.user._id);
-    if (!user) {
-      console.error('User not found for ID:', req.session.user._id);
-      return res.status(404).send('User not found');
-    }
-
-    console.log('User found:', user);
+    if (!user) return res.status(404).send('User not found');
 
     const address = user.addresses.id(selectedAddress);
-    if (!address) {
-      console.error('Address not found for ID:', selectedAddress);
-      return res.status(404).send('Address not found');
-    }
-
-    console.log('Selected address:', address);
+    if (!address) return res.status(404).send('Address not found');
 
     const products = await Product.find({ _id: { $in: productIds } });
     if (products.length !== productIds.length) {
-      console.error('Mismatch in products retrieved. Expected:', productIds.length, 'Found:', products.length);
       return res.status(404).send('One or more products not found');
     }
-
-    console.log('Products retrieved:', products);
 
     let totalAmount = 0;
     const orderItems = [];
@@ -560,41 +724,40 @@ exports.confirmPayment = async (req, res) => {
       const quantity = parseInt(quantities[i], 10);
 
       if (quantity > product.quantity) {
-        console.error('Insufficient stock for product:', product.name);
         throw new Error(`Insufficient stock for product: ${product.name}`);
       }
 
-      const price = product.salesPrice || product.regularPrice;
+      const price = offerPrices ? parseFloat(offerPrices[i]) : (product.salesPrice || product.regularPrice);
       totalAmount += price * quantity;
-
-      console.log(`Product: ${product.name}, Quantity: ${quantity}, Price: ${price}, Total Amount: ${totalAmount}`);
 
       orderItems.push({
         product: {
           _id: product._id,
           name: product.name,
           brand: product.brand,
-          salesPrice: product.salesPrice,
-          regularPrice: product.regularPrice,
           images: product.images,
         },
         quantity,
+        offerPrice: price
       });
 
       product.quantity -= quantity;
       await product.save();
-      console.log(`Updated stock for product: ${product.name}, Remaining Stock: ${product.quantity}`);
+    }
+
+    const discountAmount = calculateDiscountAmount(products, quantities, offerPrices);
+    let deliveryCharge = totalAmount < 50000 ? 80 : 0;
+    totalAmount += deliveryCharge;
+
+    let couponDiscount = 0;
+    if (req.session.coupon?.discountAmount) {
+      couponDiscount = req.session.coupon.discountAmount;
+      totalAmount -= couponDiscount;
     }
 
     const estimatedDate = new Date();
     estimatedDate.setDate(estimatedDate.getDate() + 6);
 
-    let deliveryCharge = 0;
-    if (totalAmount < 50000) {
-      deliveryCharge = 80; // Flat delivery charge for orders under ₹50,000
-    }
-
-    totalAmount += deliveryCharge;
     const newOrder = new Order({
       user: user._id,
       products: orderItems.map(item => ({
@@ -605,17 +768,21 @@ exports.confirmPayment = async (req, res) => {
       selectedAddress: address._id,
       paymentMethod,
       estimatedDelivery: estimatedDate,
+      deliveryCharge,
       status: 'Pending',
+      discountAmount,
+      couponDiscount
     });
 
     await newOrder.save();
-    console.log('Order successfully saved:', newOrder);
 
     req.session.orderItems = orderItems;
     req.session.address = address;
     req.session.paymentMethod = paymentMethod;
     req.session.totalAmount = totalAmount;
+    req.session.deliveryCharge = deliveryCharge;
     req.session.arrivalDate = estimatedDate;
+    req.session.couponDiscount = couponDiscount;
 
     res.redirect('/user/confirm-payment');
   } catch (err) {
@@ -624,29 +791,33 @@ exports.confirmPayment = async (req, res) => {
   }
 };
 
+
 // Render Confirm Payment Page (GET request)
 exports.renderConfirmPayment = async (req, res) => {
   try {
-    console.log('Rendering confirm payment page with session data:', req.session);
-
-    const { orderItems, address, paymentMethod, totalAmount, deliveryCharge, arrivalDate } = req.session;
+    const {
+      orderItems,
+      address,
+      paymentMethod,
+      totalAmount,
+      deliveryCharge,
+      arrivalDate,
+      couponDiscount
+    } = req.session;
 
     if (!orderItems || !address || !paymentMethod || !totalAmount || !arrivalDate) {
-      console.error('Missing order details in session.');
       return res.status(400).send('Missing order details.');
     }
 
-    // Calculate the final amount including delivery charge
-    const finalTotalAmount = totalAmount + deliveryCharge;
+    const finalTotalAmount = totalAmount;
 
-    // === Related Products Logic ===
+    // Related products
     let relatedProducts = [];
     if (orderItems.length > 0) {
       const categories = orderItems.map(item => item.product.category);
-      // Fetch related products from same categories
       relatedProducts = await Product.find({
         category: { $in: categories },
-        _id: { $nin: orderItems.map(item => item.product._id) }, // exclude already ordered items
+        _id: { $nin: orderItems.map(item => item.product._id) },
       }).limit(6);
     }
 
@@ -654,10 +825,11 @@ exports.renderConfirmPayment = async (req, res) => {
       orderItems,
       address,
       paymentMethod,
-      totalAmount: finalTotalAmount, // Updated amount
+      totalAmount: finalTotalAmount,
       deliveryCharge,
-      arrivalDate: new Date(arrivalDate), // Ensure proper date format
-      relatedProducts // ✅ Passed to EJS
+      arrivalDate: new Date(arrivalDate),
+      relatedProducts,
+      couponDiscount // ✅ Pass to EJS
     });
   } catch (err) {
     console.error('Error rendering confirmation page:', err.message);
@@ -879,7 +1051,8 @@ exports.getProductDetailsWithRelated = async (req, res) => {
     const product = await Product.findOne({
       _id: productId,
       isBlocked: false
-    }).populate('category');
+    }).populate('category')
+    .populate('offers');
 
     if (!product) {
       return res.status(404).send('Product not found');
@@ -901,5 +1074,121 @@ exports.getProductDetailsWithRelated = async (req, res) => {
   } catch (error) {
     console.error('Error:', error);
     res.status(500).send('Server Error');
+  }
+};
+exports.cancelEntireOrder = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { reason } = req.body;
+
+    const order = await Order.findById(id).populate('products.product');
+
+    if (!order) return res.status(404).send('Order not found');
+
+    if (!['Pending', 'Placed'].includes(order.status)) {
+      return res.status(400).send('Cannot cancel this order.');
+    }
+
+    // Restock products
+    for (let item of order.products) {
+      const product = item.product;
+      product.quantity += item.quantity;
+      await product.save();
+    }
+
+    order.status = 'User Cancelled';
+    order.cancellationReason = reason || '';
+    await order.save();
+
+    res.redirect('/user/orders');
+  } catch (err) {
+    console.error('Cancel entire order error:', err);
+    res.status(500).send('Server error');
+  }
+};
+exports.returnProduct = async (req, res) => {
+  try {
+    const { orderId, productId } = req.params;
+    const { reason, quantity } = req.body;
+
+    if (!reason || reason.trim() === '') {
+      return res.status(400).send('Return reason is required');
+    }
+
+    const order = await Order.findById(orderId);
+
+    if (!order || order.status !== 'Delivered') {
+      return res.status(400).send('Only delivered orders can be returned');
+    }
+
+    const productEntry = order.products.find(
+      item => item.product.toString() === productId
+    );
+
+    if (!productEntry) {
+      return res.status(404).send('Product not found in order');
+    }
+
+    order.returnedItems.push({
+      product: productEntry.product,
+      quantity: quantity || productEntry.quantity,
+      reason: reason,
+    });
+
+    order.returnRequested = true;
+    order.returnStatus = 'Requested';
+    await order.save();
+
+    res.redirect('/user/orders');
+  } catch (err) {
+    console.error('Return product error:', err);
+    res.status(500).send('Server error');
+  }
+};
+exports.returnOrder = async (req, res) => {
+  try {
+    if (!req.session.user) {
+      return res.redirect('/login');
+    }
+
+    const orderId = req.params.id;
+
+    if (!mongoose.Types.ObjectId.isValid(orderId)) {
+      return res.status(400).send('Invalid Order ID');
+    }
+
+    const order = await Order.findById(orderId);
+
+    if (!order || order.user.toString() !== req.session.user._id.toString()) {
+      return res.status(404).send('Order not found');
+    }
+
+    if (order.status !== 'Delivered') {
+      return res.status(400).send('Only delivered orders can be returned');
+    }
+
+    order.status = 'Return Requested';
+    await order.save();
+
+    res.redirect('/user/orders');
+  } catch (err) {
+    console.error('Error returning order:', err);
+    res.status(500).send('Internal Server Error');
+  }
+};
+
+//wallet
+exports.renderWalletPage = async (req, res) => {
+  try {
+    const user = await User.findById(req.session.user._id);
+
+    if (!user) {
+      return res.status(404).send('User not found');
+    }
+
+    res.render('user/wallet', { user });
+  } catch (err) {
+    console.error('Error loading wallet page:', err);
+    res.status(500).send('Internal Server Error');
   }
 };
