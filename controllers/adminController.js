@@ -1248,7 +1248,7 @@ exports.renderSalesReportPage = async (req, res) => {
     const startOfDay = new Date(today.setHours(0, 0, 0, 0));
     const endOfDay = new Date(today.setHours(23, 59, 59, 999));
 
-   const orders = await Order.find({ createdAt: { $gte: start, $lte: end } }).populate('user', 'name');
+   const orders = await Order.find({ createdAt: { $gte: startOfDay, $lte: endOfDay } }).populate('user', 'name');
 
     const summary = calculateSummary(orders);
 
