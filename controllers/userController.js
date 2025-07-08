@@ -651,6 +651,7 @@ exports.placeOrder = async (req, res) => {
         product: item.product._id,
         quantity: item.quantity
       })),
+      
       totalAmount,
       paymentMethod,
       deliveryCharge,
@@ -659,6 +660,11 @@ exports.placeOrder = async (req, res) => {
       discountAmount,
       couponDiscount
     });
+    await Cart.updateOne(
+  { user: req.session.user._id },
+  { $pull: { items: { product: { $in: productIds } } } }
+);
+
 
     req.session.orderItems = orderItems;
     req.session.address = address;
@@ -724,7 +730,7 @@ exports.confirmPayment = async (req, res) => {
       const quantity = parseInt(quantities[i], 10);
 
       if (quantity > product.quantity) {
-        throw new Error(`Insufficient stock for product: ${product.name}`);
+       throw new Error(`Insufficient stock for product: ${product.name}`);
       }
 
       const price = offerPrices ? parseFloat(offerPrices[i]) : (product.salesPrice || product.regularPrice);
@@ -836,6 +842,7 @@ exports.renderConfirmPayment = async (req, res) => {
     res.status(500).send(err.message || 'Internal Server Error');
   }
 };
+
 
 
 //settings
@@ -1174,6 +1181,41 @@ exports.returnOrder = async (req, res) => {
   } catch (err) {
     console.error('Error returning order:', err);
     res.status(500).send('Internal Server Error');
+  }
+};
+exports.cancelSingleItem = async (req, res) => {
+  try {
+    const { orderId } = req.params;
+    const { productId } = req.body;
+
+    const order = await Order.findById(orderId);
+    if (!order || order.status !== 'Pending') {
+      return res.status(400).send('Order not found or cannot cancel at this stage');
+    }
+
+    const item = order.products.find(p => p.product.toString() === productId);
+    if (!item) return res.status(404).send('Product not found in order');
+
+    // Optionally restock
+    const product = await Product.findById(productId);
+    if (product) {
+      product.quantity += item.quantity;
+      await product.save();
+    }
+
+    // Remove the item from the order
+    order.products = order.products.filter(p => p.product.toString() !== productId);
+
+    // If no more products left, cancel the order
+    if (order.products.length === 0) {
+      order.status = 'User Cancelled';
+    }
+
+    await order.save();
+    res.redirect('/user/orders');
+  } catch (err) {
+    console.error('Cancel single item error:', err);
+    res.status(500).send('Server error');
   }
 };
 
