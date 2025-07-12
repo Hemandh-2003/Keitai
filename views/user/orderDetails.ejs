@@ -56,8 +56,17 @@
         <%= order.orderId %>
       </p>
       <p><strong>Status:</strong>
-        <%= order.status %>
+        <% if (order.returnStatus==='Approved' ) { %>
+          Return Accepted
+          <% } else if (order.returnStatus==='Rejected' ) { %>
+            Return Rejected
+            <% } else if (order.returnStatus==='Requested' ) { %>
+              Return Requested
+              <% } else { %>
+                <%= order.status %>
+                  <% } %>
       </p>
+
       <p><strong>Order Date:</strong>
         <%= new Date(order.createdAt).toLocaleDateString() %>
       </p>
@@ -102,8 +111,9 @@
                     </form>
                     <% } %>
           </li>
-          <% }) %>
+          <% }); %>
       </ul>
+
     </form>
 
     <h3>Shipping Address</h3>
@@ -142,8 +152,7 @@
             <button type="submit" class="cancel-btn">Cancel Order</button>
           </form>
           <% } else if (order.status==='Delivered' ) { %>
-            <form action="/user/orders/return/<%= order._id %>" method="POST"
-              onsubmit="return confirm('Are you sure you want to return this order?');">
+            <form class="return-order-form" action="/user/orders/return/<%= order._id %>" method="POST">
               <button type="submit" class="return-btn">Return Order</button>
             </form>
             <% } %>
@@ -157,6 +166,31 @@
         window.location.href = '/user/orders';
       }
     }
+
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script>
+    // Target all return-order forms
+    document.querySelectorAll('.return-order-form').forEach(form => {
+      form.addEventListener('submit', function (e) {
+        e.preventDefault(); // prevent default form submit
+
+        Swal.fire({
+          title: 'Are you sure?',
+          text: 'Do you want to return this order?',
+          icon: 'warning',
+          showCancelButton: true,
+          confirmButtonColor: '#3085d6',
+          cancelButtonColor: '#d33',
+          confirmButtonText: 'Yes, return it!',
+          cancelButtonText: 'Cancel'
+        }).then((result) => {
+          if (result.isConfirmed) {
+            form.submit(); // submit the form if confirmed
+          }
+        });
+      });
+    });
   </script>
 
 </body>

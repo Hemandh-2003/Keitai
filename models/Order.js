@@ -89,14 +89,30 @@ const orderSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ['Pending', 'Placed', 'Shipped', 'Delivered', 'Cancelled', 'User Cancelled'],
+    enum: [
+      'Pending',
+      'Placed',
+      'Shipped',
+      'Delivered',
+      'Cancelled',
+      'User Cancelled',
+      'Return Requested' // ✅ Added here
+    ],
     default: 'Pending',
   },
   statusHistory: [
     {
       status: {
         type: String,
-        enum: ['Pending', 'Placed', 'Shipped', 'Delivered', 'Cancelled', 'User Cancelled'],
+        enum: [
+          'Pending',
+          'Placed',
+          'Shipped',
+          'Delivered',
+          'Cancelled',
+          'User Cancelled',
+          'Return Requested' // ✅ Added here
+        ],
       },
       updatedAt: {
         type: Date,
@@ -114,18 +130,17 @@ const orderSchema = new mongoose.Schema({
   },
 });
 
-// Update updatedAt on save
+// Auto-update `updatedAt`
 orderSchema.pre('save', function (next) {
   this.updatedAt = new Date();
   next();
 });
 
-// Method to populate product name
+// Populate method for products
 orderSchema.methods.populateProductDetails = function () {
   return this.populate('products.product', 'name');
 };
 
-// Check if model already exists to avoid recompilation
+// Model export
 const Order = mongoose.models.Order || mongoose.model('Order', orderSchema);
-
 module.exports = Order;

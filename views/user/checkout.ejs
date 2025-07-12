@@ -126,6 +126,10 @@
         <label class="payment-option">
           <input type="radio" name="paymentMethod" value="COD" checked> Cash on Delivery
         </label>
+        <!--label class="payment-option">
+          <input type="radio" name="paymentMethod" value="Wallet"> Pay with Wallet (₹<%= user.walletBalance || 0 %>
+            available)
+        </label-->
         <label class="payment-option">
           <input type="radio" name="paymentMethod" value="Online"> Online Payment (Credit/Debit/UPI)
         </label>
@@ -153,87 +157,87 @@
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
   <script>
-   document.querySelector('.submit-btn').addEventListener('click', async (e) => {
-  e.preventDefault();
+    document.querySelector('.submit-btn').addEventListener('click', async (e) => {
+      e.preventDefault();
 
-  if (!validateAddress()) return;
+      if (!validateAddress()) return;
 
-  const paymentMethod = document.querySelector('input[name="paymentMethod"]:checked')?.value;
-  const grandTotal = <%= grandTotal %>; // already in ₹
+      const paymentMethod = document.querySelector('input[name="paymentMethod"]:checked')?.value;
+      const grandTotal = <%= grandTotal %>;
 
-  if (paymentMethod === 'COD') {
-    if (grandTotal > 20000) {
-      return Swal.fire({
-        icon: 'warning',
-        title: 'COD Not Allowed',
-        text: 'Cash on Delivery is only available for orders up to ₹20,000. Please choose Online Payment.'
-      });
-    }
+      if (paymentMethod === 'COD') {
+        if (grandTotal > 20000) {
+          return Swal.fire({
+            icon: 'warning',
+            title: 'COD Not Allowed',
+            text: 'Cash on Delivery is only available for orders up to ₹20,000. Please choose Online Payment.'
+          });
+        }
 
-    document.querySelector('.checkout-form').submit();
+        document.querySelector('.checkout-form').submit();
 
-  } else if (paymentMethod === 'Online') {
+      } else if (paymentMethod === 'Online') {
 
-    if (grandTotal > 450000) {
-      return Swal.fire({
-        icon: 'error',
-        title: 'Payment Limit Exceeded',
-        text: 'Online payment is only allowed for orders up to ₹4.5 lakhs. Please reduce your cart total.'
-      });
-    }
+        if (grandTotal > 450000) {
+          return Swal.fire({
+            icon: 'error',
+            title: 'Payment Limit Exceeded',
+            text: 'Online payment is only allowed for orders up to ₹4.5 lakhs. Please reduce your cart total.'
+          });
+        }
 
-    try {
-      const response = await fetch('/payment/create-order', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          amount: grandTotal,
-          currency: 'INR',
-          receipt: 'order_' + Date.now()
-        })
-      });
+        try {
+          const response = await fetch('/payment/create-order', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              amount: grandTotal,
+              currency: 'INR',
+              receipt: 'order_' + Date.now()
+            })
+          });
 
-      const paymentData = await response.json();
+          const paymentData = await response.json();
 
-      const options = {
-        key: '<%= process.env.RAZORPAY_KEY_ID %>',
-        amount: paymentData.amount,
-        currency: paymentData.currency,
-        name: "Keitai",
-        description: "Order Payment",
-        order_id: paymentData.id,
-        handler: function (response) {
-          const form = document.querySelector('.checkout-form');
-          const paymentInput = document.createElement('input');
-          paymentInput.type = 'hidden';
-          paymentInput.name = 'paymentDetails';
-          paymentInput.value = JSON.stringify(response);
-          form.appendChild(paymentInput);
-          form.submit();
-        },
-        prefill: {
-          name: '<%= user.name %>',
-          email: '<%= user.email %>',
-          contact: '<%= user.phone || "9999999999" %>'
-        },
-        theme: { color: "#3399cc" }
-      };
+          const options = {
+            key: '<%= process.env.RAZORPAY_KEY_ID %>',
+            amount: paymentData.amount,
+            currency: paymentData.currency,
+            name: "Keitai",
+            description: "Order Payment",
+            order_id: paymentData.id,
+            handler: function (response) {
+              const form = document.querySelector('.checkout-form');
+              const paymentInput = document.createElement('input');
+              paymentInput.type = 'hidden';
+              paymentInput.name = 'paymentDetails';
+              paymentInput.value = JSON.stringify(response);
+              form.appendChild(paymentInput);
+              form.submit();
+            },
+            prefill: {
+              name: '<%= user.name %>',
+              email: '<%= user.email %>',
+              contact: '<%= user.phone || "9999999999" %>'
+            },
+            theme: { color: "#3399cc" }
+          };
 
-      const rzp = new Razorpay(options);
-      rzp.on('payment.failed', function (response) {
-        window.location.href = `/payment/failed?error=${encodeURIComponent(response.error.description)}`;
-      });
-      rzp.open();
+          const rzp = new Razorpay(options);
+          rzp.on('payment.failed', function (response) {
+            window.location.href = `/payment/failed?error=${encodeURIComponent(response.error.description)}`;
+          });
+          rzp.open();
 
-    } catch (err) {
-      Swal.fire({
-        icon: 'error',
-        title: 'Payment Error',
-        text: 'Something went wrong while initiating payment. Please try again.'
-      });
-    }
-  }
-});
+        } catch (err) {
+          Swal.fire({
+            icon: 'error',
+            title: 'Payment Error',
+            text: 'Something went wrong while initiating payment. Please try again.'
+          });
+        }
+      }
+    });
 
 
     function validateAddress() {
@@ -261,16 +265,15 @@
       e.preventDefault();
       if (!validateAddress()) return;
 
-      // ✅ Safely parse the grandTotal and log it
+      const selectedAddress = document.querySelector('input[name="selectedAddress"]:checked').value;
       const amountInRupees = parseFloat("<%= grandTotal %>");
-      console.log("🧾 Grand Total (₹):", amountInRupees);
 
       try {
         const response = await fetch('/payment/create-order', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            amount: amountInRupees,  // ✅ Only rupees here!
+            amount: amountInRupees,
             currency: 'INR',
             receipt: 'order_' + Date.now()
           })
@@ -280,20 +283,38 @@
 
         const options = {
           key: '<%= process.env.RAZORPAY_KEY_ID %>',
-          amount: paymentData.amount, // 👈 already in paise from backend
+          amount: paymentData.amount,
           currency: paymentData.currency,
-          name: "Your Store Name",
+          name: "Keitai",
           description: "Order Payment",
           order_id: paymentData.id,
-          handler: function (response) {
-            console.log("✅ Razorpay Success:", response);
-            const form = document.querySelector('.checkout-form');
-            const paymentInput = document.createElement('input');
-            paymentInput.type = 'hidden';
-            paymentInput.name = 'paymentDetails';
-            paymentInput.value = JSON.stringify(response);
-            form.appendChild(paymentInput);
-            form.submit();
+          handler: async function (response) {
+            try {
+              const confirmResponse = await fetch('/user/confirm-payment', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  selectedAddress,
+                  paymentMethod: 'Online',
+                  razorpayPaymentId: response.razorpay_payment_id,
+                  razorpayOrderId: response.razorpay_order_id,
+                  razorpaySignature: response.razorpay_signature
+                })
+              });
+
+              if (confirmResponse.ok) {
+                window.location.href = '/user/confirm-payment';
+              } else {
+                throw new Error('Payment confirmation failed');
+              }
+            } catch (err) {
+              console.error("❌ Error confirming payment:", err);
+              Swal.fire({
+                icon: 'error',
+                title: 'Payment Error',
+                text: 'Payment was successful but order confirmation failed.'
+              });
+            }
           },
           prefill: {
             name: '<%= user.name %>',
@@ -305,87 +326,86 @@
 
         const rzp = new Razorpay(options);
         rzp.on('payment.failed', function (response) {
-          console.error("❌ Razorpay Failed:", response);
           window.location.href = `/payment/failed?error=${encodeURIComponent(response.error.description)}`;
         });
         rzp.open();
-
       } catch (err) {
-        console.error("🔥 Error creating Razorpay order:", err);
+        console.error("🔥 Razorpay init error:", err);
         Swal.fire({
           icon: 'error',
           title: 'Payment Error',
-          text: 'Something went wrong while initiating payment. Please try again.'
+          text: 'Something went wrong while starting payment. Try again.'
         });
       }
     });
+
 
     // Coupon Apply
-   document.getElementById('applyCouponBtn')?.addEventListener('click', async () => {
-    const code = document.getElementById('couponCode').value.trim();
-    const total = <%= totalPrice + deliveryCharge %>;
+    document.getElementById('applyCouponBtn')?.addEventListener('click', async () => {
+      const code = document.getElementById('couponCode').value.trim();
+      const total = <%= totalPrice + deliveryCharge %>;
 
-    if (!code) {
-      return Swal.fire({
-        icon: 'warning',
-        title: 'Select a Coupon',
-        text: 'Please choose a coupon to apply.'
-      });
-    }
-
-  if (total < 200000) {
-  return Swal.fire({
-    icon: 'info',
-    title: 'Not Eligible',
-    text: 'You need to spend ₹2,00,000 or more to apply a coupon.'
-  });
-}
-
-    const confirm = await Swal.fire({
-      title: 'Apply Coupon?',
-      text: `Do you want to apply the coupon "${code}"?`,
-      icon: 'question',
-      showCancelButton: true,
-      confirmButtonText: 'Yes, Apply',
-      cancelButtonText: 'Cancel',
-      reverseButtons: true
-    });
-
-    if (!confirm.isConfirmed) return;
-
-    try {
-      const res = await fetch('/user/apply-coupon', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ code, total })
-      });
-
-      const data = await res.json();
-
-      if (data.success) {
-        await Swal.fire({
-          icon: 'success',
-          title: 'Coupon Applied!',
-          text: `You saved ₹${data.discountAmount}`,
-          timer: 2000,
-          showConfirmButton: false
-        });
-        window.location.reload();
-      } else {
-        Swal.fire({
-          icon: 'error',
-          title: 'Coupon Error',
-          text: data.message || 'Failed to apply coupon.'
+      if (!code) {
+        return Swal.fire({
+          icon: 'warning',
+          title: 'Select a Coupon',
+          text: 'Please choose a coupon to apply.'
         });
       }
-    } catch (err) {
-      Swal.fire({
-        icon: 'error',
-        title: 'Server Error',
-        text: 'Something went wrong. Please try again.'
+
+      if (total < 200000) {
+        return Swal.fire({
+          icon: 'info',
+          title: 'Not Eligible',
+          text: 'You need to spend ₹2,00,000 or more to apply a coupon.'
+        });
+      }
+
+      const confirm = await Swal.fire({
+        title: 'Apply Coupon?',
+        text: `Do you want to apply the coupon "${code}"?`,
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonText: 'Yes, Apply',
+        cancelButtonText: 'Cancel',
+        reverseButtons: true
       });
-    }
-  });
+
+      if (!confirm.isConfirmed) return;
+
+      try {
+        const res = await fetch('/user/apply-coupon', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ code, total })
+        });
+
+        const data = await res.json();
+
+        if (data.success) {
+          await Swal.fire({
+            icon: 'success',
+            title: 'Coupon Applied!',
+            text: `You saved ₹${data.discountAmount}`,
+            timer: 2000,
+            showConfirmButton: false
+          });
+          window.location.reload();
+        } else {
+          Swal.fire({
+            icon: 'error',
+            title: 'Coupon Error',
+            text: data.message || 'Failed to apply coupon.'
+          });
+        }
+      } catch (err) {
+        Swal.fire({
+          icon: 'error',
+          title: 'Server Error',
+          text: 'Something went wrong. Please try again.'
+        });
+      }
+    });
 
     // Coupon Remove
     document.getElementById('removeCouponBtn')?.addEventListener('click', async () => {
@@ -394,33 +414,6 @@
         headers: { 'Content-Type': 'application/json' }
       });
       location.reload();
-    });
-    document.getElementById('applyCouponBtn')?.addEventListener('click', async () => {
-      const code = document.getElementById('couponCode').value.trim();
-      const total = <%= totalPrice + deliveryCharge %>;
-
-      if (!code) {
-        Swal.fire({ icon: 'warning', title: 'Select a Coupon', text: 'Please choose a coupon to apply.' });
-        return;
-      }
-
-      const res = await fetch('/user/apply-coupon', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ code, total })
-      });
-
-      const data = await res.json();
-
-      if (data.success) {
-        location.reload();
-      } else {
-        Swal.fire({
-          icon: 'error',
-          title: 'Coupon Error',
-          text: data.message || 'Failed to apply coupon'
-        });
-      }
     });
 
   </script>

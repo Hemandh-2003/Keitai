@@ -8,23 +8,43 @@ exports.addToWishlist = async (req, res) => {
     const { productId } = req.body;
     const userId = req.user?._id;
 
-    if (!userId) return res.status(401).send({ message: 'Unauthorized access' });
+    if (!userId) {
+      return res.status(401).json({ message: 'Unauthorized access' });
+    }
 
     const productExists = await Product.findById(productId);
-    if (!productExists) return res.status(404).json({ message: 'Product not found' });
+    if (!productExists) {
+      return res.status(404).json({ message: 'Product not found' });
+    }
 
-    const wishlist = await Wishlist.findOneAndUpdate(
-      { user: userId },
-      { $addToSet: { products: productId } },
-      { new: true, upsert: true }
-    ).populate('products');
+    let wishlist = await Wishlist.findOne({ user: userId });
 
-    res.status(200).json({ message: 'Product added to wishlist!', wishlist: wishlist.products });
+    if (wishlist) {
+      const alreadyExists = wishlist.products.includes(productId);
+
+      if (alreadyExists) {
+        return res.status(200).json({ message: 'Already in wishlist', wishlist: wishlist.products });
+      }
+
+      wishlist.products.push(productId);
+      await wishlist.save();
+    } else {
+      wishlist = await Wishlist.create({
+        user: userId,
+        products: [productId]
+      });
+    }
+
+    // Populate products before sending response
+    await wishlist.populate('products');
+
+    return res.status(200).json({ message: 'Product added to wishlist!', wishlist: wishlist.products });
   } catch (err) {
-    console.error('Error adding to wishlist:', err);
-    res.status(500).json({ message: 'Server error' });
+    console.error('❌ Error adding to wishlist:', err);
+    return res.status(500).json({ message: 'Server error' });
   }
 };
+
 
 // Remove product from wishlist
 exports.removeFromWishlist = async (req, res) => {

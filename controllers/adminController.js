@@ -261,17 +261,17 @@ exports.addProduct = async (req, res) => {
 exports.createProduct = async (req, res) => {
   try {
     // Debugging: Log the incoming request body and files
-    console.log('Request Body:', req.body);
+   /* console.log('Request Body:', req.body);
     console.log('Uploaded Images:', req.files.images);
-    console.log('Uploaded Highlights:', req.files.highlights);
+    console.log('Uploaded Highlights:', req.files.highlights);*/
 
     // Extract and process uploaded files
     const images = req.files.images ? req.files.images.map((file) => file.filename) : [];
     const highlights = req.files.highlights ? req.files.highlights.map((file) => file.filename) : [];
 
     // Debugging: Log the processed filenames
-    console.log('Processed Images:', images);
-    console.log('Processed Highlights:', highlights);
+   /* console.log('Processed Images:', images);
+    console.log('Processed Highlights:', highlights);*/
 
     // Validate the number of images and highlights
     if (images.length > 4) {
@@ -312,7 +312,7 @@ exports.createProduct = async (req, res) => {
     }).save();
 
     // Debugging: Log the saved product
-    console.log('Product Saved:', product);
+    //console.log('Product Saved:', product);
 
     res.redirect('/admin/products');
   } catch (error) {
@@ -504,8 +504,8 @@ exports.viewProductDetails = async (req, res) => {
 exports.listOrders = async (req, res) => {
   try {
     const sort = req.query.sort || 'new';
-    const page = parseInt(req.query.page) || 1; // Get the current page (default to 1)
-    const limit = 5; // Number of orders per page
+    const page = parseInt(req.query.page) || 1;
+    const limit = 5;
     let sortCriteria = {};
     let filterCriteria = {};
 
@@ -536,21 +536,24 @@ exports.listOrders = async (req, res) => {
         filterCriteria = { status: 'Pending' };
         sortCriteria = { createdAt: -1 };
         break;
+      case 'return-requested':
+        filterCriteria = { returnRequested: true, returnStatus: 'Requested' };
+        sortCriteria = { createdAt: -1 };
+        break;
       default:
         sortCriteria = { createdAt: -1 };
     }
 
     const orders = await Order.find(filterCriteria)
       .sort(sortCriteria)
-      .skip((page - 1) * limit) // Skip the appropriate number of orders
-      .limit(limit) // Limit to 5 orders per page
+      .skip((page - 1) * limit)
+      .limit(limit)
       .populate('user')
       .populate('products.product')
       .exec();
 
-    // Get the total count of orders to calculate total pages
     const totalOrders = await Order.countDocuments(filterCriteria);
-    const totalPages = Math.ceil(totalOrders / limit); // Calculate total pages
+    const totalPages = Math.ceil(totalOrders / limit);
 
     res.render('admin/orders', {
       orders,
@@ -564,6 +567,7 @@ exports.listOrders = async (req, res) => {
   }
 };
 
+
 // Change Order Status
 exports.changeOrderStatus = async (req, res) => {
   try {
@@ -575,17 +579,74 @@ exports.changeOrderStatus = async (req, res) => {
       { status },
       { new: true }
     );
-    
+
     if (!order) {
       return res.status(404).json({ success: false, message: 'Order not found' });
     }
-    
+
     res.redirect('/admin/orders');
   } catch (error) {
     console.error('Error changing order status:', error);
     res.status(500).send('Error changing order status');
   }
 };
+exports.updateReturnStatus = async (req, res) => {
+  try {
+    const orderId = req.params.id;
+    const { action } = req.body; // 'Approved' or 'Rejected'
+
+    if (!['Approved', 'Rejected'].includes(action)) {
+      return res.status(400).send('Invalid action');
+    }
+
+    const order = await Order.findById(orderId).populate('user').populate('returnedItems.product');
+
+    if (!order || !order.returnRequested || order.returnStatus !== 'Requested') {
+      return res.status(400).send('Invalid return request');
+    }
+
+    order.returnStatus = action;
+    order.returnRequested = false;
+    order.statusHistory.push({
+      status: `Return ${action}`,
+      updatedAt: new Date(),
+    });
+
+    // ✅ If approved, calculate refund and add to user's wallet
+    if (action === 'Approved') {
+      let refundAmount = 0;
+
+      for (const item of order.returnedItems) {
+        const matchedProduct = order.products.find(
+          p => p.product.toString() === item.product._id.toString()
+        );
+
+        const unitPrice = matchedProduct?.salesPrice || matchedProduct?.regularPrice || 0;
+        refundAmount += unitPrice * item.quantity;
+      }
+
+      // ✅ Update user wallet
+      const user = order.user;
+      user.wallet.balance += refundAmount;
+      user.wallet.transactions.push({
+        type: 'Credit',
+        amount: refundAmount,
+        reason: 'Refund for returned items',
+        orderId: order._id,
+      });
+
+      await user.save();
+    }
+
+    await order.save();
+    res.redirect('/admin/orders?sort=return-requested');
+
+  } catch (err) {
+    console.error('❌ Error updating return status:', err);
+    res.status(500).send('Server error');
+  }
+};
+
 
 // Cancel Order
 exports.cancelOrder = async (req, res) => {
@@ -648,7 +709,7 @@ exports.initiatePayment = async (req, res) => {
       /*payment_capture: 1*/
     };
 
-    console.log("📦 Razorpay Options:", options);
+   // console.log("📦 Razorpay Options:", options);
 
     const razorpayOrder = await razorpay.orders.create(options);
     
@@ -1002,15 +1063,16 @@ exports.editOfferForm = async (req, res) => {
 
     console.log('Offer fetched for editing:', offer); // Optional log
 
-    res.render('admin/edit-offer', { 
-      offer,
-      products,
-      categories,
-      offerTypes: ['product', 'category', 'referral'],
-      discountTypes: ['percentage', 'fixed'],
-      selectedProducts: offer.products || [],
-      selectedCategories: offer.categories || []
-    });
+   res.render('admin/edit-offer', { 
+  offer,
+  products,
+  categories,
+  offerTypes: ['product', 'category', 'referral'],
+  discountTypes: ['percentage', 'fixed'],
+  selectedProducts: (offer.products || []).map(p => p.toString()),
+  selectedCategories: (offer.categories || []).map(c => c.toString())
+});
+
   } catch (error) {
     console.error('Error loading edit offer form:', error);
     res.status(500).send('Error loading form');
@@ -1060,7 +1122,7 @@ exports.updateOffer = async (req, res) => {
     offer.discountValue = discountValue;
     offer.startDate = startDate;
     offer.endDate = endDate;
-    offer.isActive = isActive === 'on';
+   offer.isActive = req.body.hasOwnProperty('isActive');
 
     // Handle different offer types
     if (offerType === 'product') {
@@ -1244,44 +1306,73 @@ exports.deleteCoupon = async (req, res) => {
 //Report
 exports.renderSalesReportPage = async (req, res) => {
   try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = 10;
+    const skip = (page - 1) * limit;
+
     const today = new Date();
     const startOfDay = new Date(today.setHours(0, 0, 0, 0));
     const endOfDay = new Date(today.setHours(23, 59, 59, 999));
 
-   const orders = await Order.find({ createdAt: { $gte: startOfDay, $lte: endOfDay } }).populate('user', 'name');
+    const allOrders = await Order.find({
+      createdAt: { $gte: startOfDay, $lte: endOfDay }
+    }).populate('user', 'name');
 
-    const summary = calculateSummary(orders);
+    const totalOrders = allOrders.length;
+    const totalPages = Math.ceil(totalOrders / limit);
+    const paginatedOrders = allOrders.slice(skip, skip + limit);
+
+    const summary = calculateSummary(allOrders);
 
     res.render('admin/salesReport', {
-      orders,
+      orders: paginatedOrders,
       summary,
       startDate: startOfDay.toISOString().split('T')[0],
-      endDate: endOfDay.toISOString().split('T')[0]
+      endDate: endOfDay.toISOString().split('T')[0],
+      currentPage: page,
+      totalPages
     });
   } catch (err) {
-    console.error('Error loading sales report:', err);
+    console.error('Error loading sales report:', err.message);
     res.status(500).send('Server error');
   }
 };
 
 
+
 exports.filterSalesReport = async (req, res) => {
   try {
-    const { startDate, endDate } = req.body;
+    const page = parseInt(req.query.page) || 1;
+    const limit = 10;
+    const skip = (page - 1) * limit;
+
+    // Use req.body for POST or req.query for GET (pagination)
+    const startDate = req.body.startDate || req.query.startDate;
+    const endDate = req.body.endDate || req.query.endDate;
+
+    if (!startDate || !endDate) {
+      return res.status(400).send('Start and End Date are required');
+    }
 
     const start = new Date(startDate);
     const end = new Date(endDate);
     end.setHours(23, 59, 59, 999);
 
-   const orders = await Order.find({ createdAt: { $gte: start, $lte: end } }).populate('user', 'name');
+    const allOrders = await Order.find({ createdAt: { $gte: start, $lte: end } }).populate('user', 'name');
 
-    const summary = calculateSummary(orders);
+    const totalOrders = allOrders.length;
+    const totalPages = Math.ceil(totalOrders / limit);
+    const orders = allOrders.slice(skip, skip + limit); // client-side pagination
+
+    const summary = calculateSummary(allOrders);
 
     res.render('admin/salesReport', {
       orders,
       summary,
       startDate,
-      endDate
+      endDate,
+      currentPage: page,
+      totalPages
     });
   } catch (err) {
     console.error('Filter Error:', err);
@@ -1439,13 +1530,14 @@ exports.downloadSalesReportPDF = async (req, res) => {
 
     orders.forEach((order, i) => {
       const alt = i % 2 === 0;
-    const orderRow = [
+ const orderRow = [
   order.user?.name || 'N/A',
   moment(order.createdAt).format('YYYY-MM-DD'),
-  order.totalAmount.toFixed(2),
-  (order.discountAmount || 0).toFixed(2),
-  (order.couponDiscount || 0).toFixed(2),
+  order.totalAmount.toLocaleString('en-IN', { minimumFractionDigits: 2 }),
+  (order.discountAmount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 }),
+  (order.couponDiscount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 }),
 ];
+
 
 
       drawRow(y, orderRow, false, alt);
@@ -1468,9 +1560,8 @@ exports.downloadSalesReportPDF = async (req, res) => {
       .font('Helvetica')
       .fontSize(11)
       .text(`Total Orders: ${orders.length}`)
-      .text(`Total Sales Amount: ₹${totalAmount.toFixed(2)}`)
-      .text(`Total Discounts (incl. coupon): ₹${totalDiscount.toFixed(2)}`);
-
+.text(`Total Sales Amount: ₹${totalAmount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`)
+.text(`Total Discounts (incl. coupon): ₹${totalDiscount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`);
     doc.end();
   } catch (err) {
     console.error('PDF generation error:', err);

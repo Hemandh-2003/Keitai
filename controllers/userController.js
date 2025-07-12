@@ -244,7 +244,7 @@ exports.viewOrderDetails = async (req, res) => {
       return res.status(404).send('Selected address not found');
     }
 
-    console.log('Order Details:', order);
+   // console.log('Order Details:', order);
 
     res.render('user/orderDetails', { order, selectedAddress });
   } catch (err) {
@@ -255,27 +255,65 @@ exports.viewOrderDetails = async (req, res) => {
 exports.cancelOrder = async (req, res) => {
   try {
     const orderId = req.params.id;
-    const order = await Order.findById(orderId);
+   // console.log("📝 Cancel request received for order:", orderId);
+
+    const order = await Order.findById(orderId)
+      .populate('products.product')
+      .populate('user');
 
     if (!order) {
+     // console.log("❌ Order not found");
       return res.status(404).send('Order not found');
     }
 
-    // Check if the order is still in a 'Pending' status
-    if (order.status !== 'Pending') {
-      return res.status(400).send('Order cannot be canceled');
+    if (!['Pending', 'Placed'].includes(order.status)) {
+     // console.log("❌ Order cannot be cancelled at this stage:", order.status);
+      return res.status(400).send('Order cannot be cancelled at this stage');
     }
 
-    // Update order status to 'User Cancelled'
+    // Restock products
+    for (let item of order.products) {
+      const product = item.product;
+      if (product) {
+        product.quantity += item.quantity;
+        await product.save();
+      }
+    }
+
+    // Update order status
     order.status = 'User Cancelled';
+    order.statusHistory.push({ status: 'User Cancelled', updatedAt: new Date() });
     await order.save();
 
-    res.redirect('/user/orders'); // Redirect to the orders page after cancellation
+    // Refund
+    const user = order.user;
+
+    if (!user.wallet) {
+      user.wallet = { balance: 0, transactions: [] };
+    }
+
+    const refundAmount = order.totalAmount;
+    console.log("💰 Refunding:", refundAmount);
+
+    user.wallet.balance += refundAmount;
+    user.wallet.transactions.push({
+      type: 'Credit',
+      amount: refundAmount,
+      reason: 'Order Cancelled by User',
+      orderId: order._id
+    });
+
+    await user.save();
+    console.log("✅ Wallet updated successfully");
+
+    res.redirect('/user/orders');
   } catch (err) {
-    console.error('Error canceling order:', err);
+    console.error('❌ Error canceling order:', err.message);
     res.status(500).send('Server error');
   }
 };
+
+
 // Get Products
 exports.getProducts = async (req, res) => {
   try {
@@ -412,136 +450,148 @@ exports.searchProducts = async (req, res) => {
 // Combined checkout method
 exports.checkout = async (req, res) => {
   try {
-    if (!req.session.user) {
-      return res.redirect('/login');
-    }
+    if (!req.session.user) return res.redirect('/login');
 
-    const { productIds, quantities, productId, quantity, productUrl } = req.body;
+    const {
+      productIds,
+      quantities,
+      productId,
+      quantity,
+      productUrl
+    } = req.body;
+
     const user = await User.findById(req.session.user._id);
-    let cart = [];
-    let totalAmount = 0;
-    let offerPrices = [];
+    const now = new Date();
 
-    // 🔥 Fetch active coupons
-  const now = new Date();
-const coupons = await Coupon.find({
-  isActive: true,
-  startDate: { $lte: now },
-  endDate: { $gte: now }
-}).sort({ createdAt: -1 });
+    const coupons = await Coupon.find({
+      isActive: true,
+      startDate: { $lte: now },
+      endDate: { $gte: now }
+    }).sort({ createdAt: -1 });
 
-    //multi items handle
-  if (productIds && quantities && Array.isArray(productIds) && Array.isArray(quantities)) {
-  for (let i = 0; i < productIds.length; i++) {
-    const product = await Product.findById(productIds[i]);
-    if (product) {
-      const qty = parseInt(quantities[i]);
-      const offerDetails = await product.getBestOfferPrice();
-      const price = offerDetails.price;
+    let sessionCheckout = {
+      productIds: [],
+      quantities: [],
+      offerPrices: [],
+      totalAmount: 0,
+      isFromCart: false
+    };
 
-      offerPrices.push(price); // 👈 Correct
+    // ✅ Cart Checkout
+    if (
+      productIds &&
+      quantities &&
+      Array.isArray(productIds) &&
+      Array.isArray(quantities)
+    ) {
+      let total = 0;
+      let offers = [];
 
-      cart.push({
-        product: {
-          _id: product._id,
-          name: product.name,
-          salesPrice: product.salesPrice,
-          regularPrice: product.regularPrice,
-          images: product.images,
-          offerDetails
-        },
-        quantity: qty
-      });
+      for (let i = 0; i < productIds.length; i++) {
+        const product = await Product.findById(productIds[i]);
+        if (!product || product.isBlocked || product.isDeleted) continue;
 
-      totalAmount += qty * price;
+        const qty = parseInt(quantities[i]);
+
+        if (qty > product.quantity) {
+          return res.status(400).send(`Only ${product.quantity} units available for ${product.name}`);
+        }
+
+        const offer = await product.getBestOfferPrice();
+        const price = offer.price;
+
+        total += qty * price;
+        offers.push(price);
+
+        sessionCheckout.productIds.push(product._id.toString());
+        sessionCheckout.quantities.push(qty);
+      }
+
+      sessionCheckout.totalAmount = total;
+      sessionCheckout.offerPrices = offers;
+      sessionCheckout.isFromCart = true;
+
+    // ✅ Buy Now Checkout
+    } else if (productId && quantity) {
+      const product = await Product.findById(productId);
+      if (!product || product.isBlocked || product.isDeleted) {
+        return res.status(404).send('Product not available');
+      }
+
+      const qty = parseInt(quantity);
+
+      if (qty > product.quantity) {
+        return res.status(400).send(`Only ${product.quantity} unit(s) available for ${product.name}`);
+      }
+
+      const offer = await product.getBestOfferPrice();
+      const price = offer.price;
+
+      sessionCheckout = {
+        productIds: [product._id.toString()],
+        quantities: [qty],
+        offerPrices: [price],
+        totalAmount: qty * price,
+        isFromCart: false
+      };
+    } else {
+      return res.redirect('/cart');
     }
-  }
 
-  // 💾 Save to session
-  req.session.checkout = {
-    productIds,
-    quantities,
-    offerPrices,
-    totalAmount,
-    isFromCart: true
-  };
-} else if (productId && quantity) {
-  const product = await Product.findById(productId);
-  if (!product) return res.status(404).send('Product not found');
+    // 💾 Save validated cart to session
+    req.session.checkout = sessionCheckout;
 
-  const offerDetails = await product.getBestOfferPrice();
-  const price = offerDetails.price;
-  const qty = parseInt(quantity);
+    // ✅ Redirect to GET route to render checkout
+    return res.redirect('/user/checkout');
 
-  cart = [{
-    product: {
-      _id: product._id,
-      name: product.name,
-      salesPrice: product.salesPrice,
-      regularPrice: product.regularPrice,
-      images: product.images,
-      offerDetails
-    },
-    quantity: qty
-  }];
-
-  totalAmount = qty * price;
-
-  req.session.checkout = {
-    productIds: [productId],
-    quantities: [quantity],
-    offerPrices: [price],
-    totalAmount,
-    isFromCart: false
-  };
-} else {
-  return res.redirect('/cart');
-}
-
-
-    // ✅ Render checkout with accurate total
-    res.render('user/checkout', {
-      user: req.session.user,
-      cart,
-      addresses: user.addresses || [],
-      totalAmount,
-      session: req.session,
-      productUrl: productUrl || '',
-      coupons,
-      razorpayKeyId: process.env.RAZORPAY_KEY_ID 
-    });
   } catch (err) {
-    console.error('Checkout Error:', err);
+    console.error('🚨 Checkout POST error:', err);
     res.status(500).send('Internal Server Error');
   }
 };
 
-
 exports.getCheckout = async (req, res) => {
   try {
-    const user = req.session.user;
-    const addresses = await Address.find({ user: user._id });
-    const cart = await getUserCart(user._id);
-    const totalAmount = calculateTotal(cart);
+    if (!req.session.user) return res.redirect('/login');
 
-const now = new Date();
-const coupons = await Coupon.find({
-  isActive: true,
-  startDate: { $lte: now },
-  endDate: { $gte: now }
-}).sort({ createdAt: -1 });
+    const checkout = req.session.checkout;
+    if (!checkout || !checkout.productIds || checkout.productIds.length === 0) {
+      return res.redirect('/cart');
+    }
 
+    const user = await User.findById(req.session.user._id);
+    const { productIds, quantities, offerPrices, totalAmount } = checkout;
+
+    const cart = [];
+    for (let i = 0; i < productIds.length; i++) {
+      const product = await Product.findById(productIds[i]);
+      const offerDetails = await product.getBestOfferPrice();
+
+      cart.push({
+        product,
+        quantity: quantities[i],
+        offerDetails
+      });
+    }
+
+    const now = new Date();
+    const coupons = await Coupon.find({
+      isActive: true,
+      startDate: { $lte: now },
+      endDate: { $gte: now }
+    }).sort({ createdAt: -1 });
 
     res.render('user/checkout', {
       user,
-      addresses,
       cart,
+      addresses: user.addresses || [],
       totalAmount,
+      coupons,
       session: req.session,
-      coupons // ✅ Pass coupons here
+      razorpayKeyId: process.env.RAZORPAY_KEY_ID
     });
   } catch (error) {
-    console.error('Checkout page error:', error);
+    console.error('🚨 Checkout GET error:', error);
     res.status(500).render('user/error', { message: 'Failed to load checkout' });
   }
 };
@@ -651,7 +701,6 @@ exports.placeOrder = async (req, res) => {
         product: item.product._id,
         quantity: item.quantity
       })),
-      
       totalAmount,
       paymentMethod,
       deliveryCharge,
@@ -660,6 +709,16 @@ exports.placeOrder = async (req, res) => {
       discountAmount,
       couponDiscount
     });
+    //qty update
+    for(let i=0;i<products.length;i++){
+      const quantityOrder= parseInt(quantities[i],10);
+
+      await Product.findByIdAndUpdate(
+        products[i]._id,
+        {$inc:{quantity: -quantityOrder}},
+        {new:true}
+      );
+    }
     await Cart.updateOne(
   { user: req.session.user._id },
   { $pull: { items: { product: { $in: productIds } } } }
@@ -721,7 +780,9 @@ exports.confirmPayment = async (req, res) => {
     if (products.length !== productIds.length) {
       return res.status(404).send('One or more products not found');
     }
-
+    if (req.session.orderId) {
+  return res.redirect('/user/confirm-payment'); // Order already created
+}
     let totalAmount = 0;
     const orderItems = [];
 
@@ -1154,32 +1215,48 @@ exports.returnProduct = async (req, res) => {
 };
 exports.returnOrder = async (req, res) => {
   try {
-    if (!req.session.user) {
+    const sessionUser = req.session.user;
+
+    if (!sessionUser) {
+      console.log('User not logged in');
       return res.redirect('/login');
     }
 
     const orderId = req.params.id;
+    console.log('Order ID:', orderId);
 
     if (!mongoose.Types.ObjectId.isValid(orderId)) {
+      console.log('Invalid Order ID');
       return res.status(400).send('Invalid Order ID');
     }
 
     const order = await Order.findById(orderId);
 
-    if (!order || order.user.toString() !== req.session.user._id.toString()) {
+    if (!order) {
+      console.log('Order not found');
       return res.status(404).send('Order not found');
     }
 
+    if (!order.user || order.user.toString() !== sessionUser._id.toString()) {
+      console.log('Unauthorized access');
+      return res.status(403).send('Unauthorized access');
+    }
+
     if (order.status !== 'Delivered') {
+      console.log('Order status is not Delivered');
       return res.status(400).send('Only delivered orders can be returned');
     }
 
     order.status = 'Return Requested';
+    order.returnRequested = true;
+
     await order.save();
 
-    res.redirect('/user/orders');
+    console.log('Order marked as return requested');
+    return res.redirect('/user/orders');
+
   } catch (err) {
-    console.error('Error returning order:', err);
+    console.error('❌ Error returning order:', err.stack);
     res.status(500).send('Internal Server Error');
   }
 };
@@ -1222,10 +1299,20 @@ exports.cancelSingleItem = async (req, res) => {
 //wallet
 exports.renderWalletPage = async (req, res) => {
   try {
+    if (!req.session.user || !req.session.user._id) {
+      return res.redirect('/login');
+    }
+console.log("Session User:", req.session.user);
+
     const user = await User.findById(req.session.user._id);
 
     if (!user) {
       return res.status(404).send('User not found');
+    }
+
+    if (!user.wallet) {
+      user.wallet = { balance: 0, transactions: [] };
+      await user.save();
     }
 
     res.render('user/wallet', { user });
