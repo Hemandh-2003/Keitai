@@ -16,7 +16,7 @@ const cartRoutes = require('./routes/cartRoutes');
 const { createProduct } = require('./controllers/adminController');
 const checkBlockedUser = require('./middleware/checkBlocked');
 const paymentRoutes = require('./routes/paymentRoutes');
-
+const methodOverride = require('method-override');
 // Load environment variables
 dotenv.config();
 
@@ -77,7 +77,7 @@ app.set('views', path.join(__dirname, 'views'));
 // Static files middleware (for CSS, JS, images, etc.)
 app.use(express.static(path.join(__dirname, 'public')));
 app.use('/payment', paymentRoutes);
-
+app.use(methodOverride('_method'));
 // Ensure the 'public/uploads' directory exists
 const uploadDir = './public/uploads';
 if (!fs.existsSync(uploadDir)) {

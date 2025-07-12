@@ -22,12 +22,22 @@ exports.addToCart = async (req, res) => {
 
     if (existingItem) {
       const newTotalQuantity = existingItem.quantity + requestedQuantity;
-      if (newTotalQuantity > maxQuantity) {
-        return res.status(400).json({
-          error: `You can only have up to ${maxQuantity} units of this product in your cart.`,
-          currentQuantity: existingItem.quantity,
-        });
-      }
+
+if (newTotalQuantity > maxQuantity) {
+  return res.status(400).json({
+    error: `You can only have up to ${maxQuantity} units of this product in your cart.`,
+    currentQuantity: existingItem.quantity,
+  });
+}
+
+if (newTotalQuantity > product.quantity) {
+  return res.status(400).json({
+    error: `Only ${product.quantity - existingItem.quantity} more unit(s) available in stock.`,
+    currentQuantity: existingItem.quantity,
+    stock: product.quantity
+  });
+}
+
       existingItem.quantity = newTotalQuantity;
     } else {
       if (requestedQuantity > maxQuantity) {

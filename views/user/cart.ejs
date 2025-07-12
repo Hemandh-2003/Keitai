@@ -48,8 +48,15 @@
     <% if (cart && cart.items.length> 0) { %>
       <!-- Subtotal Section -->
       <div class="subtotal">
-        <span>Subtotal: ₹<%= cart.totalPrice %></span>
-        <a href="#">Check here for EMI details and plans</a>
+        <% let subtotal=0; cart.items.forEach(item=> {
+          const original = item.product.regularPrice;
+          const final = item.product.offerPrice || item.product.salesPrice || original;
+          subtotal += final * item.quantity;
+          });
+          %>
+          <span>Subtotal: ₹<%= subtotal %></span>
+
+          <a href="#">Check here for EMI details and plans</a>
       </div>
 
       <!-- Proceed to Checkout -->

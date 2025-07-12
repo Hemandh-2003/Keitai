@@ -108,6 +108,8 @@ router.get('/admin/orders', async (req, res) => {
     res.status(500).send('Internal Server Error');
   }
 });
+router.post('/orders/:id/return-status', adminController.updateReturnStatus);
+
 // Offer Management Routes
 router.get('/offers', isAdmin, adminController.listOffers);
 router.get('/offers/add', isAdmin, adminController.addOfferForm);
@@ -125,6 +127,7 @@ router.post('/coupons/delete/:id', adminController.deleteCoupon);
 // Sales Report Routes
 router.get('/sales-report', adminController.renderSalesReportPage);
 router.post('/sales-report/filter', adminController.filterSalesReport);
+router.get('/sales-report/filter', adminController.filterSalesReport); // 👈 Add this
 router.post('/sales-report/download/excel', adminController.downloadSalesReportExcel);
 router.post('/sales-report/download/pdf', adminController.downloadSalesReportPDF);
 

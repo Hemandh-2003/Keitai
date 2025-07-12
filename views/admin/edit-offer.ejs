@@ -59,7 +59,7 @@
     <% categories.forEach(category => { %>
       <label>
         <input type="checkbox" name="categories" value="<%= category._id %>" 
-          <%= selectedCategories.includes(category._id) ? 'checked' : '' %> >
+  <%= selectedCategories.includes(category._id.toString()) ? 'checked' : '' %>>
         <%= category.name %>
       </label><br>
     <% }) %>
