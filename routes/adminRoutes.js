@@ -131,4 +131,7 @@ router.get('/sales-report/filter', adminController.filterSalesReport); // 👈 A
 router.post('/sales-report/download/excel', adminController.downloadSalesReportExcel);
 router.post('/sales-report/download/pdf', adminController.downloadSalesReportPDF);
 
+//dashboard
+router.get('/api/dashboard-stats', adminController.getDashboardStats);
+
 module.exports = router;
