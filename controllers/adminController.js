@@ -355,32 +355,34 @@ exports.addProduct = async (req, res) => {
   res.render('admin/products', { categories }); // Ensure addProduct.ejs matches this route
 };
 
-// Create a new product
+// Allowed image MIME types
+const allowedMimeTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/jpg'];
+
 exports.createProduct = async (req, res) => {
   try {
-    // Debugging: Log the incoming request body and files
-   /* console.log('Request Body:', req.body);
-    console.log('Uploaded Images:', req.files.images);
-    console.log('Uploaded Highlights:', req.files.highlights);*/
+    const images = req.files.images ? req.files.images.map(file => file.filename) : [];
+    const highlights = req.files.highlights ? req.files.highlights.map(file => file.filename) : [];
 
-    // Extract and process uploaded files
-    const images = req.files.images ? req.files.images.map((file) => file.filename) : [];
-    const highlights = req.files.highlights ? req.files.highlights.map((file) => file.filename) : [];
+    //Validate file MIME types
+    const allFiles = [
+      ...(req.files.images || []),
+      ...(req.files.highlights || []),
+    ];
 
-    // Debugging: Log the processed filenames
-   /* console.log('Processed Images:', images);
-    console.log('Processed Highlights:', highlights);*/
-
-    // Validate the number of images and highlights
-    if (images.length > 4) {
-      throw new Error('You can upload up to 4 product images only.');
-    }
-    if (highlights.length > 4) {
-      throw new Error('You can upload up to 4 product highlights only.');
+    for (const file of allFiles) {
+      if (!allowedMimeTypes.includes(file.mimetype)) {
+        // Delete the uploaded invalid file
+        fs.unlinkSync(path.join(__dirname, '..', 'public', 'uploads', file.filename));
+        throw new Error(`Invalid file type: ${file.originalname}`);
+      }
     }
 
-    // Debugging: Log product data before saving
-   /* console.log('Product Data:', {
+    // Validate file count
+    if (images.length > 4) throw new Error('Only 4 product images allowed.');
+    if (highlights.length > 4) throw new Error('Only 4 product highlights allowed.');
+
+    // ✅ Save product
+    await new Product({
       name: req.body.name,
       category: req.body.category,
       brand: req.body.brand,
@@ -389,49 +391,17 @@ exports.createProduct = async (req, res) => {
       quantity: req.body.quantity,
       productOffer: req.body.productOffer || '',
       isBlocked: req.body.isBlocked || false,
-      images: images, // Array of image filenames
-      highlights: highlights, // Array of highlight filenames
-      description: req.body.description || '',
-    });*/
-
-    // Save the product in the database
-    const product = await new Product({
-      name: req.body.name,
-      category: req.body.category,
-      brand: req.body.brand,
-      regularPrice: req.body.regularPrice,
-      salesPrice: req.body.salesPrice || null,
-      quantity: req.body.quantity,
-      productOffer: req.body.productOffer || '',
-      isBlocked: req.body.isBlocked || false,
-      images: images, // Array of image filenames
-      highlights: highlights, // Array of highlight filenames
+      images,
+      highlights,
       description: req.body.description || '',
     }).save();
 
-    // Debugging: Log the saved product
-    //console.log('Product Saved:', product);
-
     res.redirect('/admin/products');
   } catch (error) {
-    console.error('Error:', error);
-    res.status(400).send('Error creating product: ' + error.message);
+    console.error('Product creation error:', error.message);
+    res.status(400).send('Error: ' + error.message);
   }
 };
-
-
-/*router.get('/products/:id', async (req, res) => {
-  try {
-      const product = await Product.findById(req.params.id).populate('category');
-      if (!product) {
-          return res.status(404).send('Product not found');
-      }
-      res.render('product-details', { product });
-  } catch (error) {
-      console.error(error);
-      res.status(500).send('Error loading product details');
-  }
-});*/
 
 
 // Render edit product form
@@ -1095,7 +1065,7 @@ exports.addOfferForm = async (req, res) => {
 
 // Create new offer
 exports.createOffer = async (req, res) => {
-  console.log('➡️ createOffer body:', req.body); // Inspect posted values
+  console.log('➡️ createOffer body:', req.body);
 
   try {
     let {
@@ -1104,20 +1074,22 @@ exports.createOffer = async (req, res) => {
       referralCode, referrerBonus, refereeBonus, minPurchaseAmount
     } = req.body;
 
-    // Normalize arrays
-    const selectedProducts = Array.isArray(products)
-      ? products : products ? [products] : [];
+    const existingOffer = await Offer.findOne({ name: name.trim() });
+    if (existingOffer) {
+      // Duplicate found
+      req.flash('error_msg', 'Offer with this name already exists');
+      return res.redirect('/admin/offers/add');
+    }
 
-    const selectedCategories = Array.isArray(categories)
-      ? categories : categories ? [categories] : [];
-    discountValue=parseInt(discountValue)
-    console.log("disocunt value:",discountValue)
+    const selectedProducts = Array.isArray(products) ? products : products ? [products] : [];
+    const selectedCategories = Array.isArray(categories) ? categories : categories ? [categories] : [];
+    discountValue = parseInt(discountValue);
+
     const newOffer = new Offer({
       name, description, offerType, discountType, discountValue,
       startDate, endDate, isActive: true
     });
 
-    // Handle offer types
     if (offerType === 'product') {
       newOffer.products = selectedProducts;
     } else if (offerType === 'category') {
@@ -1131,7 +1103,6 @@ exports.createOffer = async (req, res) => {
 
     await newOffer.save();
 
-    // Attach offer to categories/products
     if (offerType === 'product' && selectedProducts.length) {
       await Product.updateMany({ _id: { $in: selectedProducts } }, { $push: { offers: newOffer._id } });
     } else if (offerType === 'category' && selectedCategories.length) {
@@ -1344,30 +1315,31 @@ exports.getCoupons = async (req, res) => {
 // Create coupon
 exports.createCoupon = async (req, res) => {
   try {
-    const {
-      code,
-      discountType,
-      discount,
-      startDate,
-      endDate
-    } = req.body;
+    const { code, discountType, discount, startDate, endDate } = req.body;
 
-    console.log('Create request:', req.body);
+    const trimmedCode = code.trim().toUpperCase();
+    const coupons = await Coupon.find(); // Fetch existing coupons for rendering
 
-    const existingCoupon = await Coupon.findOne({ code: code.trim().toUpperCase() });
-
+    // Check if coupon already exists
+    const existingCoupon = await Coupon.findOne({ code: trimmedCode });
     if (existingCoupon) {
-      req.flash('error', 'Coupon code already exists.');
-      return res.redirect('/admin/coupons');
+      return res.render('admin/coupons', {
+        coupons,
+        messages: { error: 'Coupon code already exists.' }
+      });
     }
 
+    // Check if dates are valid
     if (new Date(startDate) > new Date(endDate)) {
-      req.flash('error', 'Start date must be before end date.');
-      return res.redirect('/admin/coupons');
+      return res.render('admin/coupons', {
+        coupons,
+        messages: { error: 'Start date must be before end date.' }
+      });
     }
 
+    // Create and save new coupon
     const newCoupon = new Coupon({
-      code: code.trim().toUpperCase(),
+      code: trimmedCode,
       discountType,
       discount: parseFloat(discount),
       startDate: new Date(startDate),
@@ -1375,16 +1347,23 @@ exports.createCoupon = async (req, res) => {
     });
 
     await newCoupon.save();
-    console.log('New coupon saved:', newCoupon);
 
-    req.flash('success', 'Coupon added successfully!');
-    res.redirect('/admin/coupons');
+    const updatedCoupons = await Coupon.find(); // Re-fetch after save
+    return res.render('admin/coupons', {
+      coupons: updatedCoupons,
+      messages: { success: 'Coupon added successfully!' }
+    });
+
   } catch (err) {
     console.error('Error creating coupon:', err.message);
-    req.flash('error', 'Failed to create coupon.');
-    res.redirect('/admin/coupons');
+    const coupons = await Coupon.find();
+    return res.render('admin/coupons', {
+      coupons,
+      messages: { error: 'Failed to create coupon.' }
+    });
   }
 };
+
 
 
 // Delete coupon

@@ -120,18 +120,18 @@ router.post('/offers/toggle-status/:id', isAdmin, adminController.toggleOfferSta
 router.get('/offers/delete/:id', isAdmin, adminController.deleteOffer);
 
 //Coupons management Routes
-router.get('/coupons', adminController.getCoupons);
-router.post('/coupons/create', adminController.createCoupon);
-router.post('/coupons/delete/:id', adminController.deleteCoupon);
+router.get('/coupons', isAdmin,adminController.getCoupons);
+router.post('/coupons/create', isAdmin,adminController.createCoupon);
+router.post('/coupons/delete/:id', isAdmin,adminController.deleteCoupon);
 
 // Sales Report Routes
-router.get('/sales-report', adminController.renderSalesReportPage);
-router.post('/sales-report/filter', adminController.filterSalesReport);
-router.get('/sales-report/filter', adminController.filterSalesReport); // 👈 Add this
-router.post('/sales-report/download/excel', adminController.downloadSalesReportExcel);
-router.post('/sales-report/download/pdf', adminController.downloadSalesReportPDF);
+router.get('/sales-report', isAdmin,adminController.renderSalesReportPage);
+router.post('/sales-report/filter', isAdmin,adminController.filterSalesReport);
+router.get('/sales-report/filter', isAdmin,adminController.filterSalesReport); // 👈 Add this
+router.post('/sales-report/download/excel', isAdmin,adminController.downloadSalesReportExcel);
+router.post('/sales-report/download/pdf', isAdmin,adminController.downloadSalesReportPDF);
 
 //dashboard
-router.get('/api/dashboard-stats', adminController.getDashboardStats);
+router.get('/api/dashboard-stats', isAdmin,adminController.getDashboardStats);
 
 module.exports = router;
