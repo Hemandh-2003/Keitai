@@ -13,7 +13,105 @@ const Razorpay = require('razorpay');
 exports.adminDashboard = (req, res) => {
   res.render('admin/dashboard');
 };
+exports.getDashboardStats = async (req, res) => {
+  try {
+    const { range, startDate, endDate } = req.query;
 
+    let match = { status: { $ne: 'Cancelled' } };
+
+    // Date filter
+    if (range === 'daily') {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const tomorrow = new Date(today);
+      tomorrow.setDate(today.getDate() + 1);
+      match.createdAt = { $gte: today, $lt: tomorrow };
+    } else if (range === 'monthly') {
+      const firstDay = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+      const lastDay = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0);
+      match.createdAt = { $gte: firstDay, $lt: lastDay };
+    } else if (range === 'yearly') {
+      const year = new Date().getFullYear();
+      const start = new Date(year, 0, 1);
+      const end = new Date(year + 1, 0, 1);
+      match.createdAt = { $gte: start, $lt: end };
+    } else if (startDate && endDate) {
+      match.createdAt = { $gte: new Date(startDate), $lt: new Date(endDate) };
+    }
+
+    // Aggregation for total sales and orders
+    const orders = await Order.find(match).populate('products.product');
+    const sales = orders.reduce((sum, order) => sum + order.totalAmount, 0);
+    const orderCount = orders.length;
+
+    // Top products by quantity sold
+    const topProducts = await Order.aggregate([
+      { $match: match },
+      { $unwind: '$products' },
+      {
+        $group: {
+          _id: '$products.product',
+          totalSold: { $sum: '$products.quantity' }
+        }
+      },
+      {
+        $lookup: {
+          from: 'products',
+          localField: '_id',
+          foreignField: '_id',
+          as: 'product'
+        }
+      },
+      { $unwind: '$product' },
+      {
+        $project: {
+          name: '$product.name',
+          totalSold: 1
+        }
+      },
+      { $sort: { totalSold: -1 } },
+      { $limit: 10 }
+    ]);
+
+    // Top categories by number of products
+    const topCategories = await Product.aggregate([
+      {
+        $group: {
+          _id: '$category',
+          count: { $sum: 1 }
+        }
+      },
+      {
+        $lookup: {
+          from: 'categories',
+          localField: '_id',
+          foreignField: '_id',
+          as: 'category'
+        }
+      },
+      { $unwind: '$category' },
+      {
+        $project: {
+          name: '$category.name',
+          count: 1
+        }
+      },
+      { $sort: { count: -1 } },
+      { $limit: 5 }
+    ]);
+
+    res.json({
+      sales,
+      orderCount,
+      topProducts,
+      topCategories,
+      message: 'Dashboard stats fetched successfully'
+    });
+  } catch (err) {
+    console.error('Dashboard stats error:', err);
+    res.status(500).json({ error: 'Server error' });
+  }
+};
 // User management
 exports.listUsers = async (req, res) => {
   try {
