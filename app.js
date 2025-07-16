@@ -86,34 +86,27 @@ if (!fs.existsSync(uploadDir)) {
 
 // Multer setup for file uploads
 const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, path.join(__dirname, './public/uploads'));
+  destination: (req, file, cb) => {
+    console.log('Uploading File:', file.originalname);
+    cb(null, path.join(__dirname, 'public/uploads'));
   },
-  filename: function (req, file, cb) {
-    const uniqueName = `${Date.now()}-${path.basename(file.originalname)}`;
+  filename: (req, file, cb) => {
+    const uniqueName = `${Date.now()}-${file.originalname}`;
+    console.log('Generated Filename:', uniqueName);
     cb(null, uniqueName);
-  }
+  },
 });
 
+// Multer config with file type check
 const upload = multer({
-  storage: multer.diskStorage({
-    destination: (req, file, cb) => {
-      console.log('Uploading File:', file.originalname); // Log the file name being uploaded
-      cb(null, './public/uploads');
-    },
-    filename: (req, file, cb) => {
-      const uniqueName = `${Date.now()}-${file.originalname}`;
-      console.log('Generated Filename:', uniqueName); // Log the generated filename
-      cb(null, uniqueName);
-    },
-  }),
-  limits: { fileSize: 10 * 1024 * 1024 }, // Max file size: 10 MB
+  storage,
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10 MB
   fileFilter: (req, file, cb) => {
-    const allowedTypes = ['image/jpeg', 'image/png', 'image/gif'];
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/jpg'];
     if (!allowedTypes.includes(file.mimetype)) {
-      return cb(new Error('Only image files are allowed'), false);
+      console.log('Rejected File Type:', file.mimetype);
+      return cb(new Error('Only JPG, PNG, or WEBP images are allowed'), false);
     }
-    console.log('File Type:', file.mimetype); // Log the file type being uploaded
     cb(null, true);
   },
 });
@@ -125,8 +118,17 @@ app.post(
     { name: 'images', maxCount: 8 },
     { name: 'highlights', maxCount: 8 },
   ]),
+  (err, req, res, next) => {
+    if (err instanceof multer.MulterError || err.message.includes('Only JPG')) {
+      const message = encodeURIComponent('Only JPG, PNG, or WEBP images are allowed.');
+      return res.redirect(`/admin/products?error=${message}`);
+    }
+    next();
+  },
   createProduct
 );
+
+
 
 // Fetch categories from database and pass to all pages
 const fetchCategories = async () => {
