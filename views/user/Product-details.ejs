@@ -168,8 +168,9 @@
                     <button type="button" class="btn-quantity" id="decrease-qty" <%=product.quantity===0 ? 'disabled'
                         : '' %>>-</button>
                     <input type="number" name="quantity" class="quantity-input" value="1" min="1"
-                        max="<%= product.quantity %>" id="quantity" oninput="validateQuantity(this)"
-                        <%=product.quantity===0 ? 'disabled' : '' %>>
+                max="<%= Math.min(5, product.quantity) %>" id="quantity" oninput="validateQuantity(this)"
+                <%= product.quantity === 0 ? 'disabled' : '' %>>
+
                     <button type="button" class="btn-quantity" id="increase-qty" <%=product.quantity===0 ? 'disabled'
                         : '' %>>+</button>
                 </div>
@@ -447,27 +448,51 @@ document.addEventListener("DOMContentLoaded", () => {
     const min = parseInt(quantityInput.min) || 1;
     const max = parseInt(quantityInput.max) || 99;
 
-    decreaseBtn.addEventListener("click", () => {
-        let qty = parseInt(quantityInput.value);
-        if (qty > min) {
-            quantityInput.value = qty - 1;
-        }
-    });
+   decreaseBtn.addEventListener("click", () => {
+    let qty = parseInt(quantityInput.value);
+
+    if (qty > min) {
+        quantityInput.value = qty - 1;
+        increaseBtn.disabled = false;
+    }
+
+    if (qty - 1 <= min) {
+        decreaseBtn.disabled = true;
+    }
+});
+
 
     increaseBtn.addEventListener("click", () => {
-        let qty = parseInt(quantityInput.value);
-        if (qty < max) {
-            quantityInput.value = qty + 1;
-        }
-    });
+    let qty = parseInt(quantityInput.value);
 
-    quantityInput.addEventListener("input", () => {
-        let qty = parseInt(quantityInput.value);
-        if (isNaN(qty) || qty < min) quantityInput.value = min;
-        if (qty > max) quantityInput.value = max;
-    });
+    if (qty < max && qty < 5) {
+        quantityInput.value = qty + 1;
+        decreaseBtn.disabled = false;
+
+        if (qty + 1 >= 5) {
+            increaseBtn.disabled = true;
+            Swal.fire({
+                icon: "warning",
+                title: "Limit Reached",
+                text: "You can only purchase up to 5 units of this product."
+            });
+        }
+    }
 });
+
+
+});
+document.getElementById("quantity").addEventListener("keypress", function (e) {
+    const charCode = e.which ? e.which : e.keyCode;
+    const currentValue = parseInt(this.value + e.key);
+
+    if (currentValue > 5) {
+        e.preventDefault();
+    }
+});
+
 </script>
+
 
 </body>
 

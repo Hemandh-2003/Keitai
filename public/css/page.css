@@ -225,7 +225,15 @@ main {
   .wishlist-icon:hover {
     color: rgb(0, 0, 0); /* Change color when hovered */
   }
-  
+  .wishlist-icon i {
+  color: gray;
+  transition: color 0.3s ease;
+}
+
+.wishlist-icon.active i {
+  color: red;
+}
+
   .blocked-product {
     opacity: 0.6; /* Makes the card appear grayed out */
     pointer-events: none; /* Disables interaction with the card */
