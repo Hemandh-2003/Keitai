@@ -1321,3 +1321,18 @@ console.log("Session User:", req.session.user);
     res.status(500).send('Internal Server Error');
   }
 };
+
+//info
+exports.getAboutUsPage = (req, res) => {
+  res.render('user/aboutus');
+};
+exports.getServicesPage = (req, res) => {
+  res.render('user/service');
+};
+exports.getSupportPage = (req, res) => {
+  res.render('user/support');
+};
+
+exports.getContactPage = (req, res) => {
+  res.render('user/contact');
+};

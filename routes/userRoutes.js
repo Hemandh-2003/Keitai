@@ -60,7 +60,11 @@ router.post('/apply-coupon', ...protect, couponController.applyCoupon);
 router.post('/remove-coupon', ...protect, couponController.removeCoupon);
 
 //wallet
-router.get('/wallet', userController.renderWalletPage);
-//payment
+router.get('/wallet', ...protect,userController.renderWalletPage);
 
+// About Us Route
+router.get('/aboutus', userController.getAboutUsPage);
+router.get('/services', userController.getServicesPage);
+router.get('/support', userController.getSupportPage);
+router.get('/contact', userController.getContactPage);
 module.exports = router;

@@ -1,0 +1,98 @@
+/* General Styling */
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background-color: #fff;
+  color: #000;
+}
+
+/* Page Titles */
+h2 {
+  color: #000;
+  font-weight: 600;
+  border-bottom: 2px solid #000;
+  padding-bottom: 10px;
+  margin-bottom: 30px;
+}
+
+/* Subtitle Paragraph */
+p.text-muted {
+  color: #555;
+  font-size: 1rem;
+  max-width: 700px;
+  margin: 0 auto 40px auto;
+  text-align: center;
+}
+
+/* Accordion */
+.accordion-button {
+  background-color: #fff;
+  color: #000;
+  border: 1px solid #000;
+  font-weight: 500;
+}
+
+.accordion-button:not(.collapsed) {
+  background-color: #000;
+  color: #fff;
+}
+
+.accordion-button:focus {
+  box-shadow: none;
+}
+
+.accordion-body {
+  background-color: #f9f9f9;
+  color: #000;
+  border-left: 1px solid #000;
+  border-right: 1px solid #000;
+  border-bottom: 1px solid #000;
+}
+
+/* Form Styling */
+form .form-label {
+  font-weight: 500;
+  color: #000;
+}
+
+form .form-control {
+  border: 1px solid #000;
+  border-radius: 0;
+  background-color: #fff;
+  color: #000;
+}
+
+form .form-control:focus {
+  border-color: #000;
+  box-shadow: none;
+}
+
+form textarea {
+  resize: vertical;
+}
+
+/* Submit Button */
+button[type="submit"] {
+  background-color: #000;
+  color: #fff;
+  border: none;
+  padding: 0.6rem 2rem;
+  font-size: 1rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05rem;
+  transition: background-color 0.3s ease;
+}
+
+button[type="submit"]:hover {
+  background-color: #222;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  h2 {
+    font-size: 1.6rem;
+  }
+
+  p.text-muted {
+    font-size: 0.95rem;
+  }
+}
