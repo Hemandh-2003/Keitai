@@ -426,55 +426,88 @@ exports.editProduct = async (req, res) => {
 exports.updateProduct = async (req, res) => {
   try {
     const product = await Product.findById(req.params.id);
-    if (!product) {
-      return res.status(404).send('Product not found');
-    }
+    if (!product) return res.status(404).send('Product not found');
 
-    // Validate category
     const categoryExists = await Category.findById(req.body.category);
-    if (!categoryExists) {
-      return res.status(400).send('Invalid category');
-    }
+    if (!categoryExists) return res.status(400).send('Invalid category');
 
-    // Handle file uploads
-    const imagePaths = req.files && req.files.length > 0
-      ? req.files.map((file) => file.filename)
-      : product.images;
+    // Process uploaded images
+    const newImages = req.files['images']?.map(file => file.filename) || [];
+    const newHighlights = req.files['highlights']?.map(file => file.filename) || [];
 
-    // Remove old images if new ones are uploaded
-    if (req.files && req.files.length > 0) {
-      product.images.forEach((oldImage) => {
-        const oldImagePath = path.join(__dirname, '..', 'uploads', oldImage);
-        if (fs.existsSync(oldImagePath)) {
-          fs.unlinkSync(oldImagePath); // Delete old image file
-        }
-      });
-    }
+    // Merge new uploads with existing ones
+    product.images = [...product.images, ...newImages].slice(0, 4);      // Limit to 4
+    product.highlights = [...product.highlights, ...newHighlights].slice(0, 4); // Limit to 4
 
-    // Update product fields
+    // Update basic fields
     product.name = req.body.name;
     product.category = req.body.category;
     product.brand = req.body.brand;
     product.regularPrice = req.body.regularPrice;
     product.salesPrice = req.body.salesPrice || null;
 
-    // Ensure salesPrice is not higher than regularPrice
+    // Validate salesPrice
     if (product.salesPrice && product.salesPrice > product.regularPrice) {
       return res.status(400).send('Sales Price cannot be greater than Regular Price');
     }
 
     product.quantity = req.body.quantity;
     product.productOffer = req.body.productOffer || '';
-    product.isBlocked = req.body.isBlocked || false;
-    product.images = imagePaths;
     product.description = req.body.description || '';
 
-    // Save the updated product
     await product.save();
     res.redirect('/admin/products');
+
   } catch (error) {
-    console.error(error);
+    console.error('Update Product Error:', error);
     res.status(500).send('Internal Server Error');
+  }
+};
+
+exports.deleteImage = async (req, res) => {
+  const { filename } = req.params;
+
+  try {
+    const product = await Product.findOne({ images: filename });
+
+    if (!product) return res.status(404).json({ success: false, message: 'Product not found' });
+
+    product.images = product.images.filter(img => img !== filename);
+    await product.save();
+
+    // Optionally delete the file from uploads/
+    const filePath = path.join(__dirname, '../public/uploads', filename);
+    fs.unlink(filePath, err => {
+      if (err) console.log("File not deleted:", err);
+    });
+
+    res.json({ success: true });
+  } catch (err) {
+    console.error("Delete image error:", err);
+    res.status(500).json({ success: false });
+  }
+};
+
+exports.deleteHighlight = async (req, res) => {
+  const { filename } = req.params;
+
+  try {
+    const product = await Product.findOne({ highlights: filename });
+
+    if (!product) return res.status(404).json({ success: false, message: 'Product not found' });
+
+    product.highlights = product.highlights.filter(hl => hl !== filename);
+    await product.save();
+
+    const filePath = path.join(__dirname, '../public/uploads', filename);
+    fs.unlink(filePath, err => {
+      if (err) console.log("File not deleted:", err);
+    });
+
+    res.json({ success: true });
+  } catch (err) {
+    console.error("Delete highlight error:", err);
+    res.status(500).json({ success: false });
   }
 };
 

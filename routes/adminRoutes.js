@@ -81,6 +81,8 @@ router.post('/products/update/:id', isAdmin, multer({ dest: './public/uploads' }
 router.post('/products/block/:id', isAdmin, blockProduct);
 router.post('/products/unblock/:id', isAdmin,unblockProduct);
 router.get('/products/:productId',  getProductDetailsWithRelated );
+router.delete('/products/delete-image/:filename', isAdmin,adminController.deleteImage);
+router.delete('/products/delete-highlight/:filename', isAdmin,adminController.deleteHighlight);
 // Admin Logout
 router.post('/logout', (req, res) => {
   req.session.destroy((err) => {

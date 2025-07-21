@@ -34,10 +34,10 @@
         <i class="fas fa-wallet"></i>
         Wallet
       </a>
-      <a href="/reviews">
+      <!--a href="/reviews">
         <i class="fas fa-star"></i>
         Your Reviews
-      </a>
+      </a-->
       <a href="/user/settings">
         <i class="fas fa-cog"></i>
         Settings
@@ -60,34 +60,44 @@
     </section>
 
     <section class="transaction-history">
-      <h2>Transaction History</h2>
-      <% if (user.wallet.transactions.length > 0) { %>
-        <table class="transaction-table">
-          <thead>
-            <tr>
-              <th>Date</th>
-              <th>Type</th>
-              <th>Amount</th>
-              <th>Reason</th>
-              <th>Order ID</th>
-            </tr>
-          </thead>
-          <tbody>
-            <% user.wallet.transactions.slice().reverse().forEach(txn => { %>
-              <tr>
-                <td><%= new Date(txn.date).toLocaleDateString() %></td>
-                <td class="<%= txn.type.toLowerCase() %>"><%= txn.type %></td>
-                <td>₹ <%= txn.amount.toFixed(2) %></td>
-                <td><%= txn.reason %></td>
-                <td><%= txn.orderId || 'N/A' %></td>
-              </tr>
-            <% }) %>
-          </tbody>
-        </table>
-      <% } else { %>
-        <p class="no-transactions">No wallet transactions yet.</p>
+  <h2>Transaction History</h2>
+  <% if (user.wallet.transactions.length > 0) { %>
+    <table class="transaction-table">
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Type</th>
+          <th>Amount</th>
+          <th>Reason</th>
+          <th>Order ID</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% user.wallet.transactions.forEach(txn => { %>
+          <tr>
+            <td><%= new Date(txn.date).toLocaleDateString() %></td>
+            <td class="<%= txn.type.toLowerCase() %>"><%= txn.type %></td>
+            <td>₹ <%= txn.amount.toFixed(2) %></td>
+            <td><%= txn.reason %></td>
+            <td><%= txn.orderId || 'N/A' %></td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+
+    <!-- Pagination Controls -->
+    <div class="pagination">
+      <% for (let i = 1; i <= totalPages; i++) { %>
+        <a href="?page=<%= i %>" class="<%= i === currentPage ? 'active' : '' %>">
+          <%= i %>
+        </a>
       <% } %>
-    </section>
+    </div>
+  <% } else { %>
+    <p class="no-transactions">No wallet transactions yet.</p>
+  <% } %>
+</section>
+
   </div>
 </body>
 </html>

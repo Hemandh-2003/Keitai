@@ -155,12 +155,26 @@
                       <%= product.isBlocked ? 'pointer-events: none; cursor: not-allowed;' : '' %>">
               <div class="product-card text-center <%= product.isBlocked ? 'blocked-product' : '' %>">
                 <!-- Heart Icon for Wishlist -->
-                <div class="wishlist-container">
-                  <button class="wishlist-icon" onclick="addToWishlist('<%= product._id %>', this, event)"
-                    style="background: none; border: none; cursor: pointer;">
-                    <i class="fas fa-heart <%= product.isInWishlist ? 'text-danger' : 'text-secondary' %>"></i>
-                  </button>
-                </div>
+          <div class="action-icons">
+  <% if (!product.isBlocked) { %>
+  <div class="cart-container">
+    <button class="cart-icon"
+      onclick="addToCart('<%= product._id %>', event)">
+      <i class="fas fa-cart-plus"></i>
+    </button>
+  </div>
+  <% } %>
+  <div class="wishlist-container">
+    <button class="wishlist-icon"
+      onclick="addToWishlist('<%= product._id %>', this, event)">
+      <i class="fas fa-heart"></i>
+    </button>
+  </div>
+</div>
+
+
+
+
 
                 <img src="/uploads/<%= product.images[0] %>" alt="<%= product.name %>" class="img-fluid">
                 <p class="mt-2">
@@ -285,6 +299,42 @@
   </script>
    <script src="/js/page.js"></script>
     <script src="/js/search.js"></script>
+     <script>
+  function addToCart(productId, event) {
+    event.preventDefault();
+
+    fetch('/cart/add', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ productId, quantity: 1 })
+    })
+    .then(res => res.json())
+    .then(data => {
+      console.log('Cart response:', data);
+
+      if (data.success) {
+        Swal.fire({
+          icon: 'success',
+          title: 'Added to cart!',
+          showConfirmButton: false,
+          timer: 1200
+        });
+      } else {
+        Swal.fire({
+          icon: 'error',
+          title: 'Failed to add to cart',
+          text: data.message || data.error || 'Please try again.'
+        });
+      }
+    })
+    .catch(error => {
+      console.error('Cart Error:', error);
+      Swal.fire('Error', 'Could not add to cart.', 'error');
+    });
+  }
+</script>
 </body>
 
 </html>

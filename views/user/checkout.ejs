@@ -126,17 +126,18 @@
         <label class="payment-option">
           <input type="radio" name="paymentMethod" value="COD" checked> Cash on Delivery
         </label>
-        <!--label class="payment-option">
-          <input type="radio" name="paymentMethod" value="Wallet"> Pay with Wallet (₹<%= user.walletBalance || 0 %>
-            available)
-        </label-->
+        <label class="payment-option">
+          <input type="radio" name="paymentMethod" value="Wallet" <%=walletBalance < totalAmount ? 'disabled' : '' %>>
+          Pay with Wallet (₹ <%= walletBalance.toFixed(2) %> available)
+        </label>
+
         <label class="payment-option">
           <input type="radio" name="paymentMethod" value="Online"> Online Payment (Credit/Debit/UPI)
         </label>
-        <div id="razorpay-container" style="display:none; margin-top:15px;">
-          <button type="button" id="rzp-button" class="razorpay-btn">
+        <div id="razorpay-container" style="display: none; margin-top: 15px;">
+          <div id="rzp-indicator" class="razorpay-indicator">
             <i class="fas fa-credit-card"></i> Pay with Razorpay
-          </button>
+          </div>
         </div>
       </section>
 
@@ -157,109 +158,120 @@
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
   <script>
-    document.querySelector('.submit-btn').addEventListener('click', async (e) => {
-      e.preventDefault();
+  document.querySelector('.submit-btn').addEventListener('click', async (e) => {
+    e.preventDefault();
 
-      if (!validateAddress()) return;
+    if (!validateAddress()) return;
 
-      const paymentMethod = document.querySelector('input[name="paymentMethod"]:checked')?.value;
-      const grandTotal = <%= grandTotal %>;
+    const paymentMethod = document.querySelector('input[name="paymentMethod"]:checked')?.value;
+    const grandTotal = <%= grandTotal %>;
+    const walletBalance = <%= walletBalance %>;
 
-      if (paymentMethod === 'COD') {
-        if (grandTotal > 20000) {
-          return Swal.fire({
-            icon: 'warning',
-            title: 'COD Not Allowed',
-            text: 'Cash on Delivery is only available for orders up to ₹20,000. Please choose Online Payment.'
-          });
-        }
-
-        document.querySelector('.checkout-form').submit();
-
-      } else if (paymentMethod === 'Online') {
-
-        if (grandTotal > 450000) {
-          return Swal.fire({
-            icon: 'error',
-            title: 'Payment Limit Exceeded',
-            text: 'Online payment is only allowed for orders up to ₹4.5 lakhs. Please reduce your cart total.'
-          });
-        }
-
-        try {
-          const response = await fetch('/payment/create-order', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              amount: grandTotal,
-              currency: 'INR',
-              receipt: 'order_' + Date.now()
-            })
-          });
-
-          const paymentData = await response.json();
-
-          const options = {
-            key: '<%= process.env.RAZORPAY_KEY_ID %>',
-            amount: paymentData.amount,
-            currency: paymentData.currency,
-            name: "Keitai",
-            description: "Order Payment",
-            order_id: paymentData.id,
-            handler: function (response) {
-              const form = document.querySelector('.checkout-form');
-              const paymentInput = document.createElement('input');
-              paymentInput.type = 'hidden';
-              paymentInput.name = 'paymentDetails';
-              paymentInput.value = JSON.stringify(response);
-              form.appendChild(paymentInput);
-              form.submit();
-            },
-            prefill: {
-              name: '<%= user.name %>',
-              email: '<%= user.email %>',
-              contact: '<%= user.phone || "9999999999" %>'
-            },
-            theme: { color: "#3399cc" }
-          };
-
-          const rzp = new Razorpay(options);
-          rzp.on('payment.failed', function (response) {
-            window.location.href = `/payment/failed?error=${encodeURIComponent(response.error.description)}`;
-          });
-          rzp.open();
-
-        } catch (err) {
-          Swal.fire({
-            icon: 'error',
-            title: 'Payment Error',
-            text: 'Something went wrong while initiating payment. Please try again.'
-          });
-        }
-      }
-    });
-
-
-    function validateAddress() {
-      const selectedAddress = document.querySelector('input[name="selectedAddress"]:checked');
-      if (!selectedAddress) {
-        Swal.fire({
+    if (paymentMethod === 'COD') {
+      if (grandTotal > 20000) {
+        return Swal.fire({
           icon: 'warning',
-          title: 'Shipping Address Required',
-          text: 'Please select a shipping address before continuing with your order.',
+          title: 'COD Not Allowed',
+          text: 'Cash on Delivery is only available for orders up to ₹20,000. Please choose Online Payment.'
         });
-        return false;
       }
-      return true;
-    }
 
-    // Razorpay logic
-    document.querySelectorAll('input[name="paymentMethod"]').forEach(radio => {
-      radio.addEventListener('change', function () {
-        document.getElementById('razorpay-container').style.display =
-          this.value === 'Online' ? 'block' : 'none';
+      document.querySelector('.checkout-form').submit();
+
+    } else if (paymentMethod === 'Wallet') {
+      if (walletBalance < grandTotal) {
+        return Swal.fire({
+          icon: 'error',
+          title: 'Insufficient Wallet Balance',
+          text: 'You don’t have enough wallet balance to place this order.'
+        });
+      }
+
+      // ✅ Submit form directly for wallet
+      document.querySelector('.checkout-form').submit();
+
+    } else if (paymentMethod === 'Online') {
+      if (grandTotal > 450000) {
+        return Swal.fire({
+          icon: 'error',
+          title: 'Payment Limit Exceeded',
+          text: 'Online payment is only allowed for orders up to ₹4.5 lakhs. Please reduce your cart total.'
+        });
+      }
+
+      try {
+        const response = await fetch('/payment/create-order', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            amount: grandTotal,
+            currency: 'INR',
+            receipt: 'order_' + Date.now()
+          })
+        });
+
+        const paymentData = await response.json();
+
+        const options = {
+          key: '<%= process.env.RAZORPAY_KEY_ID %>',
+          amount: paymentData.amount,
+          currency: paymentData.currency,
+          name: "Keitai",
+          description: "Order Payment",
+          order_id: paymentData.id,
+          handler: function (response) {
+            const form = document.querySelector('.checkout-form');
+            const paymentInput = document.createElement('input');
+            paymentInput.type = 'hidden';
+            paymentInput.name = 'paymentDetails';
+            paymentInput.value = JSON.stringify(response);
+            form.appendChild(paymentInput);
+            form.submit();
+          },
+          prefill: {
+            name: '<%= user.name %>',
+            email: '<%= user.email %>',
+            contact: '<%= user.phone || "9999999999" %>'
+          },
+          theme: { color: "#3399cc" }
+        };
+
+        const rzp = new Razorpay(options);
+        rzp.on('payment.failed', function (response) {
+          window.location.href = `/payment/failed?error=${encodeURIComponent(response.error.description)}`;
+        });
+        rzp.open();
+
+      } catch (err) {
+        Swal.fire({
+          icon: 'error',
+          title: 'Payment Error',
+          text: 'Something went wrong while initiating payment. Please try again.'
+        });
+      }
+    }
+  });
+
+  function validateAddress() {
+    const selectedAddress = document.querySelector('input[name="selectedAddress"]:checked');
+    if (!selectedAddress) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Shipping Address Required',
+        text: 'Please select a shipping address before continuing with your order.',
       });
+      return false;
+    }
+    return true;
+  }
+
+  // Razorpay UI toggle
+  document.querySelectorAll('input[name="paymentMethod"]').forEach(radio => {
+    radio.addEventListener('change', function () {
+      document.getElementById('razorpay-container').style.display =
+        this.value === 'Online' ? 'block' : 'none';
     });
+  });
 
     document.getElementById('rzp-button')?.addEventListener('click', async function (e) {
       e.preventDefault();

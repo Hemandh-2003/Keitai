@@ -5,48 +5,94 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Edit Address</title>
   <link rel="stylesheet" href="/css/edit-address.css">
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
 <body>
   <header>
     <a href="/user/address">&larr; Back to Addresses</a>
     <h1>Edit Address</h1>
   </header>
+
   <form id="editAddressForm" action="/user/address/edit/<%= address._id %>" method="POST">
     <label for="name">Full Name:</label>
     <input type="text" id="name" name="name" value="<%= address.name %>" required>
+
     <label for="street">Street Address:</label>
     <input type="text" id="street" name="street" value="<%= address.street %>" required>
+
     <label for="city">City:</label>
     <input type="text" id="city" name="city" value="<%= address.city %>" required>
+
     <label for="state">State:</label>
     <input type="text" id="state" name="state" value="<%= address.state %>" required>
+
     <label for="zip">ZIP Code:</label>
     <input type="text" id="zip" name="zip" value="<%= address.zip %>" required pattern="^\d{6}$" title="ZIP Code must be 6 digits">
+
     <label for="country">Country:</label>
     <input type="text" id="country" name="country" value="<%= address.country %>" required>
+
     <label for="phone">Phone Number:</label>
     <input type="tel" id="phone" name="phone" value="<%= address.phone %>" required pattern="^\d{10}$" title="Phone number must be 10 digits">
+
     <button type="submit">Save</button>
   </form>
 
   <script>
-    // Form validation
-    const editAddressForm = document.getElementById('editAddressForm');
+    const form = document.getElementById('editAddressForm');
 
-    editAddressForm.addEventListener('submit', (event) => {
-      const zip = document.getElementById('zip').value;
-      const phone = document.getElementById('phone').value;
+    const isSafeInput = (value) => /^[a-zA-Z0-9\s\-]+$/.test(value);
 
-      if (zip.length !== 6 || isNaN(zip)) {
-        alert('ZIP Code must be exactly 6 digits.');
+    form.addEventListener('submit', (event) => {
+      const name = document.getElementById('name').value.trim();
+      const street = document.getElementById('street').value.trim();
+      const city = document.getElementById('city').value.trim();
+      const state = document.getElementById('state').value.trim();
+      const zip = document.getElementById('zip').value.trim();
+      const country = document.getElementById('country').value.trim();
+      const phone = document.getElementById('phone').value.trim();
+
+      // Check for empty fields
+      if (!name || !street || !city || !state || !zip || !country || !phone) {
         event.preventDefault();
-        return;
+        return Swal.fire({
+          icon: 'warning',
+          title: 'Missing Fields',
+          text: 'Please fill out all fields before submitting.'
+        });
       }
 
-      if (phone.length !== 10 || isNaN(phone)) {
-        alert('Phone number must be exactly 10 digits.');
+      // ZIP validation
+      if (!/^\d{6}$/.test(zip)) {
         event.preventDefault();
-        return;
+        return Swal.fire({
+          icon: 'error',
+          title: 'Invalid ZIP Code',
+          text: 'ZIP Code must be exactly 6 digits.'
+        });
+      }
+
+      // Phone validation
+      if (!/^\d{10}$/.test(phone)) {
+        event.preventDefault();
+        return Swal.fire({
+          icon: 'error',
+          title: 'Invalid Phone Number',
+          text: 'Phone number must be exactly 10 digits.'
+        });
+      }
+
+      // Special character check for fields
+      const fields = [name, street, city, state, country];
+      for (const field of fields) {
+        if (!isSafeInput(field)) {
+          event.preventDefault();
+          return Swal.fire({
+            icon: 'error',
+            title: 'Invalid Characters',
+            text: 'Only letters, numbers, spaces, and hyphens are allowed. No special characters like {}, [], =, etc.'
+          });
+        }
       }
     });
   </script>

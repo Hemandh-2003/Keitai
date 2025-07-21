@@ -23,7 +23,7 @@ exports.addToWishlist = async (req, res) => {
       const alreadyExists = wishlist.products.includes(productId);
 
       if (alreadyExists) {
-        return res.status(200).json({ message: 'Already in wishlist', wishlist: wishlist.products });
+        return res.status(404).json({ message: 'Already in wishlist', wishlist: wishlist.products });
       }
 
       wishlist.products.push(productId);

@@ -38,14 +38,14 @@
         <i class="fas fa-heart"></i>
         Wishlist
       </a>
-      <a href="/wallet">
+      <a href="/user/wallet">
         <i class="fas fa-wallet"></i>
         Wallet
       </a>
-      <a href="/reviews">
+      <!--a href="/reviews">
         <i class="fas fa-star"></i>
         Your Reviews
-      </a>
+      </a-->
       <a href="/user/settings">
         <i class="fas fa-cog"></i>
         Settings
@@ -116,45 +116,85 @@
       </div>
     </div>
 
-    <script>
-      // Modal functionality
-      const addAddressBtn = document.querySelector('.add-address-btn');
-      const modal = document.getElementById('addAddressModal');
-      const closeModal = document.querySelector('.close-modal');
-      const addAddressForm = document.getElementById('addAddressForm');
+   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+  const addAddressBtn = document.querySelector('.add-address-btn');
+  const modal = document.getElementById('addAddressModal');
+  const closeModal = document.querySelector('.close-modal');
+  const addAddressForm = document.getElementById('addAddressForm');
 
-      addAddressBtn.addEventListener('click', () => {
-        modal.style.display = 'block';
+  addAddressBtn.addEventListener('click', () => {
+    modal.style.display = 'block';
+  });
+
+  closeModal.addEventListener('click', () => {
+    modal.style.display = 'none';
+  });
+
+  window.addEventListener('click', (event) => {
+    if (event.target === modal) {
+      modal.style.display = 'none';
+    }
+  });
+
+  const isSafeInput = (value) => /^[a-zA-Z0-9\s\-]+$/.test(value);
+
+  addAddressForm.addEventListener('submit', (event) => {
+    const name = document.getElementById('name').value.trim();
+    const street = document.getElementById('street').value.trim();
+    const city = document.getElementById('city').value.trim();
+    const state = document.getElementById('state').value.trim();
+    const zip = document.getElementById('zip').value.trim();
+    const country = document.getElementById('country').value.trim();
+    const phone = document.getElementById('phone').value.trim();
+
+    // Check for empty fields
+    if (!name || !street || !city || !state || !zip || !country || !phone) {
+      event.preventDefault();
+      return Swal.fire({
+        icon: 'warning',
+        title: 'Missing Fields',
+        text: 'Please fill in all fields.',
       });
+    }
 
-      closeModal.addEventListener('click', () => {
-        modal.style.display = 'none';
+    // Check for valid zip
+    if (!/^\d{6}$/.test(zip)) {
+      event.preventDefault();
+      return Swal.fire({
+        icon: 'error',
+        title: 'Invalid ZIP Code',
+        text: 'ZIP Code must be exactly 6 digits.',
       });
+    }
 
-      window.addEventListener('click', (event) => {
-        if (event.target === modal) {
-          modal.style.display = 'none';
-        }
+    // Check for valid phone number
+    if (!/^\d{10}$/.test(phone)) {
+      event.preventDefault();
+      return Swal.fire({
+        icon: 'error',
+        title: 'Invalid Phone Number',
+        text: 'Phone number must be exactly 10 digits.',
       });
+    }
 
-      // Form validation
-      addAddressForm.addEventListener('submit', (event) => {
-        const zip = document.getElementById('zip').value;
-        const phone = document.getElementById('phone').value;
+    // Check for special characters
+    const fieldsToValidate = [name, street, city, state, country];
+    for (const field of fieldsToValidate) {
+      if (!isSafeInput(field)) {
+        event.preventDefault();
+        return Swal.fire({
+          icon: 'error',
+          title: 'Invalid Characters',
+          text: 'Please use only letters, numbers, spaces, or hyphens (-). No special characters like {}, [], @, !, =, etc.',
+        });
+      }
+    }
+  });
+</script>
 
-        if (zip.length !== 6 || isNaN(zip)) {
-          alert('ZIP Code must be exactly 6 digits.');
-          event.preventDefault();
-          return;
-        }
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
-        if (phone.length !== 10 || isNaN(phone)) {
-          alert('Phone number must be exactly 10 digits.');
-          event.preventDefault();
-          return;
-        }
-      });
-    </script>
 </body>
 
 </html>

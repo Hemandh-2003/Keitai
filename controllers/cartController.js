@@ -50,7 +50,7 @@ if (newTotalQuantity > product.quantity) {
 
     await cart.calculateTotal();
     await cart.save();
-    res.status(200).json({ message: 'Item added to cart', cart });
+   res.status(200).json({ success: true, message: 'Item added to cart', cart });
   } catch (error) {
     console.error(`Error adding item to cart: ${error.message}`);
     res.status(500).json({ error: 'Failed to add item to cart' });

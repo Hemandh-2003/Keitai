@@ -80,7 +80,7 @@ const orderSchema = new mongoose.Schema({
   },
   paymentMethod: {
     type: String,
-    enum: ['COD', 'Card', 'Online'],
+    enum: ['COD', 'Card', 'Online', 'Wallet'], // ✅ Wallet added
     required: true,
   },
   estimatedDelivery: {
@@ -96,7 +96,8 @@ const orderSchema = new mongoose.Schema({
       'Delivered',
       'Cancelled',
       'User Cancelled',
-      'Return Requested' // ✅ Added here
+      'Return Requested',
+      'Paid' // ✅ Paid added
     ],
     default: 'Pending',
   },
@@ -111,7 +112,8 @@ const orderSchema = new mongoose.Schema({
           'Delivered',
           'Cancelled',
           'User Cancelled',
-          'Return Requested' // ✅ Added here
+          'Return Requested',
+          'Paid' // ✅ Paid added here too
         ],
       },
       updatedAt: {
@@ -136,11 +138,10 @@ orderSchema.pre('save', function (next) {
   next();
 });
 
-// Populate method for products
+// Method to populate product details
 orderSchema.methods.populateProductDetails = function () {
   return this.populate('products.product', 'name');
 };
 
-// Model export
 const Order = mongoose.models.Order || mongoose.model('Order', orderSchema);
 module.exports = Order;

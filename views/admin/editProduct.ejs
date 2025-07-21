@@ -49,66 +49,75 @@
         <input type="number" id="salesPrice" name="salesPrice" value="<%= product.salesPrice || '' %>"
           placeholder="Sales Price">
       </div>
-<!-- Product Images -->
-<div class="form-group">
-  <label for="images">Product Images:</label>
-  <div class="image-upload-container">
-    <% product.images.forEach((image, index) => { %>
-      <div class="image-box">
-        <img src="/uploads/<%= image %>" alt="Image <%= index + 1 %>" class="image-preview">
-        <button type="button" class="delete-image-btn" onclick="removeImage('<%= image %>')">Remove</button>
+      <!-- Product Images -->
+      <div class="form-group">
+        <label for="images">Product Images:</label>
+        <div class="image-upload-container">
+          <% product.images.forEach((image, index)=> { %>
+            <div class="image-box">
+              <img src="/uploads/<%= image %>" alt="Image <%= index + 1 %>" class="image-preview">
+              <button type="button" class="delete-image-btn" onclick="removeImage('<%= image %>')">Remove</button>
+            </div>
+            <% }); %>
+              <% for (let i=product.images.length; i < 4; i++) { %>
+                <div class="image-box">
+                  <% if (product.images.length < 4) { %>
+                    <input type="file" name="images" accept="image/*" multiple>
+                    <p>You can upload <%= 4 - product.images.length %> more image(s)</p>
+                    <% } %>
+
+                </div>
+                <% } %>
+        </div>
       </div>
-    <% }); %>
-    <% for (let i = product.images.length; i < 4; i++) { %>
-      <div class="image-box">
-        <input type="file" name="images" accept="image/*">
+
+      <!-- Product Highlights -->
+      <div class="form-group">
+        <label for="highlights">Product Highlights:</label>
+        <div class="image-upload-container">
+          <% product.highlights.forEach((highlight, index)=> { %>
+            <div class="image-box">
+              <img src="/uploads/<%= highlight %>" alt="Highlight <%= index + 1 %>" class="image-preview">
+              <button type="button" class="delete-highlight-btn"
+                onclick="removeHighlight('<%= highlight %>')">Remove</button>
+            </div>
+            <% }); %>
+              <% for (let i=product.highlights.length; i < 4; i++) { %>
+                <div class="image-box">
+                  <% if (product.highlights.length < 4) { %>
+                    <input type="file" name="highlights" accept="image/*" multiple>
+                    <p>You can upload <%= 4 - product.highlights.length %> more highlight(s)</p>
+                    <% } %>
+
+                </div>
+                <% } %>
+        </div>
       </div>
-    <% } %>
-  </div>
-</div>
 
-<!-- Product Highlights -->
-<div class="form-group">
-  <label for="highlights">Product Highlights:</label>
-  <div class="image-upload-container">
-    <% product.highlights.forEach((highlight, index) => { %>
-      <div class="image-box">
-        <img src="/uploads/<%= highlight %>" alt="Highlight <%= index + 1 %>" class="image-preview">
-        <button type="button" class="delete-highlight-btn" onclick="removeHighlight('<%= highlight %>')">Remove</button>
+
+      <!-- Quantity -->
+      <div class="form-group">
+        <label for="quantity">Quantity:</label>
+        <input type="number" id="quantity" name="quantity" value="<%= product.quantity %>" placeholder="Quantity"
+          required>
       </div>
-    <% }); %>
-    <% for (let i = product.highlights.length; i < 4; i++) { %>
-      <div class="image-box">
-        <input type="file" name="highlights" accept="image/*">
+
+      <!-- Product Offer -->
+      <div class="form-group">
+        <label for="productOffer">Product Offer (Optional):</label>
+        <input type="text" id="productOffer" name="productOffer" value="<%= product.productOffer || '' %>"
+          placeholder="Product Offer">
       </div>
-    <% } %>
-  </div>
-</div>
 
+      <!-- Description -->
+      <div class="form-group">
+        <label for="description">Description:</label>
+        <textarea id="description" name="description" rows="4"
+          placeholder="Description"><%= product.description %></textarea>
+      </div>
 
-              <!-- Quantity -->
-              <div class="form-group">
-                <label for="quantity">Quantity:</label>
-                <input type="number" id="quantity" name="quantity" value="<%= product.quantity %>"
-                  placeholder="Quantity" required>
-              </div>
-
-              <!-- Product Offer -->
-              <div class="form-group">
-                <label for="productOffer">Product Offer (Optional):</label>
-                <input type="text" id="productOffer" name="productOffer" value="<%= product.productOffer || '' %>"
-                  placeholder="Product Offer">
-              </div>
-
-              <!-- Description -->
-              <div class="form-group">
-                <label for="description">Description:</label>
-                <textarea id="description" name="description" rows="4"
-                  placeholder="Description"><%= product.description %></textarea>
-              </div>
-
-              <!-- Submit Button -->
-              <button type="submit">Update Product</button>
+      <!-- Submit Button -->
+      <button type="submit">Update Product</button>
     </form>
 
     <!-- Back Button -->
@@ -132,7 +141,41 @@
           });
       }
     }
-  </script>  
+  </script>
+  <script>
+    function removeImage(image) {
+      if (confirm("Are you sure you want to remove this image?")) {
+        fetch(`/admin/products/delete-image/${image}`, {
+          method: 'DELETE'
+        })
+          .then(res => res.json())
+          .then(data => {
+            if (data.success) {
+              location.reload();
+            } else {
+              alert("Failed to remove image. Please try again.");
+            }
+          });
+      }
+    }
+
+    function removeHighlight(highlight) {
+      if (confirm("Are you sure you want to remove this highlight?")) {
+        fetch(`/admin/products/delete-highlight/${highlight}`, {
+          method: 'DELETE'
+        })
+          .then(res => res.json())
+          .then(data => {
+            if (data.success) {
+              location.reload();
+            } else {
+              alert("Failed to remove highlight. Please try again.");
+            }
+          });
+      }
+    }
+  </script>
+
 </body>
 
 </html>

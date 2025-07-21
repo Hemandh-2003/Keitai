@@ -173,3 +173,21 @@ body {
     padding: 10px;
   }
 }
+.pagination {
+  margin-top: 20px;
+  text-align: center;
+}
+.pagination a {
+  display: inline-block;
+  padding: 8px 12px;
+  margin: 0 3px;
+  background-color: #eee;
+  border-radius: 4px;
+  text-decoration: none;
+  color: #333;
+}
+.pagination a.active {
+  background-color: #3399cc;
+  color: #fff;
+  font-weight: bold;
+}

@@ -112,21 +112,23 @@ const upload = multer({
 });
 
 // Route for creating a product
-app.post(
-  '/admin/products/create',
-  upload.fields([
-    { name: 'images', maxCount: 8 },
-    { name: 'highlights', maxCount: 8 },
-  ]),
-  (err, req, res, next) => {
-    if (err instanceof multer.MulterError || err.message.includes('Only JPG')) {
+const uploadFields = upload.fields([
+  { name: 'images', maxCount: 8 },
+  { name: 'highlights', maxCount: 8 },
+]);
+
+app.post('/admin/products/create', (req, res, next) => {
+  uploadFields(req, res, function (err) {
+    if (err instanceof multer.MulterError || (err && err.message.includes('Only JPG'))) {
       const message = encodeURIComponent('Only JPG, PNG, or WEBP images are allowed.');
       return res.redirect(`/admin/products?error=${message}`);
+    } else if (err) {
+      console.error('Upload error:', err);
+      return res.status(500).send('Upload Error');
     }
-    next();
-  },
-  createProduct
-);
+    next(); // Proceed to controller
+  });
+}, createProduct);
 
 
 

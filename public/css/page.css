@@ -205,34 +205,54 @@ main {
 .filter-sidebar button[type="button"]:hover {
     background: #a71d2a;
 }
-.wishlist-container {
-    position: absolute;
-    top: 10px;
-    right: 10px;
-    display: none; /* Initially hidden */
-  }
-  
-  .product-card:hover .wishlist-container {
-    display: block; /* Show on hover */
-  }
-  
-  .wishlist-icon {
-    font-size: 20px;
-    color: grey;
-    transition: color 0.3s ease;
-  }
-  
-  .wishlist-icon:hover {
-    color: rgb(0, 0, 0); /* Change color when hovered */
-  }
-  .wishlist-icon i {
-  color: gray;
-  transition: color 0.3s ease;
+.icon-stack {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  display: none; /* hidden until hover */
+  flex-direction: column;
+  gap: 10px;
 }
 
+.product-card:hover .icon-stack {
+  display: flex;
+}
+
+/* Wishlist Icon */
+.wishlist-icon {
+  background: none;
+  border: none;
+  font-size: 20px;
+  cursor: pointer;
+}
+.wishlist-icon i {
+  color: grey;
+  transition: color 0.3s ease;
+  padding-top: 20px;
+}
+.wishlist-icon:hover i {
+  color: black;
+}
 .wishlist-icon.active i {
   color: red;
 }
+
+/* Cart Icon */
+.cart-icon {
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+.cart-icon i {
+  color: #0d6efd;
+  font-size: 18px;
+  transition: color 0.3s ease;
+}
+.cart-icon:hover i {
+  color: #084298;
+}
+
+
 
   .blocked-product {
     opacity: 0.6; /* Makes the card appear grayed out */
@@ -471,7 +491,7 @@ input[type="checkbox"]:checked, input[type="radio"]:checked {
 .wishlist-icon {
   position: absolute;
   top: 10px;
-  right: 10px;
+  right: 0px;
   z-index: 2;
 }
 
