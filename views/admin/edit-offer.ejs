@@ -82,5 +82,86 @@
 
   <button type="submit">Update Offer</button>
 </form>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+  const editForm = document.querySelector('form');
+  const offerTypeSelect = editForm.querySelector('select[name="offerType"]');
+  const discountTypeSelect = editForm.querySelector('select[name="discountType"]');
+  const discountValueInput = editForm.querySelector('input[name="discountValue"]');
+  const startDateInput = editForm.querySelector('input[name="startDate"]');
+  const endDateInput = editForm.querySelector('input[name="endDate"]');
+
+  // Show/hide relevant sections based on offer type
+  offerTypeSelect.addEventListener('change', () => {
+    document.getElementById('product-section').style.display = 'none';
+    document.getElementById('category-section').style.display = 'none';
+    document.getElementById('referral-section').style.display = 'none';
+
+    const type = offerTypeSelect.value;
+    if (type === 'product') {
+      document.getElementById('product-section').style.display = '';
+    } else if (type === 'category') {
+      document.getElementById('category-section').style.display = '';
+    } else if (type === 'referral') {
+      document.getElementById('referral-section').style.display = '';
+    }
+  });
+
+  // Validate before submit
+  editForm.addEventListener('submit', function (e) {
+    const discountType = discountTypeSelect.value;
+    const discount = parseFloat(discountValueInput.value);
+    const start = new Date(startDateInput.value);
+    const end = new Date(endDateInput.value);
+
+    // Validate dates
+    if (start >= end) {
+      e.preventDefault();
+      Swal.fire({
+        icon: 'warning',
+        title: 'Invalid Dates',
+        text: 'End date must be after start date',
+      });
+      return;
+    }
+
+    // Validate discount range
+    if (discountType === 'percentage') {
+      if (discount < 1 || discount > 90) {
+        e.preventDefault();
+        Swal.fire({
+          icon: 'error',
+          title: 'Invalid Discount',
+          text: 'Percentage discount must be between 1% and 90%',
+        });
+        return;
+      }
+    } else if (discountType === 'fixed') {
+      if (discount < 1 || discount > 50000) {
+        e.preventDefault();
+        Swal.fire({
+          icon: 'error',
+          title: 'Invalid Discount',
+          text: 'Fixed discount must be between ₹1 and ₹50,000',
+        });
+        return;
+      }
+    } else {
+      e.preventDefault();
+      Swal.fire({
+        icon: 'error',
+        title: 'Missing Discount Type',
+        text: 'Please select a valid discount type',
+      });
+    }
+  });
+
+  // Trigger section toggle on initial load (for edit pre-filled value)
+  document.addEventListener('DOMContentLoaded', () => {
+    const event = new Event('change');
+    offerTypeSelect.dispatchEvent(event);
+  });
+</script>
+
 </body>
 </html>

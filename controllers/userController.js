@@ -7,6 +7,8 @@ const Coupon = require('../models/Coupon')
 const mongoose = require('mongoose');
 const otpController = require('../controllers/otpController');
 const bcrypt = require('bcryptjs');
+const Wishlist = require('../models/Wishlist');
+const PDFDocument = require('pdfkit');
 //Profile
 exports.getProfile = async (req, res) => {
   try {
@@ -296,30 +298,140 @@ exports.viewOrders = async (req, res) => {
 exports.viewOrderDetails = async (req, res) => {
   try {
     const orderId = req.params.id;
-    const order = await Order.findById(orderId)
-      .populate('products.product')  // Populate products
-      .populate('user')  // Populate the user (to get the addresses)
-      .exec();  // Ensure execution of the query
+
+    let query = Order.findById(orderId)
+      .populate('products.product')
+      .populate('user');
+
+    // Optional populate if coupon exists and is valid
+    const orderDoc = await Order.findById(orderId).select('coupon');
+    if (orderDoc && orderDoc.coupon && mongoose.Types.ObjectId.isValid(orderDoc.coupon)) {
+      query = query.populate('coupon');
+    }
+
+    const order = await query.exec();
 
     if (!order) {
       return res.status(404).send('Order not found');
     }
 
-    // Get the selected address from the user's addresses array
     const selectedAddress = order.user.addresses.find(
-      (address) => address._id.toString() === order.selectedAddress.toString()
+      (address) =>
+        order.selectedAddress &&
+        address._id.toString() === order.selectedAddress.toString()
     );
 
     if (!selectedAddress) {
       return res.status(404).send('Selected address not found');
     }
 
-   // console.log('Order Details:', order);
+    res.render('user/orderDetails', {
+      order,
+      selectedAddress,
+    });
 
-    res.render('user/orderDetails', { order, selectedAddress });
   } catch (err) {
-    console.error('Error fetching order details:', err);
+    console.error('Error fetching order details:', err.stack || err);
     res.status(500).send('Server error');
+  }
+};
+exports.downloadInvoice = async (req, res) => {
+  try {
+    const orderId = req.params.id;
+
+    if (!mongoose.Types.ObjectId.isValid(orderId)) {
+      return res.status(400).send('Invalid order ID');
+    }
+
+    const order = await Order.findById(orderId)
+      .populate('products.product')
+      .populate('coupon') // ✅ now works after adding 'coupon' to schema
+      .populate('user');
+
+    if (!order) {
+      return res.status(404).send('Order not found');
+    }
+
+    const selectedAddress = order.user.addresses.find(
+      (addr) => addr._id.toString() === order.selectedAddress.toString()
+    );
+
+    if (!selectedAddress) {
+      return res.status(404).send('Address not found');
+    }
+
+    // Initialize PDF
+    const doc = new PDFDocument({ margin: 50 });
+
+    // Set headers
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename=invoice-${order.orderId}.pdf`
+    );
+
+    // Pipe PDF to response
+    doc.pipe(res);
+
+    // ---- INVOICE CONTENT ----
+    doc.fontSize(20).text('INVOICE', { align: 'center' });
+    doc.moveDown();
+
+    doc.fontSize(12).text(`Order ID: ${order.orderId}`);
+    doc.text(`Order Date: ${new Date(order.createdAt).toLocaleDateString()}`);
+    doc.text(`Payment Method: ${order.paymentMethod}`);
+    doc.text(`Status: ${order.status}`);
+    doc.moveDown();
+
+    doc.fontSize(14).text('Shipping Address', { underline: true });
+    doc.text(`${selectedAddress.name}`);
+    doc.text(`${selectedAddress.street}`);
+    doc.text(`${selectedAddress.city}, ${selectedAddress.state} - ${selectedAddress.zip}`);
+    doc.text(`${selectedAddress.country}`);
+    doc.text(`Phone: ${selectedAddress.phone}`);
+    doc.moveDown();
+
+    doc.fontSize(14).text('Product Details', { underline: true });
+
+    let subtotal = 0;
+
+    order.products.forEach((item, index) => {
+      const price = item.product.salesPrice || item.product.regularPrice || 0;
+      const total = price * item.quantity;
+      subtotal += total;
+
+      doc.text(
+        `${index + 1}. ${item.product.name} - ₹${price} x ${item.quantity} = ₹${total.toFixed(2)}`
+      );
+    });
+
+    doc.moveDown();
+    doc.fontSize(12).text(`Subtotal: ₹${subtotal.toFixed(2)}`);
+
+    if (order.deliveryCharge && order.deliveryCharge > 0) {
+      doc.text(`Delivery Charge: ₹${order.deliveryCharge.toFixed(2)}`);
+    }
+
+    if (order.coupon) {
+      doc.moveDown();
+      doc.fontSize(14).text('Coupon Details', { underline: true });
+      doc.fontSize(12).text(`Code: ${order.coupon.code}`);
+      doc.text(`Type: ${order.coupon.discountType === 'percentage' ? 'Percentage' : 'Fixed Amount'}`);
+      doc.text(`Discount: ${order.coupon.discountType === 'percentage'
+        ? `${order.coupon.discount}%`
+        : `₹${order.coupon.discount}`}`);
+      doc.text(`Discount Applied: -₹${(order.couponDiscount || 0).toFixed(2)}`);
+    }
+
+    doc.moveDown();
+    doc.font('Helvetica-Bold').text(`Total Amount: ₹${order.totalAmount.toFixed(2)}`, {
+      align: 'right',
+    });
+
+    doc.end();
+  } catch (error) {
+    console.error('Invoice generation error:', error.stack || error);
+    res.status(500).send('Could not generate invoice');
   }
 };
 exports.cancelOrder = async (req, res) => {
@@ -444,12 +556,21 @@ exports.getProducts = async (req, res) => {
           : b.pricing.finalPrice - a.pricing.finalPrice;
       });
     }
+        const wishlist = []
+        const userId = req.user?._id;
+        if(userId){
+
+          wishlist = await Wishlist.findOne({ user: userId }).populate('products');
+        }
+        console.log('wishlist',wishlist)
+    
 
     const totalProducts = await Product.countDocuments(query);
     const totalPages = Math.ceil(totalProducts / perPage);
 
       res.render('user/accessories', {
       products,
+      wishlist,
       currentPage: parseInt(page),
       totalPages,
       search,
@@ -502,21 +623,6 @@ exports.getProductDetails = async (req, res) => {
     res.status(500).send('Internal Server Error');
   }
 };
-/* In userController.js
-exports.searchProducts = async (req, res) => {
-  try {
-    const query = req.query.query;
-    const products = await Product.find({
-      $text: { $search: query },
-      isBlocked: false,
-      isDeleted: false
-    }).limit(10);
-
-    res.json(products);
-  } catch (error) {
-    res.status(500).json({ error: 'Search failed' });
-  }
-};*/
 // Combined checkout method
 exports.checkout = async (req, res) => {
   try {

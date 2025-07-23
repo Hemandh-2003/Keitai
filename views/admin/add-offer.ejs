@@ -219,6 +219,55 @@
         document.getElementById('endDate').focus();
       }
     });
+    document.querySelector('.offer-form').addEventListener('submit', function (e) {
+  const discountType = document.getElementById('discountType').value;
+  const discountValue = parseFloat(document.getElementById('discountValue').value);
+
+  // Existing start/end date validation
+  const start = new Date(document.getElementById('startDate').value);
+  const end = new Date(document.getElementById('endDate').value);
+  if (start >= end) {
+    e.preventDefault();
+    Swal.fire({
+      icon: 'warning',
+      title: 'Invalid Dates',
+      text: 'End date must be after start date',
+    });
+    document.getElementById('endDate').focus();
+    return;
+  }
+
+  // Discount validation
+  if (discountType === 'percentage') {
+    if (discountValue < 1 || discountValue > 90) {
+      e.preventDefault();
+      Swal.fire({
+        icon: 'error',
+        title: 'Invalid Discount',
+        text: 'Percentage discount must be between 1% and 90%',
+      });
+      return;
+    }
+  } else if (discountType === 'fixed') {
+    if (discountValue < 1 || discountValue > 50000) {
+      e.preventDefault();
+      Swal.fire({
+        icon: 'error',
+        title: 'Invalid Discount',
+        text: 'Fixed discount must be between ₹1 and ₹50,000',
+      });
+      return;
+    }
+  } else {
+    e.preventDefault();
+    Swal.fire({
+      icon: 'warning',
+      title: 'Missing Discount Type',
+      text: 'Please select a discount type',
+    });
+    return;
+  }
+});
   </script>
 </body>
 

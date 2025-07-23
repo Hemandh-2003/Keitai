@@ -213,6 +213,14 @@ header h1 {
   background-color: #000000;
   color: white;
 }
+.coupon-details {
+  background-color: #f1f1f1;
+  padding: 10px 15px;
+  border-left: 4px solid #28a745;
+  margin-bottom: 20px;
+  border-radius: 5px;
+}
+
 /* Responsive design */
 @media (max-width: 768px) {
   header h1 {

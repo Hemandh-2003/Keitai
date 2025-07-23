@@ -1,4 +1,3 @@
-// controllers/couponController.js
 const Coupon = require('../models/Coupon');
 
 exports.applyCoupon = async (req, res) => {
@@ -11,8 +10,7 @@ exports.applyCoupon = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Coupon already applied' });
     }
 
-    // ✅ Block if total < 5,00,000
-if (total < 200000) {
+if (total < 200000) {//allow only the orders which are above and equal to 2 lahks
   return res.status(400).json({
     success: false,
     message: 'Minimum order value for applying coupon is ₹2,00,000'

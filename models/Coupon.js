@@ -21,6 +21,15 @@ const couponSchema = new mongoose.Schema({
     type: Date,
     required: true
   },
+  coupon: {
+  type: mongoose.Schema.Types.ObjectId,
+  ref: 'Coupon',
+  default: null
+},
+couponDiscount: {
+  type: Number,
+  default: 0
+},
   endDate: {
     type: Date,
     required: true

@@ -26,6 +26,7 @@ router.post('/orders/:id/cancel', userController.cancelEntireOrder);
 router.post('/orders/:orderId/return/:productId', userController.returnProduct);
 router.post('/orders/return/:id', userController.returnOrder);
 router.post('/orders/cancel-item/:orderId', userController.cancelSingleItem);
+router.get('/order/:id/invoice', userController.downloadInvoice);
 
 // Product Routes
 router.get('/home', userController.getProducts);

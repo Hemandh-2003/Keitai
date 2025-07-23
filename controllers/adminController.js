@@ -120,7 +120,7 @@ exports.listUsers = async (req, res) => {
     const limit = 10; 
     const skip = (page - 1) * limit;
 
-    // Build the query filter based on the selected sort option
+    // sort option
     let filter = {};
     let sort = { createdAt: -1 }; 
 
@@ -252,7 +252,7 @@ exports.deleteCategory = async (req, res) => {
     await Category.findByIdAndDelete(id);
     res.redirect('/admin/categories');
   } catch (error) {
-    console.error('Error deleting category:', error);
+    console.error('Error deleting category:', error);//consoling error
     res.status(500).send('Server Error');
   }
 };
@@ -263,9 +263,9 @@ exports.loadEditCategory = async (req, res) => {
     const { id } = req.params;
     const category = await Category.findById(id);
 
-    res.render('admin/edit-category', { category });
+    res.status(200).render('admin/edit-category', { category });
   } catch (error) {
-    console.error('Error loading edit page:', error);
+    console.error('Error loading edit page:', error);//for error consoling
     res.status(500).send('Server Error');
   }
 };
@@ -713,7 +713,7 @@ exports.updateReturnStatus = async (req, res) => {
       updatedAt: new Date(),
     });
 
-    // ✅ If approved, calculate refund and add to user's wallet
+    // If approved, calculate refund and add to user's wallet
     if (action === 'Approved') {
       let refundAmount = 0;
 
@@ -726,7 +726,7 @@ exports.updateReturnStatus = async (req, res) => {
         refundAmount += unitPrice * item.quantity;
       }
 
-      // ✅ Update user wallet
+      // Update user wallet
       const user = order.user;
       user.wallet.balance += refundAmount;
       user.wallet.transactions.push({
@@ -743,7 +743,7 @@ exports.updateReturnStatus = async (req, res) => {
     res.redirect('/admin/orders?sort=return-requested');
 
   } catch (err) {
-    console.error('❌ Error updating return status:', err);
+    console.error('Error updating return status:', err);
     res.status(500).send('Server error');
   }
 };
@@ -1351,9 +1351,9 @@ exports.createCoupon = async (req, res) => {
     const { code, discountType, discount, startDate, endDate } = req.body;
 
     const trimmedCode = code.trim().toUpperCase();
-    const coupons = await Coupon.find(); // Fetch existing coupons for rendering
+    const coupons = await Coupon.find(); // Fetch all for re-rendering on errors
 
-    // Check if coupon already exists
+    // Check if coupon code already exists
     const existingCoupon = await Coupon.findOne({ code: trimmedCode });
     if (existingCoupon) {
       return res.render('admin/coupons', {
@@ -1362,26 +1362,53 @@ exports.createCoupon = async (req, res) => {
       });
     }
 
-    // Check if dates are valid
-    if (new Date(startDate) > new Date(endDate)) {
+    // Check if start date is before end date
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    if (start > end) {
       return res.render('admin/coupons', {
         coupons,
         messages: { error: 'Start date must be before end date.' }
       });
     }
 
-    // Create and save new coupon
+    // Parse discount value
+    const parsedDiscount = parseFloat(discount);
+
+    // Validate discount based on type
+    if (discountType === 'percentage') {
+      if (parsedDiscount < 1 || parsedDiscount > 90) {
+        return res.render('admin/coupons', {
+          coupons,
+          messages: { error: 'Percentage discount must be between 1% and 90%.' }
+        });
+      }
+    } else if (discountType === 'fixed') {
+      if (parsedDiscount < 1 || parsedDiscount > 50000) {
+        return res.render('admin/coupons', {
+          coupons,
+          messages: { error: 'Fixed discount must be between ₹1 and ₹50,000.' }
+        });
+      }
+    } else {
+      return res.render('admin/coupons', {
+        coupons,
+        messages: { error: 'Invalid discount type selected.' }
+      });
+    }
+
+    // Save new coupon
     const newCoupon = new Coupon({
       code: trimmedCode,
       discountType,
-      discount: parseFloat(discount),
-      startDate: new Date(startDate),
-      endDate: new Date(endDate),
+      discount: parsedDiscount,
+      startDate: start,
+      endDate: end,
     });
 
     await newCoupon.save();
 
-    const updatedCoupons = await Coupon.find(); // Re-fetch after save
+    const updatedCoupons = await Coupon.find();
     return res.render('admin/coupons', {
       coupons: updatedCoupons,
       messages: { success: 'Coupon added successfully!' }
@@ -1392,7 +1419,7 @@ exports.createCoupon = async (req, res) => {
     const coupons = await Coupon.find();
     return res.render('admin/coupons', {
       coupons,
-      messages: { error: 'Failed to create coupon.' }
+      messages: { error: 'Failed to create coupon. Please try again.' }
     });
   }
 };
@@ -1512,52 +1539,90 @@ exports.downloadSalesReportExcel = async (req, res) => {
     const { startDate, endDate } = req.body;
 
     if (!startDate || !endDate) {
-      return res.status(400).send("Start date and end date are required.");
+      return res.status(400).send('Start date and end date are required.');
     }
 
     const start = new Date(startDate);
     const end = new Date(endDate);
-    end.setHours(23, 59, 59, 999); // Include the full end day
+    end.setHours(23, 59, 59, 999); // Include full end date
 
     const orders = await Order.find({
       createdAt: { $gte: start, $lte: end }
-    }).populate('user', 'name'); 
-
-    console.log("📦 Orders found:", orders.length);
+    }).populate('user', 'name');
 
     const workbook = new ExcelJS.Workbook();
     const sheet = workbook.addWorksheet('Sales Report');
 
-   sheet.columns = [
-  { header: 'User Name', key: 'userName' },
-  { header: 'Date', key: 'date' },
-  { header: 'Amount', key: 'amount' },
-  { header: 'Discount', key: 'discount' },
-  { header: 'Coupon Discount', key: 'coupon' },
-];
+    // Headers
+    sheet.mergeCells('A1', 'E1');
+    sheet.getCell('A1').value = 'Sales Report';
+    sheet.getCell('A1').alignment = { horizontal: 'center' };
+    sheet.getCell('A1').font = { size: 16, bold: true };
+
+    sheet.mergeCells('A2', 'E2');
+    sheet.getCell('A2').value = `From: ${moment(start).format('YYYY-MM-DD')} To: ${moment(end).format('YYYY-MM-DD')}`;
+    sheet.getCell('A2').alignment = { horizontal: 'center' };
+
+    // Column definitions
+    sheet.columns = [
+      { header: 'User Name', key: 'userName', width: 25 },
+      { header: 'Date', key: 'date', width: 15 },
+      { header: 'Amount (₹)', key: 'amount', width: 18 },
+      { header: 'Discount (₹)', key: 'discount', width: 18 },
+      { header: 'Coupon (₹)', key: 'coupon', width: 18 }
+    ];
+
+    // Data + Totals
+    let totalAmount = 0;
+    let totalDiscount = 0;
+    let totalCoupon = 0;
 
     orders.forEach(order => {
-     sheet.addRow({
-  userName: order.user?.name || 'N/A',
-  date: moment(order.createdAt).format('YYYY-MM-DD'),
-  amount: order.totalAmount,
-  discount: order.discountAmount || 0,
-  coupon: order.couponDiscount || 0,
-});
+      const discount = order.discountAmount || 0;
+      const coupon = order.couponDiscount || 0;
+      const amount = order.totalAmount || 0;
+
+      totalAmount += amount;
+      totalDiscount += discount;
+      totalCoupon += coupon;
+
+      sheet.addRow({
+        userName: order.user?.name || 'N/A',
+        date: moment(order.createdAt).format('YYYY-MM-DD'),
+        amount: amount.toFixed(2),
+        discount: discount.toFixed(2),
+        coupon: coupon.toFixed(2),
+      });
+    });
+
+    // Blank row
+    sheet.addRow({});
+
+    // Summary section
+    sheet.addRow(['Summary']);
+    sheet.addRow([`Total Orders:`, orders.length]);
+    sheet.addRow([`Total Sales Amount:`, '', '', '', `₹${totalAmount.toFixed(2)}`]);
+    sheet.addRow([`Total Discounts (incl. coupon):`, '', '', '', `₹${(totalDiscount + totalCoupon).toFixed(2)}`]);
+
+    // Style summary title
+    const summaryTitleRow = sheet.getRow(sheet.lastRow.number - 3);
+    summaryTitleRow.font = { bold: true, underline: true };
+
+    // Style totals
+    const finalRows = [sheet.lastRow.number - 2, sheet.lastRow.number - 1];
+    finalRows.forEach(rowNum => {
+      const row = sheet.getRow(rowNum);
+      row.font = { bold: true };
     });
 
     res.setHeader(
       'Content-Type',
       'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
     );
-    res.setHeader(
-      'Content-Disposition',
-      'attachment; filename=SalesReport.xlsx'
-    );
+    res.setHeader('Content-Disposition', 'attachment; filename=SalesReport.xlsx');
 
     await workbook.xlsx.write(res);
     res.end();
-
   } catch (err) {
     console.error('❌ Excel Report Generation Error:', err);
     res.status(500).send('Failed to generate sales report.');

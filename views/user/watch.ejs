@@ -119,10 +119,12 @@
                                     <!-- Heart Icon for Wishlist -->
                                    <div class="icon-stack">
   <!-- Wishlist Icon -->
+   <!-- <% %>  -->
   <button class="wishlist-icon"
     onclick="addToWishlist('<%= product._id %>', this, event)">
     <i class="fas fa-heart"></i>
   </button>
+  
 
   <!-- Cart Icon (Only if product not blocked) -->
   <% if (!product.isBlocked) { %>

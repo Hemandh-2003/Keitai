@@ -2,11 +2,11 @@
 <html lang="en">
 
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Order Details</title>
-  <link rel="stylesheet" href="/css/order-details.css">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <link rel="stylesheet" href="/css/order-details.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
   <style>
     .product-img {
       width: 80px;
@@ -34,12 +34,18 @@
       background-color: #2196F3;
       color: white;
     }
+
+    .coupon-details {
+      background-color: #f1f1f1;
+      padding: 12px 15px;
+      border-left: 4px solid #28a745;
+      margin-bottom: 20px;
+      border-radius: 5px;
+    }
   </style>
 </head>
 
 <body>
-
-  <!-- Header -->
   <header>
     <nav>
       <a href="javascript:void(0);" class="back-link" onclick="goBack()">
@@ -49,24 +55,19 @@
     <h1>Order Details</h1>
   </header>
 
-  <!-- Order Details Section -->
   <section class="order-details-section">
     <div class="order-summary">
-      <p class="order-id"><strong>Order ID:</strong>
+      <p><strong>Order ID:</strong>
         <%= order.orderId %>
       </p>
       <p><strong>Status:</strong>
-        <% if (order.returnStatus==='Approved' ) { %>
-          Return Accepted
-          <% } else if (order.returnStatus==='Rejected' ) { %>
-            Return Rejected
-            <% } else if (order.returnStatus==='Requested' ) { %>
-              Return Requested
+        <% if (order.returnStatus==='Approved' ) { %>Return Accepted
+          <% } else if (order.returnStatus==='Rejected' ) { %>Return Rejected
+            <% } else if (order.returnStatus==='Requested' ) { %>Return Requested
               <% } else { %>
                 <%= order.status %>
                   <% } %>
       </p>
-
       <p><strong>Order Date:</strong>
         <%= new Date(order.createdAt).toLocaleDateString() %>
       </p>
@@ -76,45 +77,41 @@
     </div>
 
     <h3>Products</h3>
-    <form id="action-form" method="POST">
-      <ul class="product-list">
-        <% order.products.forEach(item=> {
-          const price = item.product.salesPrice || item.product.regularPrice;
-          const subtotal = price * item.quantity;
-          %>
-          <li class="product-item">
-            <% if (item.product.images && item.product.images.length> 0) { %>
-              <img src="/uploads/<%= item.product.images[0] %>" alt="Product" class="product-img">
-              <% } %>
+    <ul class="product-list">
+      <% order.products.forEach(item=> {
+        const price = item.product.salesPrice || item.product.regularPrice;
+        const subtotal = price * item.quantity;
+        %>
+        <li class="product-item">
+          <% if (item.product.images && item.product.images.length> 0) { %>
+            <img src="/uploads/<%= item.product.images[0] %>" alt="Product" class="product-img">
+            <% } %>
+              <p><strong>Product Name:</strong>
+                <%= item.product.name %>
+              </p>
+              <p><strong>Quantity:</strong>
+                <%= item.quantity %>
+              </p>
+              <p><strong>Price:</strong> ₹<%= price %>
+              </p>
+              <p><strong>Subtotal:</strong> ₹<%= subtotal %>
+              </p>
 
-                <p><strong>Product Name:</strong>
-                  <%= item.product.name %>
-                </p>
-                <p><strong>Quantity:</strong>
-                  <%= item.quantity %>
-                </p>
-                <p><strong>Price:</strong> ₹<%= price %>
-                </p>
-                <p><strong>Subtotal:</strong> ₹<%= subtotal %>
-                </p>
-
-                <% if (order.status==='Pending' ) { %>
-                  <form action="/user/orders/cancel-item/<%= order._id %>" method="POST">
-                    <input type="hidden" name="productId" value="<%= item.product._id %>">
-                    <button type="submit" class="cancel-btn">Cancel This Item</button>
+              <% if (order.status==='Pending' ) { %>
+                <form action="/user/orders/cancel-item/<%= order._id %>" method="POST">
+                  <input type="hidden" name="productId" value="<%= item.product._id %>">
+                  <button type="submit" class="cancel-btn">Cancel This Item</button>
+                </form>
+                <% } else if (order.status==='Delivered' ) { %>
+                  <form action="/user/orders/<%= order._id %>/return/<%= item.product._id %>" method="POST">
+                    <input type="hidden" name="quantity" value="<%= item.quantity %>">
+                    <input type="hidden" name="reason" value="User initiated return">
+                    <button type="submit" class="return-btn">Return This Item</button>
                   </form>
-                  <% } else if (order.status==='Delivered' ) { %>
-                    <form action="/user/orders/<%= order._id %>/return/<%= item.product._id %>" method="POST">
-                      <input type="hidden" name="quantity" value="<%= item.quantity %>">
-                      <input type="hidden" name="reason" value="User initiated return">
-                      <button type="submit" class="return-btn">Return This Item</button>
-                    </form>
-                    <% } %>
-          </li>
-          <% }); %>
-      </ul>
-
-    </form>
+                  <% } %>
+        </li>
+        <% }); %>
+    </ul>
 
     <h3>Shipping Address</h3>
     <div class="shipping-address">
@@ -138,24 +135,55 @@
       <%= order.paymentMethod %>
     </p>
 
-    <% if (order.deliveryCharge && order.deliveryCharge> 0) { %>
-      <p><strong>Delivery Charge:</strong> ₹<%= order.deliveryCharge.toFixed(2) %>
-      </p>
+    <% if (order.coupon) { %>
+      <h3>Coupon Applied</h3>
+      <div class="coupon-details">
+        <p><strong>Code:</strong>
+          <%= order.coupon.code %>
+        </p>
+        <p><strong>Type:</strong>
+          <%= order.coupon.discountType==='percentage' ? 'Percentage' : 'Fixed Amount' %>
+        </p>
+        <p><strong>Discount:</strong>
+          <%= order.coupon.discountType==='percentage' ? `${order.coupon.discount}%` : `₹${order.coupon.discount}` %>
+        </p>
+        <p><strong>Discount Applied:</strong> ₹<%= order.couponDiscount?.toFixed(2) || 0 %>
+        </p>
+      </div>
       <% } %>
 
-        <p><strong>Total Amount:</strong> ₹<%= order.totalAmount.toFixed(2) %>
-        </p>
+        <% const subTotal=order.totalAmount + (order.couponDiscount || 0); %>
+          <p><strong>Subtotal:</strong> ₹<%= subTotal.toFixed(2) %>
+          </p>
 
-        <% if (order.status==='Pending' ) { %>
-          <form action="/user/orders/cancel/<%= order._id %>" method="POST"
-            onsubmit="return confirm('Are you sure you want to cancel this order?');">
-            <button type="submit" class="cancel-btn">Cancel Order</button>
-          </form>
-          <% } else if (order.status==='Delivered' ) { %>
-            <form class="return-order-form" action="/user/orders/return/<%= order._id %>" method="POST">
-              <button type="submit" class="return-btn">Return Order</button>
-            </form>
+          <% if (order.deliveryCharge && order.deliveryCharge> 0) { %>
+            <p><strong>Delivery Charge:</strong> ₹<%= order.deliveryCharge.toFixed(2) %>
+            </p>
             <% } %>
+
+              <% if (order.couponDiscount> 0) { %>
+                <p><strong>Coupon Discount:</strong> -₹<%= order.couponDiscount.toFixed(2) %>
+                </p>
+                <% } %>
+
+                  <p><strong>Total Amount:</strong> ₹<%= order.totalAmount.toFixed(2) %>
+                  </p>
+                  <form action="/user/order/<%= order._id %>/invoice" method="GET" target="_blank">
+                    <button type="submit" class="btn btn-primary">
+                      <i class="fas fa-file-invoice"></i> Download Invoice
+                    </button>
+                  </form>
+
+                  <% if (order.status==='Pending' ) { %>
+                    <form action="/user/orders/cancel/<%= order._id %>" method="POST"
+                      onsubmit="return confirm('Are you sure you want to cancel this order?');">
+                      <button type="submit" class="cancel-btn">Cancel Order</button>
+                    </form>
+                    <% } else if (order.status==='Delivered' ) { %>
+                      <form class="return-order-form" action="/user/orders/return/<%= order._id %>" method="POST">
+                        <button type="submit" class="return-btn">Return Order</button>
+                      </form>
+                      <% } %>
   </section>
 
   <script>
@@ -167,14 +195,9 @@
       }
     }
 
-  </script>
-  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-  <script>
-    // Target all return-order forms
     document.querySelectorAll('.return-order-form').forEach(form => {
       form.addEventListener('submit', function (e) {
-        e.preventDefault(); // prevent default form submit
-
+        e.preventDefault();
         Swal.fire({
           title: 'Are you sure?',
           text: 'Do you want to return this order?',
@@ -186,13 +209,14 @@
           cancelButtonText: 'Cancel'
         }).then((result) => {
           if (result.isConfirmed) {
-            form.submit(); // submit the form if confirmed
+            form.submit();
           }
         });
       });
     });
   </script>
 
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </body>
 
 </html>

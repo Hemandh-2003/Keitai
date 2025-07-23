@@ -8,8 +8,8 @@ exports.initiatePayment = async (req, res) => {
 
     if (!amount) return res.status(400).json({ error: 'Missing amount' });
 
-    const amountInPaise = Math.round(parseFloat(amount) * 100); // ₹ to paise
-    console.log("💰 Amount received (₹):", amount, "➡️ in paise:", amountInPaise);
+    const amountInPaise = Math.round(parseFloat(amount) * 100);
+    console.log("Amount received (₹):", amount, "➡️ in paise:", amountInPaise);
 
     const options = {
       amount: amountInPaise,

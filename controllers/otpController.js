@@ -27,12 +27,11 @@ transporter.verify((error, success) => {
 exports.generateOtp = (email) => {
     const otp = Math.floor(100000 + Math.random() * 900000); // Generate a 6-digit OTP
   
-    // Overwrite any existing OTP for the same email
     otpStorage[email] = {
       otp: otp,
       expiry: Date.now() + 5 * 60 * 1000, // OTP expires in 5 minutes
     };
-    console.log(`Generated OTP for ${email}: ${otp}`);
+    console.log(`Generated OTP for ${email}: ${otp}`);//consoling the otp
   
     return otp;
 };  

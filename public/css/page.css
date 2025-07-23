@@ -228,7 +228,7 @@ main {
 .wishlist-icon i {
   color: grey;
   transition: color 0.3s ease;
-  padding-top: 20px;
+  padding-top: 30px;
 }
 .wishlist-icon:hover i {
   color: black;

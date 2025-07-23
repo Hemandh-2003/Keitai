@@ -58,7 +58,7 @@
                   <button type="button" class="close" onclick="this.parentElement.style.display='none'">&times;</button>
               </div>
               <% } %>
-              
+
                 <!-- Create New Coupon Form -->
                 <form action="/admin/coupons/create" method="POST" style="margin-bottom: 30px;">
                   <div style="display: flex; flex-wrap: wrap; gap: 15px;">
@@ -130,6 +130,64 @@
       </section>
     </div>
   </div>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script>
+  <% if (messages && messages.success) { %>
+      Swal.fire({
+        icon: 'success',
+        title: 'Success!',
+        text: "<%= messages.success %>"
+      });
+  <% } %>
+
+  <% if (messages && messages.error) { %>
+      Swal.fire({
+        icon: 'error',
+        title: 'Oops!',
+        text: "<%= messages.error %>"
+      });
+  <% } %>
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+  const couponForm = document.querySelector('form[action="/admin/coupons/create"]');
+
+  couponForm.addEventListener('submit', function (e) {
+    const discountType = couponForm.querySelector('select[name="discountType"]').value;
+    const discount = parseFloat(couponForm.querySelector('input[name="discount"]').value);
+
+    if (discountType === 'percentage') {
+      if (discount < 1 || discount > 90) {
+        e.preventDefault();
+        Swal.fire({
+          icon: 'error',
+          title: 'Invalid Discount',
+          text: 'Percentage discount must be between 1% and 90%.'
+        });
+        return;
+      }
+    } else if (discountType === 'fixed') {
+      if (discount < 1 || discount > 50000) {
+        e.preventDefault();
+        Swal.fire({
+          icon: 'error',
+          title: 'Invalid Discount',
+          text: 'Fixed discount must be between ₹1 and ₹50,000.'
+        });
+        return;
+      }
+    } else {
+      e.preventDefault();
+      Swal.fire({
+        icon: 'warning',
+        title: 'Discount Type Required',
+        text: 'Please select a discount type.'
+      });
+      return;
+    }
+  });
+</script>
+
 </body>
 
 </html>
