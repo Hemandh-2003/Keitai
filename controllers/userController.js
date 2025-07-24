@@ -748,6 +748,49 @@ exports.getCheckout = async (req, res) => {
     res.status(500).render('user/error', { message: 'Failed to load checkout' });
   }
 };
+exports.createInlineAddress = async (req, res) => {
+  try {
+    const { name, street, city, state, zip, country, phone } = req.body;
+
+    // Validate input
+    if (!name || !street || !city || !state || !zip || !country || !phone) {
+      return res.status(400).json({
+        success: false,
+        message: 'All fields are required.'
+      });
+    }
+
+    const user = await User.findById(req.session.user._id);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found.'
+      });
+    }
+
+    const newAddress = {
+      name,
+      street,
+      city,
+      state,
+      zip,
+      country,
+      phone,
+      default: user.addresses.length === 0
+    };
+
+    user.addresses.push(newAddress);
+    await user.save();
+
+    res.status(200).json({ success: true });
+  } catch (err) {
+    console.error('❌ Error in createInlineAddress:', err);
+    res.status(500).json({
+      success: false,
+      message: 'Something went wrong. Please try again later.'
+    });
+  }
+};
 
 function calculateDiscountAmount(products, quantities, offerPrices = []) {
   let totalDiscount = 0;
@@ -1281,35 +1324,60 @@ exports.resendOtp = async (req, res) => {
 };
 exports.getProductDetailsWithRelated = async (req, res) => {
   try {
-    const productId = req.params.productId; // Make sure this matches your route parameter
-    const product = await Product.findOne({
-      _id: productId,
-      isBlocked: false
-    }).populate('category')
-    .populate('offers');
+    const productId = req.params.productId;
+
+    const product = await Product.findById(productId)
+      .populate('category')
+      .populate('offers');
 
     if (!product) {
-      return res.status(404).send('Product not found');
+     return res.send(`
+  <html>
+    <head>
+      <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    </head>
+    <body>
+      <script>
+        Swal.fire({
+          icon: 'warning',
+          title: 'Notice',
+          text: "This product is currently blocked. Please go back.",
+          confirmButtonText: 'Go Back',
+          allowOutsideClick: false
+        }).then(() => {
+          window.location.href = "${req.get('referer') || '/'}";
+        });
+      </script>
+    </body>
+  </html>
+`);
+
+    }
+
+    if (product.isBlocked) {
+      return res.render('user/product-status', {
+        message: 'This product is currently blocked. Please go back.',
+        redirectUrl: req.get('referer') || '/'
+      });
     }
 
     const relatedProducts = await Product.find({
       category: product.category._id,
-      _id: { $ne: productId },//
+      _id: { $ne: productId },
       isBlocked: false
     }).limit(4);
-    console.log("related:",relatedProducts)
 
-    res.render('user/Product-details', { 
-      user: req.session.user, 
+    res.render('user/Product-details', {
+      user: req.session.user,
       product,
-      relatedProducts 
+      relatedProducts
     });
-
   } catch (error) {
     console.error('Error:', error);
     res.status(500).send('Server Error');
   }
 };
+
 exports.cancelEntireOrder = async (req, res) => {
   try {
     const { id } = req.params;

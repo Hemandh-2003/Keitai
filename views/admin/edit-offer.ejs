@@ -42,7 +42,7 @@
   <input type="checkbox" name="isActive" <%= offer.isActive ? 'checked' : '' %>> Active<br>
 
   <!-- Product Selector (for product offers) -->
-  <div id="product-section" style="<%= offer.offerType === 'product' ? '' : 'display:none;' %>">
+  <div id="product-section" style=`<%= offer.offerType === 'product' ? '' : 'display:none;' %>`>
     <label>Select Products:</label><br>
     <% products.forEach(product => { %>
       <label>
@@ -54,7 +54,7 @@
   </div>
 
   <!-- Category Selector (for category offers) -->
-  <div id="category-section" style="<%= offer.offerType === 'category' ? '' : 'display:none;' %>">
+  <div id="category-section" style=`<%= offer.offerType === 'category' ? '' : 'display:none;' %>`>
     <label>Select Categories:</label><br>
     <% categories.forEach(category => { %>
       <label>
@@ -66,7 +66,7 @@
   </div>
 
   <!-- Referral Fields (for referral offers) -->
-  <div id="referral-section" style="<%= offer.offerType === 'referral' ? '' : 'display:none;' %>">
+  <div id="referral-section" style=`<%= offer.offerType === 'referral' ? '' : 'display:none;' %>`>
     <label>Referral Code:</label>
     <input type="text" name="referralCode" value="<%= offer.referralCode || '' %>"><br>
 

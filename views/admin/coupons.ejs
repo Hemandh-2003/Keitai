@@ -29,7 +29,6 @@
     <!-- Main Content -->
     <div class="main-content">
       <header class="top-bar">
-        <input type="text" placeholder="Search coupons...">
         <div class="admin-controls">
           <span>Admin</span>
           <form action="/admin/logout" method="POST">
@@ -114,7 +113,7 @@
                             <%= new Date(coupon.endDate).toLocaleDateString() %>
                           </td>
                           <td>
-                            <%= new Date(coupon.endDate)> new Date() ? 'Active' : 'Expired' %>
+                           <%= new Date(coupon.endDate)> new Date() ? 'Active' : 'Expired' %>
                           </td>
                           <td class="actions">
                             <form action="/admin/coupons/delete/<%= coupon._id %>" method="POST"
@@ -132,24 +131,6 @@
   </div>
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   <script>
-  <% if (messages && messages.success) { %>
-      Swal.fire({
-        icon: 'success',
-        title: 'Success!',
-        text: "<%= messages.success %>"
-      });
-  <% } %>
-
-  <% if (messages && messages.error) { %>
-      Swal.fire({
-        icon: 'error',
-        title: 'Oops!',
-        text: "<%= messages.error %>"
-      });
-  <% } %>
-  </script>
-  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-<script>
   const couponForm = document.querySelector('form[action="/admin/coupons/create"]');
 
   couponForm.addEventListener('submit', function (e) {
@@ -186,6 +167,22 @@
       return;
     }
   });
+  `<% if (messages && messages.success) { %>
+    Swal.fire({
+      icon: 'success',
+      title: 'Success!',
+      text: "<%- messages.success %>"
+    });
+  <% } %>
+
+  <% if (messages && messages.error) { %>
+    Swal.fire({
+      icon: 'error',
+      title: 'Oops!',
+      text: "<%- messages.error %>"
+    });
+  <% } %>`
+
 </script>
 
 </body>

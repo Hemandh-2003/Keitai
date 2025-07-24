@@ -37,7 +37,7 @@ router.post('/checkout', ...protect, userController.checkout);
 router.post('/place-order', ...protect, userController.placeOrder);
 router.post('/confirm-payment', ...protect, userController.confirmPayment);
 router.get('/confirm-payment', ...protect, userController.renderConfirmPayment);
-
+router.post('/address/create-inline', userController.createInlineAddress);
 // Filter Routes
 //router.get('/laptop', userController.getLaptopProducts);
 

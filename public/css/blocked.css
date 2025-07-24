@@ -1,0 +1,34 @@
+.blocked-container {
+  max-width: 500px;
+  margin: 100px auto;
+  text-align: center;
+  padding: 40px;
+  border: 2px solid #ccc;
+  border-radius: 10px;
+  background-color: #fff3f3;
+  box-shadow: 0 0 10px rgba(0,0,0,0.1);
+  font-family: 'Poppins', sans-serif;
+}
+
+.blocked-container h1 {
+  color: #d9534f;
+  font-size: 2em;
+}
+
+.blocked-container p {
+  margin: 15px 0;
+  color: #555;
+}
+
+.btn-home {
+  display: inline-block;
+  margin-top: 20px;
+  padding: 10px 20px;
+  background-color: #007bff;
+  color: white;
+  text-decoration: none;
+  border-radius: 5px;
+}
+.btn-home:hover {
+  background-color: #0056b3;
+}

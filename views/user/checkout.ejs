@@ -47,7 +47,10 @@
               </div>
             </label>
             <% }); %>
-              <a href="/user/address" class="add-address"><i class="fas fa-plus-circle"></i> Add New Address</a>
+              <button type="button" class="add-address" id="openAddAddressModal">
+                <i class="fas fa-plus-circle"></i> Add New Address
+              </button>
+
         </div>
       </section>
 
@@ -152,126 +155,151 @@
           <!-- Submit Button -->
           <button type="submit" class="submit-btn">Continue</button>
     </form>
+    <!-- Add Address Modal -->
+<div id="addAddressModal" class="modal">
+  <div class="modal-content">
+    <h2>Add New Address</h2>
+    <form id="addAddressForm" action="/user/address/create-inline" method="POST">
+      <label for="name">Full Name:</label>
+      <input type="text" id="name" name="name" required>
+      <label for="street">Street Address:</label>
+      <input type="text" id="street" name="street" required>
+      <label for="city">City:</label>
+      <input type="text" id="city" name="city" required>
+      <label for="state">State:</label>
+      <input type="text" id="state" name="state" required>
+      <label for="zip">ZIP Code:</label>
+      <input type="text" id="zip" name="zip" required pattern="^\d{6}$" title="ZIP Code must be 6 digits">
+      <label for="country">Country:</label>
+      <input type="text" id="country" name="country" required>
+      <label for="phone">Phone Number:</label>
+      <input type="tel" id="phone" name="phone" required pattern="^\d{10}$" title="Phone number must be 10 digits">
+      <button type="submit" class="save-btn">Save</button>
+    </form>
+    <button class="close-modal">Cancel</button>
+  </div>
+</div>
+
   </div>
 
   <!-- SweetAlert2 -->
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
   <script>
-  document.querySelector('.submit-btn').addEventListener('click', async (e) => {
-    e.preventDefault();
+    document.querySelector('.submit-btn').addEventListener('click', async (e) => {
+      e.preventDefault();
 
-    if (!validateAddress()) return;
+      if (!validateAddress()) return;
 
-    const paymentMethod = document.querySelector('input[name="paymentMethod"]:checked')?.value;
-    const grandTotal = <%= grandTotal %>;
-    const walletBalance = <%= walletBalance %>;
+      const paymentMethod = document.querySelector('input[name="paymentMethod"]:checked')?.value;
+      const grandTotal = `<%= grandTotal %>`;
+      const walletBalance = `<%= walletBalance %>`;
 
-    if (paymentMethod === 'COD') {
-      if (grandTotal > 20000) {
-        return Swal.fire({
-          icon: 'warning',
-          title: 'COD Not Allowed',
-          text: 'Cash on Delivery is only available for orders up to ₹20,000. Please choose Online Payment.'
-        });
+      if (paymentMethod === 'COD') {
+        if (grandTotal > 20000) {
+          return Swal.fire({
+            icon: 'warning',
+            title: 'COD Not Allowed',
+            text: 'Cash on Delivery is only available for orders up to ₹20,000. Please choose Online Payment.'
+          });
+        }
+
+        document.querySelector('.checkout-form').submit();
+
+      } else if (paymentMethod === 'Wallet') {
+        if (walletBalance < grandTotal) {
+          return Swal.fire({
+            icon: 'error',
+            title: 'Insufficient Wallet Balance',
+            text: 'You don’t have enough wallet balance to place this order.'
+          });
+        }
+
+        // ✅ Submit form directly for wallet
+        document.querySelector('.checkout-form').submit();
+
+      } else if (paymentMethod === 'Online') {
+        if (grandTotal > 450000) {
+          return Swal.fire({
+            icon: 'error',
+            title: 'Payment Limit Exceeded',
+            text: 'Online payment is only allowed for orders up to ₹4.5 lakhs. Please reduce your cart total.'
+          });
+        }
+
+        try {
+          const response = await fetch('/payment/create-order', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              amount: grandTotal,
+              currency: 'INR',
+              receipt: 'order_' + Date.now()
+            })
+          });
+
+          const paymentData = await response.json();
+
+          const options = {
+            key: '<%= process.env.RAZORPAY_KEY_ID %>',
+            amount: paymentData.amount,
+            currency: paymentData.currency,
+            name: "Keitai",
+            description: "Order Payment",
+            order_id: paymentData.id,
+            handler: function (response) {
+              const form = document.querySelector('.checkout-form');
+              const paymentInput = document.createElement('input');
+              paymentInput.type = 'hidden';
+              paymentInput.name = 'paymentDetails';
+              paymentInput.value = JSON.stringify(response);
+              form.appendChild(paymentInput);
+              form.submit();
+            },
+            prefill: {
+              name: '<%= user.name %>',
+              email: '<%= user.email %>',
+              contact: '<%= user.phone || "9999999999" %>'
+            },
+            theme: { color: "#3399cc" }
+          };
+
+          const rzp = new Razorpay(options);
+          rzp.on('payment.failed', function (response) {
+            window.location.href = `/payment/failed?error=${encodeURIComponent(response.error.description)}`;
+          });
+          rzp.open();
+
+        } catch (err) {
+          Swal.fire({
+            icon: 'error',
+            title: 'Payment Error',
+            text: 'Something went wrong while initiating payment. Please try again.'
+          });
+        }
       }
-
-      document.querySelector('.checkout-form').submit();
-
-    } else if (paymentMethod === 'Wallet') {
-      if (walletBalance < grandTotal) {
-        return Swal.fire({
-          icon: 'error',
-          title: 'Insufficient Wallet Balance',
-          text: 'You don’t have enough wallet balance to place this order.'
-        });
-      }
-
-      // ✅ Submit form directly for wallet
-      document.querySelector('.checkout-form').submit();
-
-    } else if (paymentMethod === 'Online') {
-      if (grandTotal > 450000) {
-        return Swal.fire({
-          icon: 'error',
-          title: 'Payment Limit Exceeded',
-          text: 'Online payment is only allowed for orders up to ₹4.5 lakhs. Please reduce your cart total.'
-        });
-      }
-
-      try {
-        const response = await fetch('/payment/create-order', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            amount: grandTotal,
-            currency: 'INR',
-            receipt: 'order_' + Date.now()
-          })
-        });
-
-        const paymentData = await response.json();
-
-        const options = {
-          key: '<%= process.env.RAZORPAY_KEY_ID %>',
-          amount: paymentData.amount,
-          currency: paymentData.currency,
-          name: "Keitai",
-          description: "Order Payment",
-          order_id: paymentData.id,
-          handler: function (response) {
-            const form = document.querySelector('.checkout-form');
-            const paymentInput = document.createElement('input');
-            paymentInput.type = 'hidden';
-            paymentInput.name = 'paymentDetails';
-            paymentInput.value = JSON.stringify(response);
-            form.appendChild(paymentInput);
-            form.submit();
-          },
-          prefill: {
-            name: '<%= user.name %>',
-            email: '<%= user.email %>',
-            contact: '<%= user.phone || "9999999999" %>'
-          },
-          theme: { color: "#3399cc" }
-        };
-
-        const rzp = new Razorpay(options);
-        rzp.on('payment.failed', function (response) {
-          window.location.href = `/payment/failed?error=${encodeURIComponent(response.error.description)}`;
-        });
-        rzp.open();
-
-      } catch (err) {
-        Swal.fire({
-          icon: 'error',
-          title: 'Payment Error',
-          text: 'Something went wrong while initiating payment. Please try again.'
-        });
-      }
-    }
-  });
-
-  function validateAddress() {
-    const selectedAddress = document.querySelector('input[name="selectedAddress"]:checked');
-    if (!selectedAddress) {
-      Swal.fire({
-        icon: 'warning',
-        title: 'Shipping Address Required',
-        text: 'Please select a shipping address before continuing with your order.',
-      });
-      return false;
-    }
-    return true;
-  }
-
-  // Razorpay UI toggle
-  document.querySelectorAll('input[name="paymentMethod"]').forEach(radio => {
-    radio.addEventListener('change', function () {
-      document.getElementById('razorpay-container').style.display =
-        this.value === 'Online' ? 'block' : 'none';
     });
-  });
+
+    function validateAddress() {
+      const selectedAddress = document.querySelector('input[name="selectedAddress"]:checked');
+      if (!selectedAddress) {
+        Swal.fire({
+          icon: 'warning',
+          title: 'Shipping Address Required',
+          text: 'Please select a shipping address before continuing with your order.',
+        });
+        return false;
+      }
+      return true;
+    }
+
+    // Razorpay UI toggle
+    document.querySelectorAll('input[name="paymentMethod"]').forEach(radio => {
+      radio.addEventListener('change', function () {
+        document.getElementById('razorpay-container').style.display =
+          this.value === 'Online' ? 'block' : 'none';
+      });
+    });
 
     document.getElementById('rzp-button')?.addEventListener('click', async function (e) {
       e.preventDefault();
@@ -355,7 +383,7 @@
     // Coupon Apply
     document.getElementById('applyCouponBtn')?.addEventListener('click', async () => {
       const code = document.getElementById('couponCode').value.trim();
-      const total = <%= totalPrice + deliveryCharge %>;
+      const total = `<%= totalPrice + deliveryCharge %>`;
 
       if (!code) {
         return Swal.fire({
@@ -429,6 +457,85 @@
     });
 
   </script>
+  <script>
+  const addAddressBtn = document.getElementById('openAddAddressModal');
+  const modal = document.getElementById('addAddressModal');
+  const closeModal = document.querySelector('.close-modal');
+  const addAddressForm = document.getElementById('addAddressForm');
+
+  addAddressBtn?.addEventListener('click', () => {
+    modal.style.display = 'block';
+  });
+
+  closeModal?.addEventListener('click', () => {
+    modal.style.display = 'none';
+  });
+
+  window.addEventListener('click', (e) => {
+    if (e.target === modal) {
+      modal.style.display = 'none';
+    }
+  });
+
+  // Optional: SweetAlert validation before submit
+  const isSafeInput = (value) => /^[a-zA-Z0-9\s\-]+$/.test(value);
+
+  addAddressForm?.addEventListener('submit', async (event) => {
+    event.preventDefault();
+
+    const formData = new FormData(addAddressForm);
+    const data = Object.fromEntries(formData.entries());
+
+    const { name, street, city, state, zip, country, phone } = data;
+
+    if (!name || !street || !city || !state || !zip || !country || !phone) {
+      return Swal.fire({
+        icon: 'warning',
+        title: 'Missing Fields',
+        text: 'Please fill in all address fields.'
+      });
+    }
+
+    if (!/^\d{6}$/.test(zip)) {
+      return Swal.fire({ icon: 'error', title: 'Invalid ZIP Code', text: 'ZIP must be 6 digits' });
+    }
+
+    if (!/^\d{10}$/.test(phone)) {
+      return Swal.fire({ icon: 'error', title: 'Invalid Phone Number', text: 'Phone must be 10 digits' });
+    }
+
+    const fieldsToCheck = [name, street, city, state, country];
+    for (let field of fieldsToCheck) {
+      if (!isSafeInput(field)) {
+        return Swal.fire({
+          icon: 'error',
+          title: 'Invalid Input',
+          text: 'Avoid special characters like @, {}, [], etc.'
+        });
+      }
+    }
+
+    try {
+      const res = await fetch('/user/address/create-inline', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+
+      const result = await res.json();
+
+      if (result.success) {
+        await Swal.fire({ icon: 'success', title: 'Address Added!', timer: 1500 });
+        window.location.reload(); // reload to reflect new address
+      } else {
+        Swal.fire({ icon: 'error', title: 'Error', text: result.message || 'Could not add address' });
+      }
+    } catch (err) {
+      Swal.fire({ icon: 'error', title: 'Server Error', text: 'Something went wrong' });
+    }
+  });
+</script>
+
 </body>
 
 </html>

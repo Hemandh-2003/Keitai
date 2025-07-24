@@ -68,7 +68,9 @@ exports.getCart = async (req, res) => {
       return res.render("user/cart", { 
         cart: { items: [], totalPrice: 0 },
         currentPage: page,
-        totalPages: 0
+        totalPages: 0,
+        hasBlockedProduct: false,
+        blockedProductNames: []
       });
     }
 
@@ -76,14 +78,21 @@ exports.getCart = async (req, res) => {
     const end = start + perPage;
     const paginatedItems = cart.items.slice(start, end);
 
-    // Manually populate and attach offerPrice
     const enhancedItems = [];
+    let hasBlockedProduct = false;
+    let blockedProductNames = [];
+
     for (const item of paginatedItems) {
       const product = await Product.findById(item.product);
       if (!product) continue;
 
-      const offer = await product.getBestOfferPrice?.();  // ✅ Ensure getBestOfferPrice exists
+      const offer = await product.getBestOfferPrice?.();
       const offerPrice = offer?.price || product.salesPrice || product.regularPrice;
+
+      if (product.isBlocked) {
+        hasBlockedProduct = true;
+        blockedProductNames.push(product.name);
+      }
 
       enhancedItems.push({
         product: {
@@ -93,19 +102,22 @@ exports.getCart = async (req, res) => {
           regularPrice: product.regularPrice,
           salesPrice: product.salesPrice,
           images: product.images,
+          isBlocked: product.isBlocked,
           offerPrice
         },
         quantity: item.quantity
       });
     }
 
-    // Calculate total pages
-    const totalPages = Math.ceil(cart.items.length / perPage);
-
-    // Compute new subtotal (optional, safer than trusting stale data)
+    // Calculate subtotal excluding blocked products
     const totalPrice = enhancedItems.reduce((sum, item) => {
-      return sum + item.quantity * item.product.offerPrice;
+      if (!item.product.isBlocked) {
+        return sum + item.quantity * item.product.offerPrice;
+      }
+      return sum;
     }, 0);
+
+    const totalPages = Math.ceil(cart.items.length / perPage);
 
     res.render("user/cart", {
       cart: {
@@ -113,8 +125,11 @@ exports.getCart = async (req, res) => {
         totalPrice
       },
       currentPage: page,
-      totalPages
+      totalPages,
+      hasBlockedProduct,
+      blockedProductNames
     });
+
   } catch (error) {
     console.error("Error fetching cart:", error);
     res.status(500).send("Server error");

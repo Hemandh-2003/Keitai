@@ -542,35 +542,50 @@ exports.getProductDetailsWithRelated = async (req, res) => {
   try {
     const productId = req.params.productId;
 
-    const product = await Product.findOne({
-      _id: productId,
-      isBlocked: false
-    })
+    const product = await Product.findById(productId)
       .populate('category')
       .populate('offers');
 
-    if (!product) {
-      return res.status(404).send('Product not found');
+    // 🛑 If product doesn't exist or is blocked
+    if (!product || product.isBlocked) {
+      return res.send(`
+        <html>
+          <head>
+            <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+          </head>
+          <body>
+            <script>
+              Swal.fire({
+                icon: 'warning',
+                title: 'Product Unavailable',
+                text: "${!product ? 'Product not found or removed.' : 'This product is currently blocked.'}",
+                confirmButtonText: 'Go Back',
+                allowOutsideClick: false
+              }).then(() => {
+                window.location.href = "${req.get('referer') || '/'}";
+              });
+            </script>
+          </body>
+        </html>
+      `);
     }
 
     // 🛠️ Calculate best offer from product + category
     const offerDetails = await product.getBestOfferPrice();
-
-    // ✅ Attach offer details directly to product (useful for EJS)
     product.offerDetails = offerDetails;
 
-    // Fetch related products
+    // 🎯 Fetch related products
     const relatedProducts = await Product.find({
       category: product.category._id,
       _id: { $ne: productId },
       isBlocked: false
     }).limit(4).populate('offers category');
 
-    // ✅ Calculate offerDetails for related products too
     for (const related of relatedProducts) {
       related.offerDetails = await related.getBestOfferPrice();
     }
 
+    // ✅ Render details page
     res.render('user/Product-details', {
       user: req.session.user,
       product,
@@ -1544,7 +1559,7 @@ exports.downloadSalesReportExcel = async (req, res) => {
 
     const start = new Date(startDate);
     const end = new Date(endDate);
-    end.setHours(23, 59, 59, 999); // Include full end date
+    end.setHours(23, 59, 59, 999); 
 
     const orders = await Order.find({
       createdAt: { $gte: start, $lte: end }
