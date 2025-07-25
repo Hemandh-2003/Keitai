@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <title>All Payments</title>
+  <link rel="stylesheet" href="/css/payment.css">
+</head>
+
+<body>
+  <div class="dashboard-container">
+    <!-- Sidebar Navigation -->
+    <nav class="sidebar">
+      <div class="logo">
+        <img src="/images/logo1.png" alt="Logo" />
+      </div>
+      <ul>
+        <li><a href="/admin/dashboard">Dashboard</a></li>
+        <li><a href="/admin/sales-report">Sales Report</a></li>
+        <li><a href="/admin/orders">Orders</a></li>
+        <li><a href="/admin/products">Products</a></li>
+        <li><a href="/admin/users">Users</a></li>
+        <li><a href="/admin/categories">Categories</a></li>
+        <li><a href="/admin/coupons">Coupons</a></li>
+        <li><a href="/admin/banners">Banners</a></li>
+        <li><a href="/admin/payments" class="active">Payments</a></li>
+        <li><a href="/admin/offers">Offers</a></li>
+      </ul>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="container">
+      <h1>All Payments</h1>
+
+      <% if (orders && orders.length > 0) { %>
+        <table>
+          <thead>
+            <tr>
+              <th>Order ID</th>
+              <th>User</th>
+              <th>Email</th>
+              <th>Payment</th>
+              <th>Status</th>
+              <th>Total</th>
+              <th>Date</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% orders.forEach(order => { %>
+              <tr>
+                <td>
+                  <strong>#<%= order.orderId %></strong><br>
+                  <small><%= new Date(order.createdAt).toLocaleDateString() %></small>
+                </td>
+                <td><%= order.user?.name || 'N/A' %></td>
+                <td><%= order.user?.email || 'N/A' %></td>
+                <td><%= order.paymentMethod %></td>
+                <td><%= order.status %></td>
+                <td>₹<%= order.totalAmount?.toFixed(2) %></td>
+                <td><%= new Date(order.createdAt).toLocaleDateString() %></td>
+                <td><a href="/admin/orders/<%= order._id %>/payment">View</a></td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      <% } else { %>
+        <p>No payments found.</p>
+      <% } %>
+
+      <!-- Pagination -->
+      <% if (totalPages > 1) { %>
+        <div class="pagination">
+          <% for (let i = 1; i <= totalPages; i++) { %>
+            <% if (i === currentPage) { %>
+              <span><%= i %></span>
+            <% } else { %>
+              <a href="?page=<%= i %>"><%= i %></a>
+            <% } %>
+          <% } %>
+        </div>
+      <% } %>
+
+    </div>
+  </div>
+</body>
+
+</html>

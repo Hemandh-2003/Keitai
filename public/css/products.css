@@ -541,6 +541,10 @@ footer {
         width: 100%;
     }
 }
+.wishlist-icon .wishlist-added {
+  color: red; /* Change heart color */
+}
+
 /* Reviews Section */
 .reviews {
     padding: 2rem 0;

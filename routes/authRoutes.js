@@ -43,41 +43,6 @@ router.get('/login', (req, res) => {
   res.render('user/login');
 });
 
-// router.get('/home', async (req, res) => {
-//   console.log('Current session:', req.session); // Check session object
-
-//   if (req.session.user) {
-//     try {
-//       // Fetch products from the database
-//       const products = await Product.find({ isBlocked: false, isDeleted: false }); // Optional filters to exclude blocked and deleted products
-      
-//       // Render the home page and pass the products data to the view
-//       res.render('user/home', { user: req.session.user, products });
-//     } catch (err) {
-//       console.error('Error fetching products:', err);
-//       res.status(500).send('Error fetching products');
-//     }
-//   } else {
-//     res.redirect('/login');
-//   }
-// });
-
-
-// // Google Callback
-// router.get(
-//   '/auth/google/callback',
-//   passport.authenticate('google', {
-//     failureRedirect: '/login',
-//     successRedirect: '/home',
-//   }),
-//   (req, res) => {
-//     console.log('/auth/google/callback')
-//     debug('Authenticated user:', req.user);  // Logs to the console under the 'app:auth' namespace
-//     res.redirect('/home');
-//     req.session.user = user;  // Save the entire user object in session
-//     res.redirect('/home');
-//   }
-// );
 
 router.get(
   '/auth/google/callback',
@@ -100,9 +65,6 @@ router.get(
     }
   }
 );
-
-
-
 
 // Resend OTP route
 router.get('/resend-otp', async (req, res) => {

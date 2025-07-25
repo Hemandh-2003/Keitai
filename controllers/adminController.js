@@ -1758,3 +1758,48 @@ exports.downloadSalesReportPDF = async (req, res) => {
     res.status(500).send('Failed to generate PDF');
   }
 };
+exports.listAllPayments = async (req, res) => {
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = 10;
+    const skip = (page - 1) * limit;
+
+    const orders = await Order.find({})
+      .populate("user")
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit);
+
+    const totalOrders = await Order.countDocuments();
+
+    res.render("admin/payments", {
+      orders,
+      totalPages: Math.ceil(totalOrders / limit),
+      currentPage: page,
+    });
+  } catch (err) {
+    console.error("Error fetching payments:", err);
+    res.status(500).render("admin/500", { message: "Internal Server Error" });
+  }
+};
+
+
+
+exports.viewPaymentDetails = async (req, res) => {
+  try {
+    const orderId = req.params.id;
+
+    const order = await Order.findById(orderId)
+      .populate("user")
+      .populate("products.product");
+
+    if (!order) {
+      return res.status(404).render("admin/404", { message: "Order not found" });
+    }
+
+    res.render("admin/payment", { order }); // ✅ pass order
+  } catch (err) {
+    console.error("Error fetching payment details:", err);
+    res.status(500).render("admin/500", { message: "Internal Server Error" });
+  }
+};

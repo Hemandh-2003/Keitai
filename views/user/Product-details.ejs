@@ -90,11 +90,12 @@
         <div class="zoom-result" id="zoom-result"></div>
         <div class="product-info">
             <div class="wishlist-container">
-                <button class="wishlist-icon" onclick="addToWishlist('<%= product._id %>', this, event)"
-                    style="background: none; border: none; cursor: pointer;">
-                    <i class="fas fa-heart"></i>
-                </button>
-            </div>
+  <button class="wishlist-icon" onclick="addToWishlist('<%= product._id %>', this, event)"
+      style="background: none; border: none; cursor: pointer;">
+    <i class="fas fa-heart"></i>
+  </button>
+</div>
+
             <h1>
                 <%= product.name %>
             </h1>
@@ -240,7 +241,7 @@
     </section>
 
     <!-- Reviews Section -->
-    <section class="reviews">
+    <!--section class="reviews">
         <div class="container">
             <h2>Customer Reviews</h2>
             <div class="review">
@@ -268,7 +269,7 @@
                 </p>
             </div>
         </div>
-    </section>
+    </section-->
 
     <!-- Related Products Section -->
     <section class="related-products">
@@ -491,6 +492,41 @@ document.getElementById("quantity").addEventListener("keypress", function (e) {
     }
 });
 
+</script>
+<script>
+  async function addToWishlist(productId, buttonElement, event) {
+    event.preventDefault();
+
+    try {
+      const response = await fetch('/wishlist/add', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ productId }),
+      });
+
+      const result = await response.json();
+
+      if (response.ok && result.success) {
+        Swal.fire({
+          icon: 'success',
+          title: 'Added to Wishlist',
+          showConfirmButton: false,
+          timer: 1200,
+        });
+      } else {
+        Swal.fire({
+          icon: 'error',
+          title: 'Failed To Add',
+          text: result.message || 'Could not add to wishlist.',
+        });
+      }
+    } catch (err) {
+      console.error('Wishlist error:', err);
+      Swal.fire('Error', 'Could not add to wishlist.', 'error');
+    }
+  }
 </script>
 
 

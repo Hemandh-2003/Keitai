@@ -65,8 +65,8 @@ exports.login = async (req, res) => {
     }
 
     // Store user session and redirect to home
-    req.session.user = user;  // Save the entire user object in session
-    res.redirect('/home');  // Redirect to the user home page
+    req.session.user = user;  
+    res.redirect('/home');  
     console.log('Session after login:', req.session);
   } catch (error) {
     console.error('Login Error:', error);

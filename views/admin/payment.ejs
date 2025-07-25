@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <title>Payment Details</title>
+    <link rel="stylesheet" href="/css/payment2.css">
+</head>
+
+<body>
+    <div class="container">
+        <h2>Payment Details for Order ID: <%= order.orderId %>
+        </h2>
+
+        <p><strong>User:</strong>
+            <%= order.user.name %> (<%= order.user.email %>)
+        </p>
+        <p><strong>Payment Method:</strong>
+            <%= order.paymentMethod %>
+        </p>
+        <p><strong>Order Status:</strong>
+            <%= order.status %>
+        </p>
+        <p><strong>Total:</strong> ₹<%= order.totalAmount.toFixed(2) %>
+        </p>
+        <p><strong>Ordered At:</strong>
+            <%= order.createdAt.toLocaleString() %>
+        </p>
+
+        <h3>Ordered Products:</h3>
+        <ul>
+            <% order.products.forEach(item=> { %>
+                <li>
+                    <%= item.product.name %> - Quantity: <%= item.quantity %> 
+                </li>
+                <% }) %>
+        </ul>
+        <a href="/admin/payments">← Back to Payments</a>
+    </div>
+</body>
+
+</html>
