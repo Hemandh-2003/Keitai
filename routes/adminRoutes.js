@@ -137,6 +137,6 @@ router.post('/sales-report/download/pdf', isAdmin,adminController.downloadSalesR
 router.get('/api/dashboard-stats', isAdmin,adminController.getDashboardStats);
 
 //payment
-router.get('/payments', adminController.listAllPayments);
-router.get('/orders/:id/payment', adminController.viewPaymentDetails);
+router.get('/payments', isAdmin,adminController.listAllPayments);
+router.get('/orders/:id/payment', isAdmin,adminController.viewPaymentDetails);
 module.exports = router;

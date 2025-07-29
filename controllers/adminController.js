@@ -13,13 +13,13 @@ const Razorpay = require('razorpay');
 exports.adminDashboard = (req, res) => {
   res.render('admin/dashboard');
 };
+//Admin
 exports.getDashboardStats = async (req, res) => {
   try {
     const { range, startDate, endDate } = req.query;
 
     let match = { status: { $ne: 'Cancelled' } };
 
-    // Date filter
     if (range === 'daily') {
       const today = new Date();
       today.setHours(0, 0, 0, 0);
@@ -39,7 +39,6 @@ exports.getDashboardStats = async (req, res) => {
       match.createdAt = { $gte: new Date(startDate), $lt: new Date(endDate) };
     }
 
-    // Aggregation for total sales and orders
     const orders = await Order.find(match).populate('products.product');
     const sales = orders.reduce((sum, order) => sum + order.totalAmount, 0);
     const orderCount = orders.length;
@@ -197,8 +196,6 @@ exports.unblockUser = async (req, res) => {
 
 
 // Category management
-
-// Load the categories page
 exports.loadCategories = async (req, res) => {
   try {
     const categories = await Category.find();
@@ -596,10 +593,28 @@ exports.getProductDetailsWithRelated = async (req, res) => {
 
   } catch (error) {
     console.error('Error in product details:', error);
-    res.status(500).send('Server Error');
+    return res.status(404).send(`
+      <html>
+        <head>
+          <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+        </head>
+        <body>
+          <script>
+            Swal.fire({
+              icon: 'error',
+              title: '404 Page Not Found',
+              text: 'Something went wrong while loading the product.',
+              confirmButtonText: 'Go Home',
+              allowOutsideClick: false
+            }).then(() => {
+              window.location.href = "/home";
+            });
+          </script>
+        </body>
+      </html>
+    `);
   }
 };
-
 
 
 exports.viewProductDetails = async (req, res) => {
@@ -1797,7 +1812,7 @@ exports.viewPaymentDetails = async (req, res) => {
       return res.status(404).render("admin/404", { message: "Order not found" });
     }
 
-    res.render("admin/payment", { order }); // ✅ pass order
+    res.render("admin/payment", { order }); 
   } catch (err) {
     console.error("Error fetching payment details:", err);
     res.status(500).render("admin/500", { message: "Internal Server Error" });

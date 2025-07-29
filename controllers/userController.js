@@ -14,7 +14,6 @@ exports.getProfile = async (req, res) => {
   try {
     const userId = req.session.user._id;
 
-    // Fetch user, recent address, and recent order
     const user = await User.findById(userId);
     if (!user) {
       return res.status(404).send('User not found');
@@ -40,7 +39,6 @@ exports.getProfile = async (req, res) => {
 };
 
 //address
-// Get All Addresses
 exports.getAddresses = async (req, res) => {
   try {
     const user = await User.findById(req.session.user._id);
@@ -53,7 +51,7 @@ exports.getAddresses = async (req, res) => {
       alert: req.session.alert || null
     });
 
-    req.session.alert = null; // Clear after use
+    req.session.alert = null; 
   } catch (err) {
     console.error('Error fetching user addresses:', err);
     res.status(500).send('Internal Server Error');
@@ -235,51 +233,44 @@ exports.removeAddress = async (req, res) => {
       return res.status(404).send('User not found');
     }
 
-    // Find and remove the address from the user's address array
     const address = user.addresses.id(addressId);
     if (!address) {
       return res.status(404).send('Address not found');
     }
 
-    // Remove the address from the addresses array
     user.addresses.pull(addressId);
 
-    // Save the updated user data
     await user.save();
 
-    // Redirect to the address page after removing the address
     res.redirect('/user/address');
   } catch (err) {
     console.error('Error removing address:', err);
     res.status(500).send('Internal Server Error');
   }
 };
+//Order
 exports.viewOrders = async (req, res) => {
   try {
     const userId = req.session.user._id;
-    const { sortBy = 'newest', page = 1 } = req.query; // Default to 'newest' and 'page 1'
+    const { sortBy = 'newest', page = 1 } = req.query; //page
 
-    // Set sorting criteria
+    //sort
     const sortCriteria = sortBy === 'oldest' ? { createdAt: 1 } : { createdAt: -1 };
 
-    // Number of orders per page
+    //no:of items in one page
     const ordersPerPage = 5;
 
-    // Calculate skip based on the page number
     const skip = (page - 1) * ordersPerPage;
 
-    // Fetch orders with pagination
     const orders = await Order.find({ user: userId })
       .sort(sortCriteria)
-      .skip(skip) // Skip the appropriate number of orders for pagination
-      .limit(ordersPerPage) // Limit the number of orders per page
+      .skip(skip) 
+      .limit(ordersPerPage)
       .populate('products.product', 'name');
 
-    // Count total number of orders to calculate total pages
     const totalOrders = await Order.countDocuments({ user: userId });
-    const totalPages = Math.ceil(totalOrders / ordersPerPage); // Calculate total pages
+    const totalPages = Math.ceil(totalOrders / ordersPerPage); 
 
-    // Render the view, passing orders, sortBy, and pagination data
     res.render('user/userOrder', { 
       orders, 
       sortBy, 
@@ -303,7 +294,6 @@ exports.viewOrderDetails = async (req, res) => {
       .populate('products.product')
       .populate('user');
 
-    // Optional populate if coupon exists and is valid
     const orderDoc = await Order.findById(orderId).select('coupon');
     if (orderDoc && orderDoc.coupon && mongoose.Types.ObjectId.isValid(orderDoc.coupon)) {
       query = query.populate('coupon');
@@ -335,6 +325,8 @@ exports.viewOrderDetails = async (req, res) => {
     res.status(500).send('Server error');
   }
 };
+
+//Bill
 exports.downloadInvoice = async (req, res) => {
   try {
     const orderId = req.params.id;
@@ -345,7 +337,7 @@ exports.downloadInvoice = async (req, res) => {
 
     const order = await Order.findById(orderId)
       .populate('products.product')
-      .populate('coupon') // ✅ now works after adding 'coupon' to schema
+      .populate('coupon')
       .populate('user');
 
     if (!order) {
@@ -360,20 +352,16 @@ exports.downloadInvoice = async (req, res) => {
       return res.status(404).send('Address not found');
     }
 
-    // Initialize PDF
     const doc = new PDFDocument({ margin: 50 });
 
-    // Set headers
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader(
       'Content-Disposition',
       `attachment; filename=invoice-${order.orderId}.pdf`
     );
 
-    // Pipe PDF to response
     doc.pipe(res);
 
-    // ---- INVOICE CONTENT ----
     doc.fontSize(20).text('INVOICE', { align: 'center' });
     doc.moveDown();
 
@@ -453,7 +441,7 @@ exports.cancelOrder = async (req, res) => {
       return res.status(400).send('Order cannot be cancelled at this stage');
     }
 
-    // Restock products
+    //restock
     for (let item of order.products) {
       const product = item.product;
       if (product) {
@@ -462,12 +450,10 @@ exports.cancelOrder = async (req, res) => {
       }
     }
 
-    // Update order status
     order.status = 'User Cancelled';
     order.statusHistory.push({ status: 'User Cancelled', updatedAt: new Date() });
     await order.save();
 
-    // Refund
     const user = order.user;
 
     if (!user.wallet) {
@@ -486,11 +472,11 @@ exports.cancelOrder = async (req, res) => {
     });
 
     await user.save();
-    console.log("✅ Wallet updated successfully");
+    //console.log("✅ Wallet updated successfully");
 
     res.redirect('/user/orders');
   } catch (err) {
-    console.error('❌ Error canceling order:', err.message);
+    //console.error('❌ Error canceling order:', err.message);
     res.status(500).send('Server error');
   }
 };
@@ -512,11 +498,9 @@ exports.getProducts = async (req, res) => {
       .skip(skip)
       .limit(perPage);
 
-    // Ensure every product has pricing information
     products = await Promise.all(products.map(async (product) => {
       const offerDetails = await product.getBestOfferPrice();
       
-      // Default pricing structure
       const pricing = {
         finalPrice: product.salesPrice || product.regularPrice,
         originalPrice: product.regularPrice,
@@ -524,7 +508,6 @@ exports.getProducts = async (req, res) => {
         discountPercentage: 0
       };
 
-      // If there's an offer, update pricing
       if (offerDetails && offerDetails.hasOffer) {
         pricing.finalPrice = offerDetails.price;
         pricing.hasOffer = true;
@@ -533,7 +516,6 @@ exports.getProducts = async (req, res) => {
           offerDetails.originalPrice * 100
         );
       } 
-      // If no offer but sales price exists
       else if (product.salesPrice) {
         pricing.finalPrice = product.salesPrice;
         pricing.discountPercentage = Math.round(
@@ -544,11 +526,10 @@ exports.getProducts = async (req, res) => {
 
       return {
         ...product.toObject(),
-        pricing // Ensure pricing object always exists
+        pricing 
       };
     }));
 
-    // Re-sort if sorting by price (since we need to consider offer prices)
     if (sort === 'price-asc' || sort === 'price-desc') {
       products.sort((a, b) => {
         return sort === 'price-asc' 
@@ -591,16 +572,15 @@ exports.getProductDetails = async (req, res) => {
     const product = await Product.findOne({
       _id: productId,
       isBlocked: false
-    }).populate('category').populate('offers'); // Add populate('offers')
+    }).populate('category').populate('offers'); 
 
     if (!product) {
       return res.status(404).send('Product not found or is unavailable');
     }
 
-    // Calculate offer details
+    //offer
     const offerDetails = await product.getBestOfferPrice();
     
-    // Add related products fetch
     const relatedProducts = await Product.find({
       category: product.category._id,
       _id: { $ne: productId },
@@ -611,7 +591,7 @@ exports.getProductDetails = async (req, res) => {
       user: req.session.user, 
       product,
       relatedProducts,
-      offerDetails: offerDetails || { // Provide default values
+      offerDetails: offerDetails || { 
         hasOffer: false,
         price: product.salesPrice || product.regularPrice,
         originalPrice: product.regularPrice,
@@ -623,7 +603,8 @@ exports.getProductDetails = async (req, res) => {
     res.status(500).send('Internal Server Error');
   }
 };
-// Combined checkout method
+
+//checkout
 exports.checkout = async (req, res) => {
   try {
     if (!req.session.user) return res.redirect('/login');
@@ -1067,8 +1048,6 @@ exports.confirmPayment = async (req, res) => {
   }
 };
 
-
-// Render Confirm Payment Page (GET request)
 exports.renderConfirmPayment = async (req, res) => {
   try {
     const {
@@ -1087,7 +1066,6 @@ exports.renderConfirmPayment = async (req, res) => {
 
     const finalTotalAmount = totalAmount;
 
-    // Related products
     let relatedProducts = [];
     if (orderItems.length > 0) {
       const categories = orderItems.map(item => item.product.category);
@@ -1105,7 +1083,7 @@ exports.renderConfirmPayment = async (req, res) => {
       deliveryCharge,
       arrivalDate: new Date(arrivalDate),
       relatedProducts,
-      couponDiscount // ✅ Pass to EJS
+      couponDiscount 
     });
   } catch (err) {
     console.error('Error rendering confirmation page:', err.message);
@@ -1158,7 +1136,7 @@ exports.changePassword = async (req, res) => {
 
 // Update name
 exports.updateUserName = async (req, res) => {
-  const userId = req.session.user?._id; // Assuming you're storing the full user object in the session
+  const userId = req.session.user?._id; 
   const { name } = req.body;
 
   if (!userId) {
@@ -1170,30 +1148,28 @@ exports.updateUserName = async (req, res) => {
   }
 
   try {
-    // Find the user and update the name, but don't modify the email
     const updatedUser = await User.findByIdAndUpdate(
       userId,
-      { name: name.trim() }, // Only update the name, not the email
-      { new: true, runValidators: true } // Return the updated document
+      { name: name.trim() }, 
+      { new: true, runValidators: true } 
     );
 
     if (!updatedUser) {
       return res.status(404).json({ message: 'User not found.' });
     }
 
-    // Respond with success or redirect as needed
-    res.redirect('/user/profile'); // Redirect back to the profile page
+    res.redirect('/user/profile'); 
   } catch (error) {
     console.error('Error updating user name:', error);
     res.status(500).json({ message: 'An error occurred while updating the name.' });
   }
 };
-// Show Forgot Password Page
+//forget password
 exports.getForgotPasswordPage = (req, res) => {
   res.render('user/forgot-password', { error: null });
 };
 
-// Handle Forgot Password (Verify Email and Send OTP)
+
 exports.handleForgotPassword = async (req, res) => {
   console.log('POST /forgot-password route hit');
   const { email } = req.body;
@@ -1246,7 +1222,7 @@ exports.getResetPasswordPage = (req, res) => {
   res.render('user/reset-password', { email, error: null });
 };
 
-// Handle Reset Password (Save New Password)
+// Handle Reset Password
 exports.handleResetPassword = async (req, res) => {
   const { email, newPassword, confirmPassword } = req.body;
 

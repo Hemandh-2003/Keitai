@@ -34,14 +34,14 @@
           <label for="password">Password:</label>
           <div class="password-wrapper">
             <input type="password" id="password" name="password" required>
-            <button type="button" class="toggle-password">👁️</button>
+            <button type="button" class="toggle-password">🙈</button>
           </div>
         </div>
         <div class="form-group">
           <label for="confirm">Confirm:</label>
           <div class="password-wrapper">
             <input type="password" id="confirm" name="confirm" required>
-            <button type="button" class="toggle-password">👁️</button>
+            <button type="button" class="toggle-password">🙈</button>
           </div>
         </div>
         <button type="submit" class="signup-button">Create</button>
@@ -65,7 +65,7 @@
         const input = button.previousElementSibling;
         const type = input.getAttribute('type') === 'password' ? 'text' : 'password';
         input.setAttribute('type', type);
-        button.textContent = type === 'password' ? '👁️' : '🙈';
+        button.textContent = type === 'password' ? '🙈' : '👁️';
       });
     });
 

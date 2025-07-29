@@ -397,9 +397,9 @@
         }
 
     // Initialize if we have an offer with end date
-    `<% if (typeof offerDetails !== 'undefined' && offerDetails && offerDetails.endDate) { %>
+    <% if (typeof offerDetails !== 'undefined' && offerDetails && offerDetails.endDate) { %>
             initializeCountdown('<%= offerDetails.endDate %>', 'offer-countdown');
-    <% } %>`
+    <% } %>
     </script>
     <script>
 document.getElementById("add-to-cart-btn").addEventListener("click", async function () {
