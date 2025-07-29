@@ -543,7 +543,7 @@ exports.getProductDetailsWithRelated = async (req, res) => {
       .populate('category')
       .populate('offers');
 
-    // 🛑 If product doesn't exist or is blocked
+    // swal for blocked products
     if (!product || product.isBlocked) {
       return res.send(`
         <html>
@@ -567,11 +567,10 @@ exports.getProductDetailsWithRelated = async (req, res) => {
       `);
     }
 
-    // 🛠️ Calculate best offer from product + category
+   
     const offerDetails = await product.getBestOfferPrice();
     product.offerDetails = offerDetails;
 
-    // 🎯 Fetch related products
     const relatedProducts = await Product.find({
       category: product.category._id,
       _id: { $ne: productId },
@@ -582,7 +581,6 @@ exports.getProductDetailsWithRelated = async (req, res) => {
       related.offerDetails = await related.getBestOfferPrice();
     }
 
-    // ✅ Render details page
     res.render('user/Product-details', {
       user: req.session.user,
       product,
@@ -592,7 +590,8 @@ exports.getProductDetailsWithRelated = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Error in product details:', error);
+    //console.error('Error in product details:', error);
+    //swal for 404
     return res.status(404).send(`
       <html>
         <head>
