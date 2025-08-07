@@ -2,6 +2,27 @@ const bcrypt = require('bcrypt');
 const User = require('../models/User');
 const otpController = require('./otpController');
 
+// Load landing page
+exports.loadLandingPage = (req, res) => {
+  res.render('user/index', {
+    title: 'Welcome to Keitai',
+    user: req.session.user || null  // 🔑 Fix: Pass user to view
+  });
+};
+
+
+// Load login page
+exports.loadLogin = (req, res) => {
+if (req.session.user || req.user) {
+  req.session.user = user; 
+  req.session.loginSuccess = true;
+  return res.redirect('/home');
+}
+  res.render('user/login', { error: null });
+};
+
+
+
 // Register user
 exports.register = async (req, res) => {
   try {
@@ -37,42 +58,8 @@ exports.register = async (req, res) => {
     res.render('user/signup', { error: 'Registration failed. Please try again.' });
   }
 };
-exports.loadLogin = (req, res) => {
 
-  res.render('user/login', { error: null });
-};
-
-// Handle login form submission
-exports.login = async (req, res) => {
-  try {
-    const { email, password } = req.body;
-
-    // Check if the user exists
-    const user = await User.findOne({ email });
-    if (!user) {
-      return res.render('user/login', { error: 'User does not exist. Please sign up.' });
-    }
-
-    // Check if the user is blocked
-    if (user.isBlocked) {
-      return res.render('user/login', { error: 'Your account is blocked. Please contact support.' });
-    }
-
-    // Verify the password
-    const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) {
-      return res.render('user/login', { error: 'Invalid credentials. Please try again.' });
-    }
-
-    // Store user session and redirect to home
-    req.session.user = user;  
-    res.redirect('/home');  
-    console.log('Session after login:', req.session);
-  } catch (error) {
-    console.error('Login Error:', error);
-    res.render('user/login', { error: 'Something went wrong. Please try again later.' });
-  }
-};
+// Login user
 exports.login = async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -82,7 +69,6 @@ exports.login = async (req, res) => {
       return res.render('user/login', { error: 'User does not exist. Please sign up.' });
     }
 
-    // Check if the user is blocked
     if (user.isBlocked) {
       return res.render('user/login', { error: 'Your account is blocked. Please contact support.' });
     }
@@ -92,8 +78,8 @@ exports.login = async (req, res) => {
       return res.render('user/login', { error: 'Invalid credentials. Please try again.' });
     }
 
-    req.session.user = user; // Store user in session
-    res.redirect('/home'); // Proceed to the home page or wherever after login
+    req.session.user = user;
+    res.redirect('/home');
   } catch (error) {
     console.error('Login Error:', error);
     res.render('user/login', { error: 'Something went wrong. Please try again later.' });
@@ -102,8 +88,7 @@ exports.login = async (req, res) => {
 
 // Verify OTP
 exports.verifyOtp = (req, res) => {
-  const { email, otp } = req.body; // Ensure JSON body
-  console.log(`Verifying OTP for email: ${email}, OTP: ${otp}`); // Debugging
+  const { email, otp } = req.body;
 
   if (otpController.validateOtp(email, otp)) {
     return res.json({ success: true });
@@ -112,8 +97,42 @@ exports.verifyOtp = (req, res) => {
   res.json({ success: false, error: 'Invalid OTP. Please try again.' });
 };
 
+// Resend OTP
+exports.resendOtp = async (req, res) => {
+  const { email } = req.query;
+
+  if (!email) {
+    return res.status(400).send('Email is required');
+  }
+
+  try {
+    const otp = otpController.generateOtp(email);
+    const otpSent = await otpController.sendOtpEmail(email, otp);
+
+    if (otpSent) {
+      return res.status(200).send('OTP resent successfully');
+    } else {
+      return res.status(500).send('Error resending OTP');
+    }
+  } catch (err) {
+    console.error('Error resending OTP:', err);
+    return res.status(500).send('Error resending OTP');
+  }
+};
+
+// Logout user
 exports.logout = (req, res) => {
-  req.session.destroy(() => {
-    res.redirect('/login'); // Redirect to login page after logging out
+  req.session.destroy(err => {
+    if (err) {
+      console.error('Error destroying session:', err);
+      return res.redirect('/');
+    }
+    res.clearCookie('connect.sid');
+    res.redirect('/login');
   });
+};
+
+// Session status
+exports.sessionStatus = (req, res) => {
+  res.json({ isLoggedIn: !!req.session.user });
 };

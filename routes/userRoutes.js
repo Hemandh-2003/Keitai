@@ -9,7 +9,6 @@ const router = express.Router();
 
 // Middleware to protect user routes
 const protect = [isLoggedIn, checkBlockedUser];
-
 // Profile Routes
 router.get('/profile', ...protect, userController.getProfile);
 router.get('/address', ...protect, userController.getAddresses);

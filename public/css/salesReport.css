@@ -229,3 +229,19 @@ form[action$="/pdf"] button:hover {
   color: #fff;
   font-weight: bold;
 }
+    .pagination {
+      margin-top: 20px;
+      text-align: center;
+    }
+    .pagination a {
+      padding: 6px 12px;
+      margin: 0 4px;
+      background: #eee;
+      text-decoration: none;
+      border-radius: 4px;
+      color: #333;
+    }
+    .pagination a.active {
+      background-color: #007bff;
+      color: white;
+    }

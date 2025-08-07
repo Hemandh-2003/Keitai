@@ -3,8 +3,23 @@
 /* ================ */
 
 /* ----------------- */
-/* BASE & RESET      */
+/* ROOT & BASE       */
 /* ----------------- */
+:root {
+  --primary: #2563eb;
+  --primary-hover: #1d4ed8;
+  --success: #22c55e;
+  --success-hover: #16a34a;
+  --danger: #ef4444;
+  --danger-hover: #dc2626;
+  --warning: #facc15;
+  --text: #1e293b;
+  --text-light: #6b7280;
+  --bg-light: #f9fafb;
+  --border: #e5e7eb;
+  --shadow: rgba(0, 0, 0, 0.05);
+}
+
 * {
   margin: 0;
   padding: 0;
@@ -13,8 +28,8 @@
 
 body {
   font-family: 'Poppins', sans-serif;
-  background-color: #f5f5f5;
-  color: #333;
+  background-color: var(--bg-light);
+  color: var(--text);
   line-height: 1.6;
 }
 
@@ -24,26 +39,27 @@ body {
 h1 {
   font-size: 2rem;
   font-weight: 700;
-  color: #2c3e50;
+  color: var(--text);
 }
 
 h2 {
   font-size: 1.5rem;
   font-weight: 600;
-  color: #34495e;
+  color: #334155;
   margin-bottom: 1.25rem;
 }
 
 /* ----------------- */
-/* LAYOUT & CONTAINERS */
+/* LAYOUT            */
 /* ----------------- */
 .checkout-container {
   max-width: 1200px;
-  margin: 0 auto;
+  margin: 2rem auto;
   padding: 2rem;
   background-color: white;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.05);
+  border-radius: 12px;
+  animation: popIn 0.4s ease forwards;
 }
 
 .checkout-header {
@@ -52,15 +68,19 @@ h2 {
   align-items: center;
   margin-bottom: 2rem;
   padding-bottom: 1rem;
-  border-bottom: 1px solid #eee;
+  border-bottom: 1px solid var(--border);
 }
 
+/* ----------------- */
+/* SECTION CARD      */
+/* ----------------- */
 .section {
-  margin-bottom: 2.5rem;
-  padding: 1.5rem;
+  margin-bottom: 2rem;
+  padding: 2rem;
   background: #fff;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  border-radius: 12px;
+  box-shadow: 0 4px 12px var(--shadow);
+  animation: popIn 0.4s ease;
 }
 
 /* ----------------- */
@@ -75,16 +95,27 @@ h2 {
   display: flex;
   align-items: flex-start;
   padding: 1.25rem;
-  border: 1px solid #ddd;
+  border: 1px solid var(--border);
   border-radius: 8px;
   transition: all 0.3s ease;
   cursor: pointer;
+  background: #fefefe;
+  position: relative;
+}
+
+.address-item::before {
+  content: "\f3c5";
+  font-family: "Font Awesome 6 Free";
+  font-weight: 900;
+  margin-right: 12px;
+  font-size: 18px;
+  color: #3498db;
 }
 
 .address-item:hover {
-  border-color: #3498db;
+  border-color: var(--primary);
   transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 .address-item input {
@@ -105,7 +136,7 @@ h2 {
 .address-country,
 .address-phone {
   font-size: 0.9rem;
-  color: #666;
+  color: var(--text-light);
   margin-bottom: 0.25rem;
 }
 
@@ -113,6 +144,15 @@ h2 {
   display: inline-block;
   margin-top: 0.75rem;
   font-size: 0.9rem;
+  color: var(--primary);
+  cursor: pointer;
+}
+
+.edit-link::before {
+  content: "\f044";
+  font-family: "Font Awesome 6 Free";
+  font-weight: 900;
+  margin-right: 6px;
 }
 
 .add-address {
@@ -121,14 +161,34 @@ h2 {
   gap: 0.5rem;
   margin-top: 1rem;
   font-weight: 500;
+  color: var(--primary);
+  cursor: pointer;
+}
+
+.add-address::before {
+  content: "\f234";
+  font-family: "Font Awesome 6 Free";
+  font-weight: 900;
 }
 
 /* ----------------- */
 /* ORDER SUMMARY     */
 /* ----------------- */
 .order-summary {
-  background-color: #f8f9fa;
-  border: 1px solid #ddd;
+  background-color: #f8fafc;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1.5rem;
+}
+
+.order-summary::before {
+  content: "\f02c";
+  font-family: "Font Awesome 6 Free";
+  font-weight: 900;
+  font-size: 18px;
+  color: #64748b;
+  margin-bottom: 0.75rem;
+  display: inline-block;
 }
 
 .order-list {
@@ -140,7 +200,8 @@ h2 {
   display: flex;
   justify-content: space-between;
   padding: 0.75rem 0;
-  border-bottom: 1px solid #e0e0e0;
+  border-bottom: 1px solid #e2e8f0;
+  animation: popIn 0.4s ease;
 }
 
 .item-name {
@@ -148,20 +209,28 @@ h2 {
 }
 
 .item-price {
-  font-weight: 500;
+  font-weight: 600;
 }
 
 .discount-label {
   font-size: 0.8rem;
-  background: #f0f0f0;
+  background: #f1f5f9;
   padding: 0.2rem 0.5rem;
   border-radius: 4px;
   margin-left: 0.5rem;
+  color: var(--success);
+}
+
+.discount-label::before {
+  content: "\f02b";
+  font-family: "Font Awesome 6 Free";
+  font-weight: 900;
+  margin-right: 5px;
 }
 
 .original-price {
   text-decoration: line-through;
-  color: #999;
+  color: #94a3b8;
   font-size: 0.9rem;
   margin-left: 0.5rem;
 }
@@ -169,7 +238,7 @@ h2 {
 .summary-total {
   margin-top: 1.5rem;
   padding-top: 1rem;
-  border-top: 1px solid #ddd;
+  border-top: 1px solid var(--border);
 }
 
 .summary-total p {
@@ -181,6 +250,7 @@ h2 {
 .total {
   font-size: 1.25rem;
   font-weight: 700;
+  color: #1e293b;
 }
 
 /* ----------------- */
@@ -196,18 +266,20 @@ h2 {
 .coupon-select {
   flex: 1;
   padding: 0.75rem;
-  border: 1px solid #ddd;
+  border: 1px solid var(--border);
   border-radius: 8px;
   font-family: inherit;
+  background: #fff;
 }
 
 .applied-coupon {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  padding: 0.75rem;
-  background: #f0f8ff;
+  padding: 0.75rem 1rem;
+  background: #e0f2fe;
   border-radius: 8px;
+  color: #0369a1;
 }
 
 /* ----------------- */
@@ -221,8 +293,35 @@ h2 {
   display: flex;
   align-items: center;
   padding: 1rem 0;
-  border-bottom: 1px solid #eee;
+  border-bottom: 1px solid #e5e7eb;
+  position: relative;
 }
+
+.payment-option::before {
+  font-family: "Font Awesome 6 Free";
+  font-weight: 900;
+  margin-right: 10px;
+  font-size: 16px;
+}
+
+/* Razorpay - Credit Card Icon */
+.payment-option.razorpay::before {
+  content: "\f09d"; /* credit card */
+  color: #0d9488;
+}
+
+/* UPI - Mobile Payment Icon */
+.payment-option.upi::before {
+  content: "\f3cd"; /* mobile-alt */
+  color: #1e40af;
+}
+
+/* COD - Money Bill Icon */
+.payment-option.cod::before {
+  content: "\f0d6"; /* money-bill-alt */
+  color: #10b981;
+}
+
 
 .payment-option input {
   margin-right: 1rem;
@@ -232,42 +331,79 @@ h2 {
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
-  background: #2c3e50;
+  background: #1e293b;
+  color: white;
+  padding: 0.75rem 1.25rem;
+  border-radius: 8px;
+  font-weight: 600;
+  position: relative;
+  overflow: hidden;
 }
 
 .razorpay-btn:hover {
-  background: #1a252f;
+  background: #0f172a;
 }
 
 /* ----------------- */
 /* BUTTONS           */
 /* ----------------- */
+.btn-primary,
+.save-btn,
+.submit-btn,
+.razorpay-btn {
+  transition: all 0.3s ease, transform 0.2s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-primary::after,
+.save-btn::after,
+.submit-btn::after,
+.razorpay-btn::after {
+  content: "";
+  position: absolute;
+  left: 0; top: 0;
+  width: 100%; height: 100%;
+  background: white;
+  opacity: 0.05;
+  transform: translateX(-100%);
+  transition: transform 0.4s ease-in-out;
+}
+
+.btn-primary:hover::after,
+.save-btn:hover::after,
+.submit-btn:hover::after,
+.razorpay-btn:hover::after {
+  transform: translateX(100%);
+}
+
 .btn-primary {
-  background-color: #3498db;
+  background-color: var(--primary);
   color: white;
   border: none;
   padding: 0.75rem 1.5rem;
   border-radius: 8px;
   cursor: pointer;
-  transition: all 0.3s ease;
+  font-weight: 600;
 }
 
 .btn-primary:hover {
-  background-color: #2980b9;
+  background-color: var(--primary-hover);
   transform: translateY(-1px);
 }
 
 .btn-delete {
   background-color: transparent;
-  color: #e74c3c;
-  border: 1px solid #e74c3c;
-  padding: 0.25rem 0.75rem;
-  border-radius: 4px;
+  color: var(--danger);
+  border: 1px solid var(--danger);
+  padding: 0.4rem 0.8rem;
+  border-radius: 6px;
   font-size: 0.8rem;
+  cursor: pointer;
 }
 
 .btn-delete:hover {
-  background-color: #fdeaea;
+  background-color: #fee2e2;
 }
 
 .submit-btn {
@@ -277,59 +413,22 @@ h2 {
   display: block;
   padding: 1rem;
   font-size: 1.1rem;
-  background-color: #28a745;
+  background-color: var(--success);
+  color: white;
+  border: none;
   border-radius: 8px;
-  transition: all 0.3s ease;
+  font-weight: 600;
 }
 
 .submit-btn:hover {
-  background-color: #218838;
+  background-color: var(--success-hover);
   transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 12px var(--shadow);
 }
 
 /* ----------------- */
-/* UTILITY CLASSES   */
+/* MODAL             */
 /* ----------------- */
-.discount-line {
-  color: #28a745;
-  font-weight: 500;
-}
-
-/* ----------------- */
-/* RESPONSIVE        */
-/* ----------------- */
-@media (max-width: 768px) {
-  .checkout-container {
-    padding: 1rem;
-  }
-  
-  .coupon-section {
-    flex-direction: column;
-    align-items: stretch;
-  }
-  
-  .submit-btn {
-    width: 100%;
-  }
-}
-.razorpay-indicator {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 14px;
-  border-radius: 20px;
-  background-color: #e0f7fa;
-  color: #00796b;
-  font-weight: 500;
-  font-size: 14px;
-  box-shadow: inset 0 0 0 1px #b2dfdb;
-  transition: background-color 0.3s ease;
-}
-
-.razorpay-indicator:hover {
-  background-color: #b2ebf2;
-}
 .modal {
   display: none;
   position: fixed;
@@ -341,7 +440,6 @@ h2 {
   padding: 30px 0;
 }
 
-/* Modal Content Box */
 .modal-content {
   background-color: #fff;
   margin: auto;
@@ -349,12 +447,9 @@ h2 {
   border-radius: 12px;
   max-width: 500px;
   box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
-  font-family: 'Poppins', sans-serif;
-  position: relative;
   animation: fadeIn 0.3s ease;
 }
 
-/* Close Button */
 .close-modal {
   background: #ccc;
   border: none;
@@ -364,13 +459,12 @@ h2 {
   border-radius: 6px;
   cursor: pointer;
   margin-top: 15px;
-  transition: background 0.3s;
 }
+
 .close-modal:hover {
   background: #999;
 }
 
-/* Form Fields */
 #addAddressForm label {
   display: block;
   margin-top: 15px;
@@ -385,7 +479,6 @@ h2 {
   border: 1px solid #ccc;
   border-radius: 6px;
   font-size: 14px;
-  transition: border-color 0.3s;
 }
 
 #addAddressForm input:focus {
@@ -394,32 +487,55 @@ h2 {
   box-shadow: 0 0 0 2px rgba(0,123,255,0.2);
 }
 
-/* Submit Button */
 .save-btn {
   margin-top: 20px;
-  background-color: #28a745;
+  background-color: var(--success);
   color: white;
   padding: 12px 20px;
   border: none;
   border-radius: 6px;
   font-weight: 600;
   font-size: 14px;
-  cursor: pointer;
   width: 100%;
-  transition: background-color 0.3s;
-}
-.save-btn:hover {
-  background-color: #218838;
 }
 
-/* Fade Animation */
+/* ----------------- */
+/* UTILITIES & FX    */
+/* ----------------- */
+.discount-line {
+  color: var(--success);
+  font-weight: 500;
+}
+
+@keyframes popIn {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(-10px); }
   to { opacity: 1; transform: translateY(0); }
 }
 
-/* Responsive Fixes */
-@media screen and (max-width: 600px) {
+/* ----------------- */
+/* RESPONSIVE        */
+/* ----------------- */
+@media (max-width: 768px) {
+  .checkout-container {
+    padding: 1rem;
+  }
+
+  .coupon-section {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .submit-btn {
+    width: 100%;
+  }
+}
+
+@media (max-width: 600px) {
   .modal-content {
     padding: 25px 20px;
     width: 90%;

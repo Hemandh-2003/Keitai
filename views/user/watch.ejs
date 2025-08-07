@@ -36,7 +36,11 @@
                     <i class="fas fa-search"></i>
                     <div id="search-results"></div> <!-- Dropdown inside the search container -->
                 </div>
-                <a href="/cart"><i class="fas fa-shopping-cart"></i></a>
+                <a href="/cart" class="cart-icon-wrapper position-relative">
+  <i class="fas fa-shopping-cart"></i>
+  <span class="cart-count-badge" id="cart-count">0</span>
+</a>
+
                 <a href="/user/profile"><i class="fas fa-user"></i></a>
             </div>
         </nav>
@@ -108,86 +112,82 @@
 
                 </aside>
             </section>
-            <section class="categories col-lg-12">
-                <h2><span class="blue-text">Featured Products.</span> Check out our latest items.</h2>
-                <div class="row">
-                    <% products.forEach(product=> { %>
-                        <div class="col-lg-3 col-md-4 col-sm-6 mb-4">
-                            <a href=<%= product.isBlocked ? '#' : '/admin/products/' + product._id %> style="text-decoration: none; color: inherit; 
-                                <%= product.isBlocked ? 'pointer-events: none; cursor: not-allowed;' : '' %>">
-                                <div class="product-card text-center <%= product.isBlocked ? 'blocked-product' : '' %>">
-                                    <!-- Heart Icon for Wishlist -->
-                                   <div class="icon-stack">
-  <!-- Wishlist Icon -->
-   <!-- <% %>  -->
-  <button class="wishlist-icon"
-    onclick="addToWishlist('<%= product._id %>', this, event)">
-    <i class="fas fa-heart"></i>
-  </button>
-  
-
-  <!-- Cart Icon (Only if product not blocked) -->
-  <% if (!product.isBlocked) { %>
-    <button class="cart-icon"
-      onclick="addToCart('<%= product._id %>', event)">
-      <i class="fas fa-cart-plus"></i>
-    </button>
-  <% } %>
-</div>
-
-
-
-                                    <img src="/uploads/<%= product.images[0] %>" alt="<%= product.name %>"
-                                        class="img-fluid">
-                                    <p class="mt-2">
-                                        <%= product.name %>
-                                    </p>
-                                   <p>
-  <% 
-  // Calculate the final price to display
-  var finalPrice = product.salesPrice || product.regularPrice;
-  var originalPrice = product.regularPrice;
-  var showDiscount = false;
-  
-  // Check for offer price if available
-  if (typeof product.offerDetails !== 'undefined' && product.offerDetails && product.offerDetails.hasOffer) {
-    finalPrice = product.offerDetails.price;
-    originalPrice = product.offerDetails.originalPrice;
-    showDiscount = true;
-  }
-  // Or check for sale price
-  else if (product.salesPrice) {
-    showDiscount = true;
-  }
+           <section class="categories col-lg-12">
+  <h2><span class="blue-text">Featured Products.</span> Check out our latest items.</h2>
+  <div class="row">
+  <% products.forEach(product => {
+     const isUnavailable = product.isBlocked || product.stock <= 0;
   %>
-  
-  <!-- Display current price -->
-  <span class="current-price">₹<%= finalPrice.toLocaleString('en-IN') %></span>
-  
-  <% if (showDiscount) { %>
-    <span class="original-price" style="text-decoration: line-through; color: #999; margin-left: 5px;">
-      ₹<%= originalPrice.toLocaleString('en-IN') %>
-    </span>
-    <% 
-    // Calculate discount percentage
-    var discountPercent = Math.round((originalPrice - finalPrice) / originalPrice * 100);
-    if (discountPercent > 0) { %>
-      <span class="discount-badge" style="background: #ff6b6b; color: white; padding: 2px 5px; border-radius: 3px; font-size: 12px; margin-left: 5px;">
-        <%= discountPercent %>% OFF
-      </span>
-    <% } %>
-  <% } %>
-</p>
+    <div class="col-lg-3 col-md-4 col-sm-6 mb-4">
+      <a href="<%= isUnavailable ? '#' : '/admin/products/' + product._id %>" 
+         style="text-decoration: none; color: inherit; 
+         <%= isUnavailable ? 'pointer-events: none; cursor: not-allowed;' : '' %>">
+        <div class="product-card text-center <%= isUnavailable ? 'blocked-product' : '' %>">
+            
+              <div class="icon-stack">
+                <button class="wishlist-icon" 
+                        <%= isUnavailable ? 'disabled style="cursor: not-allowed;"' : '' %> 
+                        onclick="<%= !isUnavailable ? `addToWishlist('${product._id}', this, event)` : '' %>">
+                  <i class="fas fa-heart"></i>
+                </button>
 
-                                    <% if (product.isBlocked) { %>
-                                        <p class="text-danger"> Currently Unavailable</p>
-                                        <% } %>
-                                </div>
-                            </a>
-                        </div>
-                        <% }); %>
-                </div>
-            </section>
+                <% if (!isUnavailable) { %>
+                  <button class="cart-icon" onclick="addToCart('<%= product._id %>', event)">
+                    <i class="fas fa-cart-plus"></i>
+                  </button>
+                <% } else { %>
+                  <button class="cart-icon" disabled style="cursor: not-allowed;">
+                    <i class="fas fa-cart-plus text-muted"></i>
+                  </button>
+                <% } %>
+              </div>
+
+              <img src="/uploads/<%= product.images[0] %>" alt="<%= product.name %>" class="img-fluid">
+              <p class="mt-2"><%= product.name %></p>
+
+              <p>
+                <%
+                  var finalPrice = product.salesPrice || product.regularPrice;
+                  var originalPrice = product.regularPrice;
+                  var showDiscount = false;
+
+                  if (product.offerDetails?.hasOffer) {
+                    finalPrice = product.offerDetails.price;
+                    originalPrice = product.offerDetails.originalPrice;
+                    showDiscount = true;
+                  } else if (product.salesPrice) {
+                    showDiscount = true;
+                  }
+                %>
+
+                <span class="current-price">₹<%= finalPrice.toLocaleString('en-IN') %></span>
+
+                <% if (showDiscount) { %>
+                  <span class="original-price" style="text-decoration: line-through; color: #999; margin-left: 5px;">
+                    ₹<%= originalPrice.toLocaleString('en-IN') %>
+                  </span>
+                  <%
+                    const discountPercent = Math.round((originalPrice - finalPrice) / originalPrice * 100);
+                    if (discountPercent > 0) {
+                  %>
+                    <span class="discount-badge" style="background: #ff6b6b; color: white; padding: 2px 5px; border-radius: 3px; font-size: 12px; margin-left: 5px;">
+                      <%= discountPercent %>% OFF
+                    </span>
+                  <% } %>
+                <% } %>
+              </p>
+
+              <% if (isUnavailable) { %>
+                <p class="text-danger"><%= product.stock <= 0 ? 'Out of Stock' : 'Currently Unavailable' %></p>
+              <% } %>
+
+            </div>
+          </a>
+        </div>
+  <% }); %>
+</div>
+</section>
+
         </div>
     </main>
     <!-- Footer -->
@@ -241,7 +241,22 @@
       Swal.fire('Error', 'Could not add to cart.', 'error');
     });
   }
+  document.addEventListener('DOMContentLoaded', () => {
+  fetch('/cart/count')
+    .then(res => res.json())
+    .then(data => {
+      const badge = document.getElementById('cart-count');
+      if (data.count > 0) {
+        badge.style.display = 'inline-block';
+        badge.textContent = data.count;
+      } else {
+        badge.style.display = 'none';
+      }
+    })
+    .catch(err => console.error('Error fetching cart count:', err));
+});
 </script>
+
 
 
 </body>

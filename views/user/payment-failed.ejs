@@ -1,38 +1,70 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Payment Failed</title>
-  <link rel="stylesheet" href="/css/payment-status.css">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/payment-failed.css" />
+  <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
 </head>
-
 <body>
-  <div class="payment-status-container failed">
-    <div class="icon">
-      <i class="fas fa-times-circle"></i>
-    </div>
-    <h1>Payment Failed</h1>
-    <p class="error-message"><%= error || 'Your payment could not be processed' %></p>
-    
-    <% if (orderId) { %>
-      <div class="order-info">
-        <p>Order #<%= orderId %> was not completed.</p>
-      </div>
-    <% } %>
-
-    <div class="action-buttons">
-      <% if (orderId) { %>
-        <a href="/checkout?orderId=<%= orderId %>" class="btn btn-primary">
-          <i class="fas fa-credit-card"></i> Retry Payment
-        </a>
-      <% } %>
-      <a href="/cart" class="btn btn-secondary">
-        <i class="fas fa-shopping-cart"></i> View Cart
-      </a>
+  <div class="container">
+    <h2>Payment Failed</h2>
+    <p class="error"><%= error || "Your payment could not be processed." %></p>
+    <div class="actions">
+      <button id="retryBtn">Retry Payment</button>
+      <a href="/cart"><button class="back">Go to Cart</button></a>
     </div>
   </div>
+
+  <script>
+    document.getElementById('retryBtn').addEventListener('click', async () => {
+  try {
+    console.log('Attempting retry payment...');
+    const res = await fetch('/retry-payment');
+    
+    if (!res.ok) {
+      const errorData = await res.json();
+      console.error('Retry failed:', errorData);
+      alert(`Retry failed: ${errorData.error || 'Unknown error'}`);
+      return;
+    }
+
+    const data = await res.json();
+    console.log('Retry response:', data);
+
+    if (!data.order) {
+      alert('Could not create retry order');
+      return;
+    }
+
+    const options = {
+      key: data.key,
+      amount: data.order.amount,
+      currency: "INR",
+      name: "Keitai Store",
+      description: "Retry Payment",
+      order_id: data.order.id,
+      handler: function (response) {
+        window.location.href = `/payment/verify?paymentId=${response.razorpay_payment_id}&orderId=${response.razorpay_order_id}&signature=${response.razorpay_signature}`;
+      },
+      theme: {
+        color: "#ff4d4f"
+      },
+      prefill: {
+        name: "<%= user.name %>",
+        email: "<%= user.email %>"
+      }
+    };
+
+    const rzp = new Razorpay(options);
+    rzp.open();
+
+  } catch (err) {
+    console.error('Retry error:', err);
+    alert('Retry failed. Check console for details.');
+  }
+});
+  </script>
 </body>
 </html>

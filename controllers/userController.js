@@ -9,6 +9,28 @@ const otpController = require('../controllers/otpController');
 const bcrypt = require('bcryptjs');
 const Wishlist = require('../models/Wishlist');
 const PDFDocument = require('pdfkit');
+
+exports.loadHome = async (req, res) => {
+  try {
+    const products = await Product.find({ isBlocked: false });
+
+    const loginSuccess = req.session.loginSuccess || false;
+    req.session.loginSuccess = false;
+
+    res.render('user/home', {
+      products,
+      user: req.session.user,
+      loginSuccess    // ✅ pass to EJS
+    });
+
+  } catch (error) {
+    console.error("Home Load Error:", error);
+    res.status(500).send("Internal Server Error");
+  }
+};
+
+
+
 //Profile
 exports.getProfile = async (req, res) => {
   try {
@@ -487,9 +509,14 @@ exports.getProducts = async (req, res) => {
   try {
     const { search, category, sort, page = 1 } = req.query;
     const perPage = 12;
+    const skip = (page - 1) * perPage;
     const query = { isBlocked: false };
 
-    // ... (your existing query logic)
+    // Your existing filtering logic for category, search, etc.
+
+    let sortOption = {};
+    if (sort === 'price-asc') sortOption = { salesPrice: 1 };
+    else if (sort === 'price-desc') sortOption = { salesPrice: -1 };
 
     let products = await Product.find(query)
       .populate('category')
@@ -500,7 +527,7 @@ exports.getProducts = async (req, res) => {
 
     products = await Promise.all(products.map(async (product) => {
       const offerDetails = await product.getBestOfferPrice();
-      
+
       const pricing = {
         finalPrice: product.salesPrice || product.regularPrice,
         originalPrice: product.regularPrice,
@@ -508,48 +535,45 @@ exports.getProducts = async (req, res) => {
         discountPercentage: 0
       };
 
-      if (offerDetails && offerDetails.hasOffer) {
+      if (offerDetails?.hasOffer) {
         pricing.finalPrice = offerDetails.price;
+        pricing.originalPrice = offerDetails.originalPrice;
         pricing.hasOffer = true;
         pricing.discountPercentage = Math.round(
-          (offerDetails.originalPrice - offerDetails.price) / 
-          offerDetails.originalPrice * 100
+          (offerDetails.originalPrice - offerDetails.price) / offerDetails.originalPrice * 100
         );
-      } 
-      else if (product.salesPrice) {
-        pricing.finalPrice = product.salesPrice;
+      } else if (product.salesPrice) {
         pricing.discountPercentage = Math.round(
-          (product.regularPrice - product.salesPrice) / 
-          product.regularPrice * 100
+          (product.regularPrice - product.salesPrice) / product.regularPrice * 100
         );
       }
 
       return {
         ...product.toObject(),
-        pricing 
+        pricing,
+        stock: typeof product.stock === 'number' ? product.stock : 0 // ✅ Ensure it's a number
       };
     }));
 
+    // Re-sort if needed
     if (sort === 'price-asc' || sort === 'price-desc') {
-      products.sort((a, b) => {
-        return sort === 'price-asc' 
-          ? a.pricing.finalPrice - b.pricing.finalPrice 
-          : b.pricing.finalPrice - a.pricing.finalPrice;
-      });
+      products.sort((a, b) =>
+        sort === 'price-asc'
+          ? a.pricing.finalPrice - b.pricing.finalPrice
+          : b.pricing.finalPrice - a.pricing.finalPrice
+      );
     }
-        const wishlist = []
-        const userId = req.user?._id;
-        if(userId){
 
-          wishlist = await Wishlist.findOne({ user: userId }).populate('products');
-        }
-        console.log('wishlist',wishlist)
-    
+    let wishlist = [];
+    const userId = req.user?._id;
+    if (userId) {
+      wishlist = await Wishlist.findOne({ user: userId }).populate('products');
+    }
 
     const totalProducts = await Product.countDocuments(query);
     const totalPages = Math.ceil(totalProducts / perPage);
 
-      res.render('user/accessories', {
+    res.render('user/accessories', {
       products,
       wishlist,
       currentPage: parseInt(page),
@@ -1090,8 +1114,6 @@ exports.renderConfirmPayment = async (req, res) => {
     res.status(500).send(err.message || 'Internal Server Error');
   }
 };
-
-
 
 //settings
 exports.getSettingsPage = (req, res) => {

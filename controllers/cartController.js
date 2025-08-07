@@ -65,13 +65,21 @@ exports.getCart = async (req, res) => {
     const cart = await Cart.findOne({ user: req.session.user._id });
 
     if (!cart || cart.items.length === 0) {
-      return res.render("user/cart", { 
+      return res.render("user/cart", {
         cart: { items: [], totalPrice: 0 },
-        currentPage: page,
+        currentPage: 1,
         totalPages: 0,
         hasBlockedProduct: false,
         blockedProductNames: []
       });
+    }
+
+    const totalItems = cart.items.length;
+    const totalPages = Math.ceil(totalItems / perPage);
+
+    // If current page exceeds total pages after deletion, redirect to the last valid page
+    if (page > totalPages) {
+      return res.redirect(`/cart?page=${totalPages}`);
     }
 
     const start = (page - 1) * perPage;
@@ -109,15 +117,12 @@ exports.getCart = async (req, res) => {
       });
     }
 
-    // Calculate subtotal excluding blocked products
     const totalPrice = enhancedItems.reduce((sum, item) => {
       if (!item.product.isBlocked) {
         return sum + item.quantity * item.product.offerPrice;
       }
       return sum;
     }, 0);
-
-    const totalPages = Math.ceil(cart.items.length / perPage);
 
     res.render("user/cart", {
       cart: {
@@ -137,18 +142,33 @@ exports.getCart = async (req, res) => {
 };
 
 
+//count
+exports.getCartCount = async (req, res) => {
+  try {
+    if (!req.session.user) {
+      return res.json({ count: 0 });
+    }
+
+    const cart = await Cart.findOne({ user: req.session.user._id });
+
+    const count = cart ? cart.items.reduce((acc, item) => acc + item.quantity, 0) : 0;
+    return res.json({ count });
+  } catch (error) {
+    console.error("Error fetching cart count:", error);
+    return res.status(500).json({ count: 0 });
+  }
+};
 //updating the cart
 exports.updateCart = async (req, res) => {
   try {
     const { productId, quantity } = req.body;
-
     const requestedQuantity = parseInt(quantity, 10);
     const maxQuantity = 5;
 
     if (requestedQuantity < 1 || requestedQuantity > maxQuantity) {
       return res.status(400).json({
         error: `Quantity must be between 1 and ${maxQuantity}.`,
-        currentQuantity: existingItem?.quantity || 1,
+        currentQuantity: requestedQuantity,
         errorType: 'MAX_LIMIT'
       });
     }
