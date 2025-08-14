@@ -13,20 +13,32 @@ const orderSchema = new mongoose.Schema({
     ref: 'User',
     required: true,
   },
-  products: [
-    {
-      product: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'Product',
-        required: true,
-      },
-      quantity: {
-        type: Number,
-        required: true,
-        min: 1,
-      },
+ products: [
+  {
+    product: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Product',
+      required: true,
     },
-  ],
+    quantity: {
+      type: Number,
+      required: true,
+      min: 1,
+    },
+    status: {
+      type: String,
+      enum: ['Active', 'Cancelled'],
+      default: 'Active',
+    },
+    cancellationReason: {
+      type: String,
+      default: '',
+    },
+    cancelledAt: {
+      type: Date,
+    }
+  },
+],
   cancellationReason: {
     type: String,
     default: '',
@@ -106,27 +118,30 @@ discountAmount: {
     ],
     default: 'Pending',
   },
-  statusHistory: [
-    {
-      status: {
-        type: String,
-        enum: [
-          'Pending',
-          'Placed',
-          'Shipped',
-          'Delivered',
-          'Cancelled',
-          'User Cancelled',
-          'Return Requested',
-          'Paid' // ✅ Paid added here too
-        ],
-      },
-      updatedAt: {
-        type: Date,
-        default: Date.now,
-      },
-    }
-  ],
+ statusHistory: [
+  {
+    status: {
+      type: String,
+      enum: [
+        'Pending',
+        'Placed',
+        'Shipped',
+        'Delivered',
+        'Cancelled',
+        'User Cancelled',
+        'Return Requested',
+        'Return Approved',  
+        'Return Rejected',   
+        'Paid'
+      ],
+    },
+    updatedAt: {
+      type: Date,
+      default: Date.now,
+    },
+  }
+],
+
   createdAt: {
     type: Date,
     default: Date.now,

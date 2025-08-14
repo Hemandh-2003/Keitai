@@ -15,7 +15,7 @@ const addressSchema = new mongoose.Schema({
 const walletTransactionSchema = new mongoose.Schema({
   type: {
     type: String,
-    enum: ['Credit', 'Debit'],
+     enum: ['Credit', 'Debit', 'Refund'],
     required: true,
   },
   amount: {
@@ -23,12 +23,12 @@ const walletTransactionSchema = new mongoose.Schema({
     required: true,
   },
   reason: {
+  type: String,
+  required: true,
+  default: 'N/A'
+},
+   orderId: {
     type: String,
-    required: true,
-  },
-  orderId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Order',
   },
   date: {
     type: Date,

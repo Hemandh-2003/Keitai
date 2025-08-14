@@ -1,6 +1,7 @@
 const express = require('express');
 const { isLoggedIn } = require('../middleware/authMiddleware');
 const userController = require('../controllers/userController');
+const orderController = require('../controllers/orderController');
 const checkBlockedUser = require('../middleware/checkBlocked');
 const couponController = require('../controllers/couponController');
 const multer = require('multer');
@@ -24,12 +25,12 @@ router.post('/orders/cancel/:id', ...protect, userController.cancelOrder);
 router.post('/orders/:id/cancel', userController.cancelEntireOrder);
 router.post('/orders/:orderId/return/:productId', userController.returnProduct);
 router.post('/orders/return/:id', userController.returnOrder);
-router.post('/orders/cancel-item/:orderId', userController.cancelSingleItem);
+router.post('/orders/cancel-item/:orderId/:productId',...protect,userController.cancelSingleItem);
 router.get('/order/:id/invoice', userController.downloadInvoice);
 
 // Product Routes
-router.get('/home', userController.getProducts);
-router.get('/product/:productId', userController.getProductDetailsWithRelated);
+// router.get('/home', userController.getProducts);
+// router.get('/product/:productId', userController.getProductDetailsWithRelated);
 // Checkout Routes
 router.get('/checkout', ...protect, userController.getCheckout);
 router.post('/checkout', ...protect, userController.checkout);
@@ -37,7 +38,8 @@ router.post('/place-order', ...protect, userController.placeOrder);
 router.post('/confirm-payment', ...protect, userController.confirmPayment);
 router.get('/confirm-payment', ...protect, userController.renderConfirmPayment);
 router.post('/address/create-inline', userController.createInlineAddress);
-
+router.get('/retry-checkout', userController.retryCheckout);
+router.get('/retry-checkout/:orderId', userController.retryCheckoutWithOrderId);
 // Settings and Password Routes
 router.get('/settings', ...protect, userController.getSettingsPage);
 router.post('/change-password', ...protect, upload.none(), userController.changePassword);
@@ -65,4 +67,10 @@ router.get('/aboutus', userController.getAboutUsPage);
 router.get('/services', userController.getServicesPage);
 router.get('/support', userController.getSupportPage);
 router.get('/contact', userController.getContactPage);
+
+//payment
+router.get('/order/:orderId/retry', ...protect, userController.retryPayment);
+
+//whishlist
+router.post('/add-to-cart-from-wishlist/:productId', ...protect, userController.addToCartFromWishlist);
 module.exports = router;

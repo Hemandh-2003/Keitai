@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8" />
   <title>Wallet</title>
@@ -7,6 +8,7 @@
   <link rel="stylesheet" href="/css/wallet.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
 </head>
+
 <body>
   <div class="wallet-container">
     <aside class="sidebar">
@@ -55,49 +57,57 @@
     <section class="wallet-balance-section">
       <div class="wallet-balance-card">
         <h2>Current Balance</h2>
-        <p class="balance">₹ <%= user.wallet.balance.toFixed(2) %></p>
+        <p class="balance">₹ <%= user.wallet.balance.toFixed(2) %>
+        </p>
       </div>
     </section>
 
     <section class="transaction-history">
-  <h2>Transaction History</h2>
-  <% if (user.wallet.transactions.length > 0) { %>
-    <table class="transaction-table">
-      <thead>
-        <tr>
-          <th>Date</th>
-          <th>Type</th>
-          <th>Amount</th>
-          <th>Reason</th>
-          <th>Order ID</th>
-        </tr>
-      </thead>
-      <tbody>
-        <% user.wallet.transactions.forEach(txn => { %>
-          <tr>
-            <td><%= new Date(txn.date).toLocaleDateString() %></td>
-            <td class="<%= txn.type.toLowerCase() %>"><%= txn.type %></td>
-            <td>₹ <%= txn.amount.toFixed(2) %></td>
-            <td><%= txn.reason %></td>
-            <td><%= txn.orderId || 'N/A' %></td>
-          </tr>
-        <% }) %>
-      </tbody>
-    </table>
+      <h2>Transaction History</h2>
+      <% if (user.wallet.transactions.length> 0) { %>
+        <table class="transaction-table">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Type</th>
+              <th>Amount</th>
+              <th>Reason</th>
+              <th>Order ID</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% user.wallet.transactions.forEach(txn=> { %>
+              <tr>
+                <td>
+                  <%= new Date(txn.date).toLocaleDateString() %>
+                </td>
+                <td class="<%= txn.type.toLowerCase() %>">
+                  <%= txn.type %>
+                </td>
+                <td>₹ <%= txn.amount.toFixed(2) %>
+                </td>
+                <td><%= txn.reason || 'No reason provided' %></td>
+               <td><%= txn.orderId ? txn.orderId : 'N/A' %></td>
+              </tr>
+              <% }) %>
+          </tbody>
 
-    <!-- Pagination Controls -->
-    <div class="pagination">
-      <% for (let i = 1; i <= totalPages; i++) { %>
-        <a href="?page=<%= i %>" class="<%= i === currentPage ? 'active' : '' %>">
-          <%= i %>
-        </a>
-      <% } %>
-    </div>
-  <% } else { %>
-    <p class="no-transactions">No wallet transactions yet.</p>
-  <% } %>
-</section>
+        </table>
+
+        <!-- Pagination Controls -->
+        <div class="pagination">
+          <% for (let i=1; i <=totalPages; i++) { %>
+            <a href="?page=<%= i %>" class="<%= i === currentPage ? 'active' : '' %>">
+              <%= i %>
+            </a>
+            <% } %>
+        </div>
+        <% } else { %>
+          <p class="no-transactions">No wallet transactions yet.</p>
+          <% } %>
+    </section>
 
   </div>
 </body>
+
 </html>

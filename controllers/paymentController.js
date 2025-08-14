@@ -82,20 +82,33 @@ exports.verifyPayment = async (req, res) => {
   }
 };
 
-exports.paymentFailed = (req, res) => {
-  if (!req.session.user) {
-    return res.redirect('/login');
-  }
-  
-  const { orderId, error } = req.query;
-  const user = req.session.user;
+exports.paymentFailed = async (req, res) => {
+  try {
+    const { orderId, error } = req.query;
 
-  res.render('user/payment-failed', {
-    orderId,
-    error,
-    user
-  });
+    if (!req.session.user) {
+      return res.redirect('/login');
+    }
+
+    // ✅ Update order status
+    if (orderId) {
+      await Order.findByIdAndUpdate(orderId, {
+        status: 'Payment Failed'
+      });
+    }
+
+    res.render('user/payment-failed', {
+      orderId,
+      error,
+      user: req.session.user
+    });
+
+  } catch (err) {
+    console.error('Payment failure handling error:', err.message);
+    res.status(500).send('Internal Server Error during payment failure handling');
+  }
 };
+
 
 exports.paymentSuccess = (req, res) => {
   res.render('user/payment-success', {
@@ -109,93 +122,53 @@ const razorpayInstance = new Razorpay({
   key_secret: process.env.RAZORPAY_KEY_SECRET
 });
 exports.retryPayment = async (req, res) => {
+  const { orderId } = req.params;
+
   try {
-    console.log('Retry payment initiated by user:', req.session.user?._id);
-    
-    if (!req.session.user) {
-      console.error('No user session found');
-      return res.status(401).json({ 
-        error: 'Authentication required',
-        details: 'User not logged in'
-      });
+    // Optionally check order status, user permissions, etc.
+    res.redirect(`/checkout?orderId=${orderId}`);
+  } catch (err) {
+    console.error('Error in retryPayment:', err);
+    res.status(500).send('Something went wrong');
+  }
+};
+exports.retryPaymentFromOrder = async (req, res) => {
+  try {
+    const orderId = req.params.orderId;
+    const user = req.session.user;
+
+    if (!user) {
+      return res.redirect('/login');
     }
 
-    const userId = req.session.user._id;
-    console.log('Looking for failed orders for user:', userId);
+    const order = await Order.findOne({ _id: orderId, user: user._id }).populate('products.product');
 
-    const lastOrder = await Order.findOne({
-      user: userId,
-      paymentStatus: { $in: ['failed', 'pending'] } // Check both statuses
-    }).sort({ createdAt: -1 });
-
-    if (!lastOrder) {
-      console.error('No failed/pending order found for user:', userId);
-      return res.status(404).json({ 
-        error: 'No order found',
-        details: 'No failed or pending order available for retry'
-      });
+    if (!order) {
+      return res.status(404).send('Order not found');
     }
 
-    console.log('Found order for retry:', lastOrder._id);
-
-    // Use totalAmount if available, otherwise fallback to totalPrice
-    const orderAmount = lastOrder.totalAmount || lastOrder.totalPrice;
-    
-    if (!orderAmount || isNaN(orderAmount)) {
-      console.error('Invalid order amount:', orderAmount);
-      return res.status(400).json({
-        error: 'Invalid amount',
-        details: `Order amount is invalid: ${orderAmount}`
-      });
+    if (order.status !== 'Payment Failed' && order.status !== 'Pending') {
+      return res.status(400).send('Payment retry is not allowed for this order');
     }
 
-    const retryAmount = Math.round(parseFloat(orderAmount) * 100);
-    console.log('Creating Razorpay order for amount:', retryAmount);
+    // ✅ Set session for checkout (simulate fresh checkout)
+    req.session.retryOrder = {
+      orderId: order._id,
+      products: order.products.map(p => ({
+        product: p.product._id.toString(),
+        quantity: p.quantity
+      })),
+      addressId: order.selectedAddress,
+      coupon: order.coupon,
+      totalAmount: order.totalAmount,
+      paymentMethod: order.paymentMethod
+    };
 
-    const razorpayOrder = await razorpay.orders.create({
-      amount: retryAmount,
-      currency: 'INR',
-      receipt: `retry_${lastOrder._id}_${Date.now()}`,
-      notes: {
-        orderId: lastOrder._id.toString(),
-        retryAttempt: Date.now()
-      }
-    });
-
-    console.log('Razorpay order created:', razorpayOrder.id);
-
-    // Update the order with new Razorpay ID
-    lastOrder.razorpayOrderId = razorpayOrder.id;
-    lastOrder.paymentRetryAttempts = (lastOrder.paymentRetryAttempts || 0) + 1;
-    await lastOrder.save();
-
-    console.log('Order updated with new Razorpay ID');
-
-    return res.json({
-      key: process.env.RAZORPAY_KEY_ID,
-      order: razorpayOrder,
-      user: {
-        name: req.session.user.name,
-        email: req.session.user.email
-      }
-    });
+    // ✅ Redirect to checkout
+    res.redirect('/user/checkout');
 
   } catch (err) {
-    console.error('Full retry payment error:', err);
-    
-    // Specific error for Razorpay API failures
-    if (err.error && err.error.description) {
-      return res.status(500).json({
-        error: 'Payment gateway error',
-        details: err.error.description,
-        code: err.error.code
-      });
-    }
-
-    return res.status(500).json({ 
-      error: 'Retry payment failed',
-      details: err.message,
-      stack: process.env.NODE_ENV === 'development' ? err.stack : undefined
-    });
+    console.error('Error in retryPaymentFromOrder:', err);
+    res.status(500).send('Server error during payment retry');
   }
 };

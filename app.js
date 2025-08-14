@@ -25,7 +25,8 @@ const authRoutes = require('./routes/authRoutes');
 const userRoutes = require('./routes/userRoutes');
 const adminRoutes = require('./routes/adminRoutes');
 const wishlistRoutes = require('./routes/wishlistRoutes');
-
+const wishlistIdsMiddleware = require('./middleware/wishlistIds');
+const Wishlist = require('./models/Wishlist');
 
 // Initialize the app
 const app = express();
@@ -36,7 +37,7 @@ app.use(express.json());
 app.use(checkBlockedUser);
 app.use(express.urlencoded({ extended: true }));
 app.use(bodyParser.json());
-
+app.use(wishlistIdsMiddleware);
 // Session middleware
 app.use(
   session({
@@ -151,13 +152,10 @@ app.use(async (req, res, next) => {
 });
 
 // Routes
-app.use('/admin', adminRoutes); // Admin routes
-app.use('/', authRoutes);       // Authentication-related routes
-app.use('/user', userRoutes);   // User-specific routes
-app.use('/admin', checkBlockedUser, adminRoutes); 
-app.use('/admin', checkBlockedUser, adminRoutes); //user blocking
-app.use('/wishlist', wishlistRoutes); //wish List
-
+app.use('/admin', checkBlockedUser, adminRoutes); // Mount admin routes once with middleware
+app.use('/', authRoutes);
+app.use('/user', userRoutes);
+app.use('/wishlist', wishlistRoutes);
 // Home route
 app.get('/', (req, res) => {
   res.render('user/index', { activePage: 'index' });
@@ -205,6 +203,14 @@ app.get('/:slug', async (req, res) => {
   .sort(sortCondition)
   .populate('offers')
   .populate('category');
+  
+      let wishlist = [];
+      const userId = req.session.user || null
+      console.log(userId)
+      if (userId) {
+        wishlist = await Wishlist.findOne({ user: userId._id }).populate('products');
+        console.log("this is wishlist",wishlist)
+      }
 
 const productsWithOffers = await Promise.all(products.map(async (product) => {
   const offerDetails = await product.getBestOfferPrice(); // This calculates product + category offers
@@ -217,7 +223,8 @@ const productsWithOffers = await Promise.all(products.map(async (product) => {
   activePage: category.slug,
   category,
   products: productsWithOffers, // ✅ Updated list with offerDetails
-  query: req.query
+  query: req.query,
+  wishlist:wishlist
 });
   } catch (error) {
     console.error('Error loading category page:', error);

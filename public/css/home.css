@@ -378,36 +378,16 @@ footer {
   background: #a71d2a;
 }
 
-/* Container for both wishlist and cart icons */
 .action-icons {
   position: absolute;
   top: 10px;
   right: 10px;
-  display: none; /* Hidden by default */
+  display: flex; /* Always show icons */
   flex-direction: column;
   gap: 10px;
   align-items: flex-end;
 }
 
-.product-card:hover .action-icons {
-  display: flex; /* Show both icons on hover */
-}
-
-/* Wishlist Icon */
-/* Action Icons - holds both cart and wishlist stacked vertically */
-.action-icons {
-  position: absolute;
-  top: 10px;
-  right: 10px;
-  display: none;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 8px;
-}
-
-.product-card:hover .action-icons {
-  display: flex;
-}
 
 /* Cart Icon */
 .cart-icon {
@@ -440,14 +420,30 @@ footer {
 }
 
 .wishlist-icon:hover i {
-  color: rgb(0, 0, 0);
+  color: rgb(255, 0, 0);
 }
 
 .wishlist-icon.active i {
-  color: rgb(0, 0, 0);
+  color: rgb(255, 0, 0);
 }
 
-
+/* Add to your CSS file (home.css or watch.css) */
+.wishlist-count-badge {
+  position: absolute;
+  top: -8px;
+  right: -10px;
+  background: #f50000;
+  color: #fff;
+  border-radius: 50%;
+  padding: 2px 7px;
+  font-size: 13px;
+  font-weight: bold;
+  z-index: 2;
+}
+.wishlist-icon-wrapper {
+  position: relative;
+  display: inline-block;
+}
 .blocked-product {
   opacity: 0.6; /* Makes the card appear grayed out */
   pointer-events: none; /* Disables interaction with the card */

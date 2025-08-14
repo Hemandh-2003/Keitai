@@ -7,216 +7,470 @@
   <title>Order Details</title>
   <link rel="stylesheet" href="/css/order-details.css" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
-  <style>
-    .product-img {
-      width: 80px;
-      height: 80px;
-      object-fit: cover;
-      border-radius: 8px;
-      margin-bottom: 8px;
-    }
-
-    .cancel-btn,
-    .return-btn {
-      padding: 10px 20px;
-      border: none;
-      cursor: pointer;
-      border-radius: 5px;
-      margin-top: 10px;
-    }
-
-    .cancel-btn {
-      background-color: #f44336;
-      color: white;
-    }
-
-    .return-btn {
-      background-color: #2196F3;
-      color: white;
-    }
-
-    .coupon-details {
-      background-color: #f1f1f1;
-      padding: 12px 15px;
-      border-left: 4px solid #28a745;
-      margin-bottom: 20px;
-      border-radius: 5px;
-    }
-  </style>
 </head>
 
 <body>
-  <header>
-    <nav>
-      <a href="javascript:void(0);" class="back-link" onclick="goBack()">
-        <i class="fas fa-arrow-left"></i> Back to Orders
-      </a>
-    </nav>
-    <h1>Order Details</h1>
-  </header>
+  <% const couponApplied=Boolean(order.coupon) || (order.couponDiscount && order.couponDiscount> 0);
+    %>
 
-  <section class="order-details-section">
-    <div class="order-summary">
-      <p><strong>Order ID:</strong>
-        <%= order.orderId %>
-      </p>
-      <p><strong>Status:</strong>
-        <% if (order.returnStatus==='Approved' ) { %>Return Accepted
-          <% } else if (order.returnStatus==='Rejected' ) { %>Return Rejected
-            <% } else if (order.returnStatus==='Requested' ) { %>Return Requested
-              <% } else { %>
-                <%= order.status %>
-                  <% } %>
-      </p>
-      <p><strong>Order Date:</strong>
-        <%= new Date(order.createdAt).toLocaleDateString() %>
-      </p>
-      <p><strong>Estimated Delivery:</strong>
-        <%= new Date(order.estimatedDelivery).toLocaleDateString() %>
-      </p>
-    </div>
+    <div class="order-container" data-coupon-applied="<%= couponApplied %>">
+      <header class="order-header">
+        <button class="back-btn" onclick="goBack()"><i class="fas fa-arrow-left"></i></button>
+        <h1>Order Details</h1>
+      </header>
 
-    <h3>Products</h3>
-    <ul class="product-list">
-      <% order.products.forEach(item=> {
-        const price = item.product.salesPrice || item.product.regularPrice;
-        const subtotal = price * item.quantity;
-        %>
-        <li class="product-item">
-          <% if (item.product.images && item.product.images.length> 0) { %>
-            <img src="/uploads/<%= item.product.images[0] %>" alt="Product" class="product-img">
-            <% } %>
-              <p><strong>Product Name:</strong>
-                <%= item.product.name %>
-              </p>
-              <p><strong>Quantity:</strong>
-                <%= item.quantity %>
-              </p>
-              <p><strong>Price:</strong> ₹<%= price %>
-              </p>
-              <p><strong>Subtotal:</strong> ₹<%= subtotal %>
-              </p>
-
-              <% if (order.status==='Pending' ) { %>
-                <form action="/user/orders/cancel-item/<%= order._id %>" method="POST">
-                  <input type="hidden" name="productId" value="<%= item.product._id %>">
-                  <button type="submit" class="cancel-btn">Cancel This Item</button>
+      <main class="order-content">
+        <!-- Order Overview -->
+        <section class="order-overview">
+          <div class="order-meta">
+            <div class="meta-item">
+              <span class="meta-label">Order ID</span>
+              <span class="meta-value">
+                <%= order.orderId %>
+              </span>
+            </div>
+            <div class="meta-item">
+              <span class="meta-label">Status</span>
+              <span class="meta-value status-badge">
+                <% if (order.returnStatus==='Approved' ) { %>
+                  Return Accepted
+                  <% } else if (order.returnStatus==='Rejected' ) { %>
+                    Return Rejected
+                    <% } else if (order.returnStatus==='Requested' ) { %>
+                      Return Requested
+                      <% } else { %>
+                        <%= order.status %>
+                          <% } %>
+              </span>
+            </div>
+            <% // Show the return button only if not already requested, approved, or rejected %>
+              <% if (!order.returnStatus && order.status==='Delivered' ) { %>
+                <form action="/return/<%= order._id %>" method="POST" style="display:inline;">
+                  <button type="submit" class="btn btn-warning">Return Item</button>
                 </form>
-                <% } else if (order.status==='Delivered' ) { %>
-                  <form action="/user/orders/<%= order._id %>/return/<%= item.product._id %>" method="POST">
-                    <input type="hidden" name="quantity" value="<%= item.quantity %>">
-                    <input type="hidden" name="reason" value="User initiated return">
-                    <button type="submit" class="return-btn">Return This Item</button>
-                  </form>
+                <% } %>
+                  <div class="meta-item">
+                    <span class="meta-label">Order Date</span>
+                    <span class="meta-value">
+                      <%= new Date(order.createdAt).toLocaleDateString() %>
+                    </span>
+                  </div>
+                  <div class="meta-item">
+                    <span class="meta-label">Delivery Date</span>
+                    <span class="meta-value">
+                      <%= new Date(order.estimatedDelivery).toLocaleDateString() %>
+                    </span>
+                  </div>
+          </div>
+        </section>
+
+        <!-- Products -->
+        <section class="order-section">
+          <h2 class="section-title">Products</h2>
+          <div class="product-grid">
+            <% (order.products || []).forEach(item=> {
+              const price = item.product.salesPrice || item.product.regularPrice;
+              const subtotal = price * item.quantity;
+              %>
+              <div class="product-card">
+                <% if (item.product.images && item.product.images.length> 0) { %>
+                  <img src="/uploads/<%= item.product.images[0] %>" alt="Product" class="product-image" />
                   <% } %>
-        </li>
-        <% }); %>
-    </ul>
 
-    <h3>Shipping Address</h3>
-    <div class="shipping-address">
-      <p>
-        <%= selectedAddress?.name || 'N/A' %>
-      </p>
-      <p>
-        <%= selectedAddress?.street || 'N/A' %>, <%= selectedAddress?.city || 'N/A' %>
-      </p>
-      <p>
-        <%= selectedAddress?.state || 'N/A' %>, <%= selectedAddress?.zip || 'N/A' %>, <%= selectedAddress?.country
-              || 'N/A' %>
-      </p>
-      <p><strong>Phone:</strong>
-        <%= selectedAddress?.phone || 'N/A' %>
-      </p>
-    </div>
+                    <div class="product-info">
+                      <h3 class="product-name">
+                        <%= item.product.name %>
+                      </h3>
+                      <div class="product-meta">
+                        <div class="meta-row"><span>Quantity:</span> <span>
+                            <%= item.quantity %>
+                          </span></div>
+                        <div class="meta-row"><span>Price:</span> <span>₹<%= price %></span></div>
+                        <div class="meta-row"><span>Subtotal:</span> <span class="text-bold">₹<%= subtotal %></span>
+                        </div>
+                      </div>
 
-    <h3>Payment Method</h3>
-    <p>
-      <%= order.paymentMethod %>
-    </p>
+                      <% if (item.status==='Cancelled' ) { %>
+                        <span class="badge bg-danger">Cancelled</span>
+                        <% if (item.cancellationReason) { %>
+                          <p class="text-muted">Reason: <%= item.cancellationReason %>
+                          </p>
+                          <% } %>
+                            <% } else { %>
+                              <% if (!couponApplied) { %>
+                                <% if (order.status==='Pending' ) { %>
+                                  <form class="cancel-item-form" data-max-qty="<%= item.quantity %>"
+                                    action="/user/orders/cancel-item/<%= order._id %>/<%= item.product._id %>"
+                                    method="POST">
+                                    <input type="hidden" name="quantity" value="" />
+                                    <input type="hidden" name="reason" value="" />
+                                    <button type="button" class="btn btn-cancel">Cancel Item</button>
+                                  </form>
 
-    <% if (order.coupon) { %>
-      <h3>Coupon Applied</h3>
-      <div class="coupon-details">
-        <p><strong>Code:</strong>
-          <%= order.coupon.code %>
-        </p>
-        <p><strong>Type:</strong>
-          <%= order.coupon.discountType==='percentage' ? 'Percentage' : 'Fixed Amount' %>
-        </p>
-        <p><strong>Discount:</strong>
-          <%= order.coupon.discountType==='percentage' ? `${order.coupon.discount}%` : `₹${order.coupon.discount}` %>
-        </p>
-        <p><strong>Discount Applied:</strong> ₹<%= order.couponDiscount?.toFixed(2) || 0 %>
-        </p>
-      </div>
-      <% } %>
+                                  <% } else if (order.status==='Delivered' ) { %>
+                                    <% if (item.returnStatus==='Approved' ) { %>
+                                      <p class="text-success">Your return request has been approved.</p>
+                                      <% } else if (item.returnStatus==='Rejected' ) { %>
+                                        <p class="text-danger">Your return request has been rejected.</p>
+                                        <% } else if (item.returnStatus==='Requested' ) { %>
+                                          <p class="text-warning">Return request pending approval.</p>
+                                          <% } else { %>
+                                            <form action="/user/orders/<%= order._id %>/return/<%= item.product._id %>"
+                                              method="POST" class="action-form return-item-form">
+                                              <input type="hidden" name="quantity" value="<%= item.quantity %>" />
+                                              <input type="hidden" name="reason" value="Damaged" />
+                                              <button type="submit" class="btn btn-return">Return Item</button>
+                                            </form>
+                                            <% } %>
+                                              <% } %>
+                                                <% } else { %>
+                                                  <p class="info-note">
+                                                    <i class="fas fa-exclamation-circle"></i> Coupon orders cannot be
+                                                    cancelled or returned.
+                                                  </p>
+                                                  <% } %>
+                                                    <% } %>
+                    </div>
+              </div>
+              <% }) %>
 
-        <% const subTotal=order.totalAmount + (order.couponDiscount || 0); %>
-          <p><strong>Subtotal:</strong> ₹<%= subTotal.toFixed(2) %>
-          </p>
+          </div>
+        </section>
 
-          <% if (order.deliveryCharge && order.deliveryCharge> 0) { %>
-            <p><strong>Delivery Charge:</strong> ₹<%= order.deliveryCharge.toFixed(2) %>
-            </p>
+        <!-- Shipping, Payment, Coupon, and Summary sections -->
+        <div class="order-details-row">
+          <section class="order-section">
+            <h2 class="section-title">Shipping Details</h2>
+            <div class="shipping-card">
+              <div class="shipping-info">
+                <p class="shipping-name">
+                  <%= selectedAddress ? selectedAddress.name : 'N/A' %>
+                </p>
+                <p class="shipping-address">
+                  <%= selectedAddress ? selectedAddress.street : 'N/A' %>, <%= selectedAddress ? selectedAddress.city
+                      : 'N/A' %>
+                </p>
+                <p class="shipping-region">
+                  <%= selectedAddress ? selectedAddress.state : 'N/A' %>, <%= selectedAddress ? selectedAddress.zip
+                      : 'N/A' %>, <%= selectedAddress ? selectedAddress.country : 'N/A' %>
+                </p>
+                <p class="shipping-phone"><i class="fas fa-phone"></i>
+                  <%= selectedAddress ? selectedAddress.phone : 'N/A' %>
+                </p>
+              </div>
+            </div>
+          </section>
+
+          <!-- Payment Method -->
+          <section class="order-section">
+            <h2 class="section-title">Payment Method</h2>
+            <div class="payment-method">
+              <i class="fas fa-credit-card"></i>
+              <span>
+                <%= order.paymentMethod %>
+              </span>
+            </div>
+          </section>
+
+          <!-- Coupon -->
+          <% if (order.coupon || (order.couponDiscount && order.couponDiscount> 0)) { %>
+            <section class="order-section">
+              <h2 class="section-title">Coupon Applied</h2>
+              <div class="coupon-card">
+                <div class="coupon-row"><span>Code:</span> <span class="coupon-code">
+                    <%= order.coupon ? order.coupon.code : '—' %>
+                  </span></div>
+                <div class="coupon-row"><span>Type:</span> <span>
+                    <%= order.coupon && order.coupon.discountType==='percentage' ? 'Percentage' : (order.coupon
+                      ? 'Fixed Amount' : (order.couponDiscount ? 'Fixed Amount' : '—' )) %>
+                  </span></div>
+                <div class="coupon-row"><span>Discount Applied:</span> <span class="text-bold">-₹<%=
+                      (order.couponDiscount || 0).toFixed(2) %></span></div>
+              </div>
+            </section>
             <% } %>
 
-              <% if (order.couponDiscount> 0) { %>
-                <p><strong>Coupon Discount:</strong> -₹<%= order.couponDiscount.toFixed(2) %>
-                </p>
-                <% } %>
-
-                  <p><strong>Total Amount:</strong> ₹<%= order.totalAmount.toFixed(2) %>
-                  </p>
-                  <form action="/user/order/<%= order._id %>/invoice" method="GET" target="_blank">
-                    <button type="submit" class="btn btn-primary">
-                      <i class="fas fa-file-invoice"></i> Download Invoice
-                    </button>
-                  </form>
-
-                  <% if (order.status==='Pending' ) { %>
-                    <form action="/user/orders/cancel/<%= order._id %>" method="POST"
-                      onsubmit="return confirm('Are you sure you want to cancel this order?');">
-                      <button type="submit" class="cancel-btn">Cancel Order</button>
-                    </form>
-                    <% } else if (order.status==='Delivered' ) { %>
-                      <form class="return-order-form" action="/user/orders/return/<%= order._id %>" method="POST">
-                        <button type="submit" class="return-btn">Return Order</button>
-                      </form>
+              <!-- Order Summary -->
+              <section class="order-section">
+                <h2 class="section-title">Order Summary</h2>
+                <div class="summary-card">
+                  <% const subTotal=order.totalAmount + (order.couponDiscount || 0); %>
+                    <div class="summary-row"><span>Subtotal</span> <span>₹<%= subTotal.toFixed(2) %></span></div>
+                    <% if (order.deliveryCharge && order.deliveryCharge> 0) { %>
+                      <div class="summary-row"><span>Delivery Charge</span> <span>₹<%= order.deliveryCharge.toFixed(2)
+                            %></span></div>
                       <% } %>
-  </section>
+                        <% if (order.couponDiscount> 0) { %>
+                          <div class="summary-row"><span>Coupon Discount</span> <span class="text-discount">-₹<%=
+                                order.couponDiscount.toFixed(2) %></span></div>
+                          <p class="coupon-note"><i class="fas fa-info-circle"></i> Coupon applied successfully. Terms
+                            may apply.</p>
+                          <% } %>
+                            <div class="summary-row total-row"><span>Total Amount</span> <span class="text-bold">₹<%=
+                                  order.totalAmount.toFixed(2) %></span></div>
+                </div>
+              </section>
+        </div>
 
-  <script>
-    function goBack() {
-      if (document.referrer) {
-        window.history.back();
-      } else {
-        window.location.href = '/user/orders';
+        <!-- Actions -->
+        <div class="action-buttons">
+          <form action="/user/order/<%= order._id %>/invoice" method="GET" target="_blank" class="action-form">
+            <button type="submit" class="btn btn-primary"><i class="fas fa-file-invoice"></i> Download Invoice</button>
+          </form>
+
+          <% if (!couponApplied) { %>
+            <% if (order.status==='Pending' ) { %>
+              <form id="cancel-order-form" action="/user/orders/cancel/<%= order._id %>" method="POST"
+                class="action-form">
+                <input type="hidden" name="reason" value="" />
+                <button type="button" class="btn btn-cancel" id="cancel-order-btn">Cancel Order</button>
+              </form>
+              <% } else if (order.status==='Delivered' ) { %>
+                <form class="return-order-form action-form" action="/user/orders/return/<%= order._id %>" method="POST">
+                  <button type="submit" class="btn btn-return">Return Order</button>
+                </form>
+                <% } %>
+                  <% } else { %>
+                    <p class="info-note"><i class="fas fa-exclamation-circle"></i> Return and cancellation are disabled
+                      for coupon orders.</p>
+                    <% } %>
+
+                      <% if (order.status==='Pending' && order.paymentStatus==='Failed' ) { %>
+                        <form action="/payment/retry-payment" method="POST" class="action-form">
+                          <input type="hidden" name="orderId" value="<%= order._id %>" />
+                          <button type="submit" class="btn btn-pay"><i class="fas fa-sync-alt"></i> Retry
+                            Payment</button>
+                        </form>
+                        <% } %>
+        </div>
+      </main>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+      function goBack() {
+        if (document.referrer) {
+          window.history.back();
+        } else {
+          window.location.href = '/user/orders';
+        }
       }
-    }
 
-    document.querySelectorAll('.return-order-form').forEach(form => {
-      form.addEventListener('submit', function (e) {
-        e.preventDefault();
+      // Return Order Confirmation
+      document.querySelectorAll('.return-order-form').forEach(form => {
+        form.addEventListener('submit', function (e) {
+          e.preventDefault();
+          Swal.fire({
+            title: 'Are you sure?',
+            text: 'Do you want to return this order?',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Yes, return it!',
+            cancelButtonText: 'Cancel'
+          }).then(result => {
+            if (result.isConfirmed) form.submit();
+          });
+        });
+      });
+
+      // Cancel Item with reason & quantity
+      document.querySelectorAll('.cancel-item-form .btn-cancel').forEach(button => {
+        button.addEventListener('click', function () {
+          const form = this.closest('form');
+          const maxQty = parseInt(form.dataset.maxQty, 10);
+
+          Swal.fire({
+            title: 'Cancel Quantity',
+            input: 'number',
+            inputAttributes: { min: 1, max: maxQty },
+            inputValue: maxQty,
+            showCancelButton: true,
+            confirmButtonText: 'Next',
+            cancelButtonText: 'Cancel',
+            inputValidator: (value) => {
+              if (!value || value < 1 || value > maxQty) return `Enter a number between 1 and ${maxQty}`;
+            }
+          }).then(qtyResult => {
+            if (!qtyResult.isConfirmed) return;
+            form.querySelector('input[name="quantity"]').value = qtyResult.value;
+
+            Swal.fire({
+              title: 'Reason for Cancellation',
+              input: 'select',
+              inputOptions: {
+                'Not Needed Anymore': 'Not Needed Anymore',
+                'Found Cheaper Elsewhere': 'Found Cheaper Elsewhere',
+                'Delivery Taking Too Long': 'Delivery Taking Too Long',
+                'Wrong Item Ordered': 'Wrong Item Ordered',
+                'Other': 'Other'
+              },
+              inputPlaceholder: 'Select a reason',
+              showCancelButton: true,
+              confirmButtonText: 'Submit'
+            }).then(reasonResult => {
+              if (!reasonResult.isConfirmed) return;
+              if (reasonResult.value === 'Other') {
+                Swal.fire({
+                  title: 'Please specify your reason',
+                  input: 'textarea',
+                  inputPlaceholder: 'Type your reason here...',
+                  showCancelButton: true,
+                  confirmButtonText: 'Submit'
+                }).then(customReason => {
+                  if (customReason.isConfirmed && customReason.value.trim() !== '') {
+                    form.querySelector('input[name="reason"]').value = customReason.value.trim();
+                    form.submit();
+                  }
+                });
+              } else {
+                form.querySelector('input[name="reason"]').value = reasonResult.value;
+                form.submit();
+              }
+            });
+          });
+        });
+      });
+
+      // Cancel Order with reason
+      document.getElementById('cancel-order-btn')?.addEventListener('click', function () {
+        const form = document.getElementById('cancel-order-form');
+
         Swal.fire({
           title: 'Are you sure?',
-          text: 'Do you want to return this order?',
+          text: 'Do you really want to cancel this order?',
           icon: 'warning',
           showCancelButton: true,
-          confirmButtonColor: '#3085d6',
-          cancelButtonColor: '#d33',
-          confirmButtonText: 'Yes, return it!',
-          cancelButtonText: 'Cancel'
-        }).then((result) => {
-          if (result.isConfirmed) {
-            form.submit();
+          confirmButtonText: 'Yes, cancel it',
+          cancelButtonText: 'No, keep it'
+        }).then(firstResult => {
+          if (firstResult.isConfirmed) {
+            Swal.fire({
+              title: 'Reason for Cancellation',
+              input: 'select',
+              inputOptions: {
+                'Not Needed Anymore': 'Not Needed Anymore',
+                'Found Cheaper Elsewhere': 'Found Cheaper Elsewhere',
+                'Delivery Taking Too Long': 'Delivery Taking Too Long',
+                'Wrong Item Ordered': 'Wrong Item Ordered',
+                'Other': 'Other'
+              },
+              inputPlaceholder: 'Select a reason',
+              showCancelButton: true,
+              confirmButtonText: 'Next',
+            }).then(reasonResult => {
+              if (reasonResult.isConfirmed) {
+                if (reasonResult.value === 'Other') {
+                  Swal.fire({
+                    title: 'Please specify your reason',
+                    input: 'textarea',
+                    inputPlaceholder: 'Type your reason here...',
+                    showCancelButton: true,
+                    confirmButtonText: 'Submit'
+                  }).then(customReason => {
+                    if (customReason.isConfirmed && customReason.value.trim() !== '') {
+                      form.querySelector('input[name="reason"]').value = customReason.value.trim();
+                      form.submit();
+                    }
+                  });
+                } else if (reasonResult.value) {
+                  form.querySelector('input[name="reason"]').value = reasonResult.value;
+                  form.submit();
+                }
+              }
+            });
           }
         });
       });
-    });
-  </script>
 
-  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+      // Return item per-product reason prompt
+      document.querySelectorAll('form[action*="/return/"]').forEach(form => {
+        if (form.classList.contains('return-order-form')) return;
+
+        form.addEventListener('submit', function (e) {
+          e.preventDefault();
+
+          const maxQty = parseInt(form.querySelector('input[name="maxQty"]')?.value || '1', 10);
+
+          // Step 1: Confirm return
+          Swal.fire({
+            title: 'Are you sure?',
+            text: 'Do you really want to return this item?',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Yes, proceed',
+            cancelButtonText: 'Cancel'
+          }).then(confirmResult => {
+            if (!confirmResult.isConfirmed) return;
+
+            // Step 2: Ask for quantity if more than one
+            const askQuantity = maxQty > 1
+              ? Swal.fire({
+                title: 'Quantity to return',
+                input: 'number',
+                inputValue: maxQty,
+                inputAttributes: { min: 1, max: maxQty },
+                showCancelButton: true,
+                confirmButtonText: 'Next',
+                cancelButtonText: 'Cancel',
+                inputValidator: (value) => {
+                  const qty = parseInt(value, 10);
+                  if (!qty || qty < 1 || qty > maxQty) {
+                    return `Please enter a valid quantity (1 - ${maxQty})`;
+                  }
+                }
+              })
+              : Promise.resolve({ isConfirmed: true, value: 1 });
+
+            askQuantity.then(qtyResult => {
+              if (!qtyResult.isConfirmed) return;
+
+              form.querySelector('input[name="quantity"]').value = qtyResult.value;
+
+              // Step 3: Reason for return
+              Swal.fire({
+                title: 'Reason for Return',
+                input: 'select',
+                inputOptions: {
+                  'Damaged or Defective': 'Damaged or Defective',
+                  'Wrong Item Delivered': 'Wrong Item Delivered',
+                  'Not as Described': 'Not as Described',
+                  'Better Price Elsewhere': 'Better Price Elsewhere',
+                  'Other': 'Other'
+                },
+                inputPlaceholder: 'Select a reason',
+                showCancelButton: true,
+                confirmButtonText: 'Next',
+                cancelButtonText: 'Cancel'
+              }).then(reasonResult => {
+                if (!reasonResult.isConfirmed) return;
+
+                if (reasonResult.value === 'Other') {
+                  Swal.fire({
+                    title: 'Please specify your reason',
+                    input: 'textarea',
+                    inputPlaceholder: 'Type your reason here...',
+                    showCancelButton: true,
+                    confirmButtonText: 'Submit',
+                    cancelButtonText: 'Cancel',
+                    inputValidator: (value) => {
+                      if (!value.trim()) return 'Please enter a reason';
+                    }
+                  }).then(customReason => {
+                    if (customReason.isConfirmed && customReason.value.trim() !== '') {
+                      form.querySelector('input[name="reason"]').value = customReason.value.trim();
+                      form.submit();
+                    }
+                  });
+                } else {
+                  form.querySelector('input[name="reason"]').value = reasonResult.value;
+                  form.submit();
+                }
+              });
+            });
+          });
+        });
+      });
+    </script>
 </body>
 
 </html>

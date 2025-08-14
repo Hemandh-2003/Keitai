@@ -363,6 +363,12 @@ header {
   background: var(--primary);
   color: #fff;
 }
+.disabled-btn {
+  background-color: #ccc !important;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
 /* Responsive */
 @media (max-width: 1024px) {
   .cart-wrapper {

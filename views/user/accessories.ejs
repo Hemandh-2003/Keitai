@@ -40,6 +40,12 @@
   <i class="fas fa-shopping-cart"></i>
   <span class="cart-count-badge" id="cart-count">0</span>
 </a>
+<a href="/wishlist" class="wishlist-icon-wrapper position-relative" style="margin-left: 18px;">
+        <i class="fas fa-heart"></i>
+        <span class="wishlist-count-badge" id="wishlist-count">
+          <%= wishlist && wishlist.products ? wishlist.products.length : 0 %>
+        </span>
+      </a>
 
                 <a href="/user/profile"><i class="fas fa-user"></i></a>
             </div>
@@ -121,10 +127,11 @@
                                 <!-- Wishlist Button -->
                                 <div class="icon-stack">
   <!-- Wishlist Icon -->
-  <button class="wishlist-icon"
-    onclick="addToWishlist('<%= product._id %>', this, event)">
-    <i class="fas fa-heart"></i>
-  </button>
+   <button
+  class="wishlist-icon <%= wishlist && wishlist.products.some(p => p._id.toString() === product._id.toString()) ? 'active' : '' %>"
+  onclick="toggleWishlist('<%= product._id %>', this, event)">
+  <i class="fas fa-heart"></i>
+</button>
 
   <!-- Cart Icon (Only if product not blocked) -->
   <% if (!product.isBlocked) { %>
@@ -253,6 +260,31 @@
     .catch(err => console.error('Error fetching cart count:', err));
 });
 
+</script>
+<script>
+function toggleWishlist(productId, btn, event) {
+  event.preventDefault();
+
+  fetch('/wishlist/toggle', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ productId })
+  })
+  .then(res => res.json())
+  .then(data => {
+    if (data.isInWishlist) {
+      btn.classList.add('active');
+      Swal.fire({ icon: 'success', title: 'Added to wishlist!', timer: 1000, showConfirmButton: false });
+    } else {
+      btn.classList.remove('active');
+      Swal.fire({ icon: 'info', title: 'Removed from wishlist', timer: 1000, showConfirmButton: false });
+    }
+  })
+  .catch(err => {
+    console.error('Wishlist toggle error:', err);
+    Swal.fire({ icon: 'error', title: 'Please Check Your Loggin' });
+  });
+}
 </script>
 </body>
 

@@ -106,260 +106,426 @@ box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
 }
 
 /* Table Header */
-th {
-background: linear-gradient(to right, #0056b3, #007bff);
-color: #ffffff;
-text-align: left;
-padding: 15px;
-font-size: 16px;
-font-weight: bold;
-text-transform: uppercase;
+/* Orders Container */
+.orders-container {
+  padding: 2rem;
+  background-color: #fff;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  margin: 20px;
 }
 
-/* Table Rows */
-td {
-padding: 9px;
-font-size: 14px;
-color: #333333;
-background-color: #f9f9f9;
-}
-
-/* Alternating Row Colors */
-tbody tr:nth-child(odd) td {
-background-color: #f1f1f1;
-}
-
-/* Hover Effect */
-tbody tr:hover td {
-background-color: #e8f4ff;
-transition: background-color 0.3s ease;
-}
-/* First and Last Columns */
-td:first-child, th:first-child {
-border-top-left-radius: 10px;
-border-bottom-left-radius: 10px;
-}
-
-td:last-child, th:last-child {
-border-top-right-radius: 10px;
-border-bottom-right-radius: 10px;
-}
-
-/* Dropdown and Buttons */
-td select,
-td button {
-padding: 10px 15px;
-font-size: 14px;
-border-radius: 5px;
-border: 1px solid #ddd;
-cursor: pointer;
-transition: all 0.3s ease;
-}
-
-/* Select Dropdown */
-td select {
-background-color: #f5f5f5;
-}
-
-td select:focus {
-outline: none;
-border-color: #007bff;
-background-color: #e6f7ff;
-}
-/* Pagination styling */
-.pagination {
-  margin-top: 20px;
-  text-align: center;
-}
-
-.pagination a {
-  padding: 8px 12px;
-  margin: 0 5px;
-  background-color: #3498db;
-  color: white;
-  text-decoration: none;
-  border-radius: 5px;
-}
-
-.pagination a:hover {
-  background-color: #2980b9;
-}
-
-.pagination span {
-  padding: 8px 12px;
-  margin: 0 5px;
-  background-color: #ecf0f1;
-  color: #2c3e50;
-  border-radius: 5px;
-}
-/* Button Styles */
-button {
-background-color: #007bff;
-color: #ffffff;
-border: none;
-padding: 10px 15px;
-border-radius: 5px;
-font-size: 14px;
-cursor: pointer;
-transition: background-color 0.3s ease, transform 0.2s ease;
-}
-
-/* Button Hover with Shadow Effect */
-button:hover {
-background-color: #0056b3;
-box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-}
-
-button:active {
-transform: scale(0.95);
-}
-
-/* Cancel Button */
-form button[type="submit"] {
-background-color: #ff4d4d;
-}
-
-form button[type="submit"]:hover {
-background-color: #cc0000;
-}
-
-/* Action Buttons Container */
-td .action-buttons {
-display: flex;
-gap: 10px; /* Add spacing between buttons */
-justify-content: flex-end; /* Align buttons to the right */
-align-items: center; /* Vertically align buttons */
-flex-wrap: wrap; /* Ensure buttons wrap on small screens */
-margin-right: 10px; /* Add a little right margin for better spacing */
-}
-
-/* Update Status Button */
-.action-buttons select {
-padding: 8px 10px;
-font-size: 14px;
-border-radius: 5px;
-border: 1px solid #ccc;
-background-color: #f5f5f5;
-cursor: pointer;
-transition: background-color 0.3s ease;
-}
-
-.action-buttons select:focus {
-outline: none;
-border-color: #007bff;
-background-color: #e6f7ff;
-}
-
-/* Buttons */
-.action-buttons button {
-padding: 8px 15px;
-font-size: 14px;
-border: none;
-border-radius: 5px;
-cursor: pointer;
-transition: background-color 0.3s ease, transform 0.2s ease;
-}
-
-/* Update Status Button */
-.action-buttons button.update-status {
-background-color: #4caf50;
-color: #fff;
-}
-
-.action-buttons button.update-status:hover {
-background-color: #45a049;
-}
-
-.action-buttons button.update-status:active {
-transform: scale(0.95);
-}
-
-/* Cancel Order Button */
-.action-buttons button.cancel-order {
-background-color: #ff4d4d;
-color: #fff;
-}
-
-.action-buttons button.cancel-order:hover {
-background-color: #cc0000;
-}
-
-.action-buttons button.cancel-order:active {
-transform: scale(0.95);
-}
-.cancel-order{
-  margin-left: 0px;
-}
-/* Responsive Design for Buttons and Table */
-@media screen and (max-width: 768px) {
-.action-buttons {
-    flex-direction: column; /* Stack buttons vertically */
-    gap: 5px; /* Reduce spacing */
-}
-
-table {
-    font-size: 12px;
-}
-
-th, td {
-    padding: 10px;
-}
-
-td select,
-td button {
-    width: 100%;
-    font-size: 14px;
-    margin-top: 5px;
-}
-
-form {
-    display: block;
-    margin-bottom: 10px;
-}
-}
-
-/* Add this to your existing CSS */
-.order-id {
-  font-family: 'Courier New', monospace;
-  color: #333;
-  font-weight: bold;
-}
-
-.order-id small.date {
-  color: #666;
-  font-size: 0.8em;
-  font-weight: normal;
-}
-
-/* For user-order.css */
-.order-header {
+.orders-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  margin-bottom: 2rem;
   flex-wrap: wrap;
-  margin-bottom: 10px;
+  gap: 1rem;
+}
+
+.orders-header h1 {
+  font-size: 1.8rem;
+  color: #2c3e50;
+  margin: 0;
+}
+
+/* Sorting */
+.sorting-container {
+  position: relative;
+}
+
+.sort-select {
+  padding: 0.6rem 1rem;
+  padding-right: 2.5rem;
+  font-size: 0.9rem;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  background-color: #f8f9fa;
+  color: #495057;
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right 0.7rem center;
+  background-size: 1rem;
+  transition: all 0.2s ease;
+}
+
+.sort-select:hover {
+  border-color: #adb5bd;
+}
+
+.sort-select:focus {
+  outline: none;
+  border-color: #4dabf7;
+  box-shadow: 0 0 0 2px rgba(77, 171, 247, 0.2);
+}
+
+/* No Orders */
+.no-orders {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem;
+  text-align: center;
+}
+
+.empty-icon {
+  width: 80px;
+  height: 80px;
+  margin-bottom: 1rem;
+  opacity: 0.6;
+}
+
+.no-orders p {
+  color: #6c757d;
+  font-size: 1.1rem;
+}
+
+/* Orders Table */
+.orders-table-container {
+  overflow-x: auto;
+  border-radius: 10px;
+  border: 1px solid #e9ecef;
+}
+
+.orders-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  min-width: 1000px;
+}
+
+.orders-table th {
+  background-color: #f8f9fa;
+  color: #495057;
+  font-weight: 600;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 1rem 1.2rem;
+  border-bottom: 2px solid #e9ecef;
+  text-align: left;
+}
+
+.orders-table td {
+  padding: 1.2rem;
+  font-size: 0.9rem;
+  color: #212529;
+  border-bottom: 1px solid #e9ecef;
+  vertical-align: top;
+}
+
+.orders-table tr:last-child td {
+  border-bottom: none;
+}
+
+.orders-table tr:hover td {
+  background-color: #f8f9fa;
+}
+
+/* Table Cells */
+.order-id-cell {
+  white-space: nowrap;
 }
 
 .order-id {
-  font-weight: bold;
+  font-weight: 600;
   color: #2c3e50;
-  margin-right: 15px;
 }
-  .approve-btn {
-    background-color: green;
-    color: white;
-    border: none;
-    padding: 6px 12px;
-    border-radius: 4px;
-    cursor: pointer;
-    margin-right: 5px;
-  }
-  .reject-btn {
-    background-color: crimson;
-    color: white;
-    border: none;
-    padding: 6px 12px;
-    border-radius: 4px;
-    cursor: pointer;
-  }
 
+.order-date {
+  font-size: 0.8rem;
+  color: #6c757d;
+  margin-top: 0.3rem;
+}
+
+.user-cell {
+  min-width: 150px;
+}
+
+.user-name {
+  font-weight: 500;
+}
+
+.user-email {
+  font-size: 0.8rem;
+  color: #6c757d;
+  margin-top: 0.3rem;
+}
+
+.status-cell {
+  min-width: 150px;
+}
+
+.payment-cell {
+  min-width: 120px;
+}
+
+.price-cell {
+  white-space: nowrap;
+}
+
+.products-cell {
+  min-width: 200px;
+}
+
+.actions-cell {
+  min-width: 180px;
+}
+
+/* Status Badges */
+.status-badge {
+  display: inline-block;
+  padding: 0.35rem 0.7rem;
+  border-radius: 50px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.status-badge.pending {
+  background-color: #fff3bf;
+  color: #e67700;
+}
+
+.status-badge.shipped {
+  background-color: #d0ebff;
+  color: #1971c2;
+}
+
+.status-badge.delivered {
+  background-color: #d3f9d8;
+  color: #2b8a3e;
+}
+
+.status-badge.cancelled,
+.status-badge.user-cancelled {
+  background-color: #ffe3e3;
+  color: #c92a2a;
+}
+
+.status-badge.return-requested {
+  background-color: #ffec99;
+  color: #d9480f;
+}
+
+/* Payment Methods */
+.payment-method {
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.payment-method.cod {
+  color: #2b8a3e;
+}
+
+.payment-method.online {
+  color: #1971c2;
+}
+
+/* Products List */
+.products-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+}
+
+.product-item {
+  display: flex;
+  flex-direction: column;
+}
+
+.product-name {
+  font-weight: 500;
+  margin-bottom: 0.2rem;
+}
+
+.product-details {
+  display: flex;
+  gap: 0.8rem;
+  font-size: 0.8rem;
+  color: #6c757d;
+}
+
+.product-qty {
+  color: #495057;
+}
+
+.product-status {
+  font-size: 0.75rem;
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+}
+
+.product-status.pending {
+  background-color: #fff3bf;
+  color: #e67700;
+}
+
+.product-status.shipped {
+  background-color: #d0ebff;
+  color: #1971c2;
+}
+
+.product-status.delivered {
+  background-color: #d3f9d8;
+  color: #2b8a3e;
+}
+
+.product-status.cancelled {
+  background-color: #ffe3e3;
+  color: #c92a2a;
+}
+
+/* Action Buttons */
+.status-form, .cancel-form {
+  margin-bottom: 0.5rem;
+}
+
+.status-select {
+  width: 100%;
+  padding: 0.5rem;
+  border: 1px solid #e9ecef;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  margin-bottom: 0.5rem;
+  background-color: #f8f9fa;
+  transition: all 0.2s ease;
+}
+
+.status-select:focus {
+  outline: none;
+  border-color: #4dabf7;
+  box-shadow: 0 0 0 2px rgba(77, 171, 247, 0.2);
+}
+
+.action-btn {
+  width: 100%;
+  padding: 0.5rem;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.update-btn {
+  background-color: #4dabf7;
+  color: white;
+}
+
+.update-btn:hover {
+  background-color: #339af0;
+}
+
+.cancel-btn {
+  background-color: #ff8787;
+  color: white;
+}
+
+.cancel-btn:hover {
+  background-color: #fa5252;
+}
+
+.approve-btn {
+  background-color: #40c057;
+  color: white;
+}
+
+.approve-btn:hover {
+  background-color: #37b24d;
+}
+
+.reject-btn {
+  background-color: #fa5252;
+  color: white;
+}
+
+.reject-btn:hover {
+  background-color: #f03e3e;
+}
+
+.return-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.return-actions form {
+  flex: 1;
+}
+
+/* Pagination */
+.pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 1rem;
+  margin-top: 2rem;
+  padding: 1rem 0;
+}
+
+.pagination-btn {
+  padding: 0.6rem 1rem;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  text-decoration: none;
+  color: #495057;
+  border: 1px solid #e9ecef;
+  background-color: #f8f9fa;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.pagination-btn:hover {
+  background-color: #e9ecef;
+  color: #212529;
+}
+
+.page-info {
+  font-size: 0.9rem;
+  color: #6c757d;
+}
+.status-label.return-requested {
+      background-color: orange;
+      color: white;
+      padding: 4px 8px;
+      border-radius: 4px;
+    }
+
+.status-badge.return-approved {
+  background-color: green;
+  color: white;
+}
+.status-badge.return-rejected {
+  background-color: red;
+  color: white;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .orders-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .sorting-container {
+    width: 100%;
+  }
+  
+  .sort-select {
+    width: 100%;
+  }
+  
+  .pagination {
+    flex-wrap: wrap;
+  }
+}

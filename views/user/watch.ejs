@@ -40,6 +40,12 @@
   <i class="fas fa-shopping-cart"></i>
   <span class="cart-count-badge" id="cart-count">0</span>
 </a>
+<a href="/wishlist" class="wishlist-icon-wrapper position-relative" style="margin-left: 18px;">
+        <i class="fas fa-heart"></i>
+        <span class="wishlist-count-badge" id="wishlist-count">
+          <%= wishlist && wishlist.products ? wishlist.products.length : 0 %>
+        </span>
+      </a>
 
                 <a href="/user/profile"><i class="fas fa-user"></i></a>
             </div>
@@ -116,74 +122,77 @@
   <h2><span class="blue-text">Featured Products.</span> Check out our latest items.</h2>
   <div class="row">
   <% products.forEach(product => {
-     const isUnavailable = product.isBlocked || product.stock <= 0;
+    const isOutOfStock = product.stock <= 0;
+  const isBlocked = product.isBlocked;
+  const isUnavailable = isOutOfStock || isBlocked;
   %>
-    <div class="col-lg-3 col-md-4 col-sm-6 mb-4">
-      <a href="<%= isUnavailable ? '#' : '/admin/products/' + product._id %>" 
-         style="text-decoration: none; color: inherit; 
-         <%= isUnavailable ? 'pointer-events: none; cursor: not-allowed;' : '' %>">
-        <div class="product-card text-center <%= isUnavailable ? 'blocked-product' : '' %>">
-            
-              <div class="icon-stack">
-                <button class="wishlist-icon" 
-                        <%= isUnavailable ? 'disabled style="cursor: not-allowed;"' : '' %> 
-                        onclick="<%= !isUnavailable ? `addToWishlist('${product._id}', this, event)` : '' %>">
-                  <i class="fas fa-heart"></i>
-                </button>
+   <div class="col-lg-3 col-md-4 col-sm-6 mb-4">
+  <a href="<%= isUnavailable ? '#' : '/admin/products/' + product._id %>" 
+     style="text-decoration: none; color: inherit; <%= isUnavailable ? 'pointer-events: none; cursor: not-allowed;' : '' %>">
+    <div class="product-card text-center <%= isUnavailable ? 'blocked-product' : '' %>">
 
-                <% if (!isUnavailable) { %>
-                  <button class="cart-icon" onclick="addToCart('<%= product._id %>', event)">
-                    <i class="fas fa-cart-plus"></i>
-                  </button>
-                <% } else { %>
-                  <button class="cart-icon" disabled style="cursor: not-allowed;">
-                    <i class="fas fa-cart-plus text-muted"></i>
-                  </button>
-                <% } %>
-              </div>
+      <div class="icon-stack">
+    
+         <button
+  class="wishlist-icon <%= wishlist && wishlist.products.some(p => p._id.toString() === product._id.toString()) ? 'active' : '' %>"
+  <%= isUnavailable ? 'disabled style="cursor: not-allowed;" title="Unavailable"' : '' %>
+  onclick="<%= !isUnavailable ? `toggleWishlist('${product._id}', this, event)` : '' %>">
+  <i class="fas fa-heart"></i>
+</button>
 
-              <img src="/uploads/<%= product.images[0] %>" alt="<%= product.name %>" class="img-fluid">
-              <p class="mt-2"><%= product.name %></p>
+        <% if (!isUnavailable) { %>
+          <button class="cart-icon" onclick="addToCart('<%= product._id %>', event)">
+            <i class="fas fa-cart-plus"></i>
+          </button>
+        <% } else { %>
+          <button class="cart-icon" disabled style="cursor: not-allowed;" title="Out of Stock">
+            <i class="fas fa-cart-plus text-muted"></i>
+          </button>
+        <% } %>
+      </div>
 
-              <p>
-                <%
-                  var finalPrice = product.salesPrice || product.regularPrice;
-                  var originalPrice = product.regularPrice;
-                  var showDiscount = false;
+      <img src="/uploads/<%= product.images[0] %>" alt="<%= product.name %>" class="img-fluid">
+      <p class="mt-2"><%= product.name %></p>
 
-                  if (product.offerDetails?.hasOffer) {
-                    finalPrice = product.offerDetails.price;
-                    originalPrice = product.offerDetails.originalPrice;
-                    showDiscount = true;
-                  } else if (product.salesPrice) {
-                    showDiscount = true;
-                  }
-                %>
+      <p>
+        <% 
+          var finalPrice = product.salesPrice || product.regularPrice;
+          var originalPrice = product.regularPrice;
+          var showDiscount = false;
 
-                <span class="current-price">₹<%= finalPrice.toLocaleString('en-IN') %></span>
+          if (product.offerDetails?.hasOffer) {
+            finalPrice = product.offerDetails.price;
+            originalPrice = product.offerDetails.originalPrice;
+            showDiscount = true;
+          } else if (product.salesPrice) {
+            showDiscount = true;
+          }
+        %>
 
-                <% if (showDiscount) { %>
-                  <span class="original-price" style="text-decoration: line-through; color: #999; margin-left: 5px;">
-                    ₹<%= originalPrice.toLocaleString('en-IN') %>
-                  </span>
-                  <%
-                    const discountPercent = Math.round((originalPrice - finalPrice) / originalPrice * 100);
-                    if (discountPercent > 0) {
-                  %>
-                    <span class="discount-badge" style="background: #ff6b6b; color: white; padding: 2px 5px; border-radius: 3px; font-size: 12px; margin-left: 5px;">
-                      <%= discountPercent %>% OFF
-                    </span>
-                  <% } %>
-                <% } %>
-              </p>
+        <span class="current-price">₹<%= finalPrice.toLocaleString('en-IN') %></span>
 
-              <% if (isUnavailable) { %>
-                <p class="text-danger"><%= product.stock <= 0 ? 'Out of Stock' : 'Currently Unavailable' %></p>
-              <% } %>
+        <% if (showDiscount) { %>
+          <span class="original-price" style="text-decoration: line-through; color: #999; margin-left: 5px;">
+            ₹<%= originalPrice.toLocaleString('en-IN') %>
+          </span>
+          <% const discountPercent = Math.round((originalPrice - finalPrice) / originalPrice * 100);
+             if (discountPercent > 0) { %>
+            <span class="discount-badge" style="background: #ff6b6b; color: white; padding: 2px 5px; border-radius: 3px; font-size: 12px; margin-left: 5px;">
+              <%= discountPercent %>% OFF
+            </span>
+          <% } %>
+        <% } %>
+      </p>
 
-            </div>
-          </a>
-        </div>
+      <% if (isOutOfStock) { %>
+        <p class="text-danger fw-bold">Out of Stock</p>
+      <% } else if (isBlocked) { %>
+        <p class="text-warning fw-bold">Product Unavailable</p>
+      <% } %>
+
+    </div>
+  </a>
+</div>
   <% }); %>
 </div>
 </section>
@@ -257,7 +266,44 @@
 });
 </script>
 
+<script>
+function toggleWishlist(productId, btn, event) {
+  event.preventDefault();
 
+  fetch('/wishlist/toggle', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ productId })
+  })
+  .then(res => res.json())
+  .then(data => {
+    if (data.isInWishlist) {
+      btn.classList.add('active'); // Heart becomes red
+      Swal.fire({ icon: 'success', title: 'Added to wishlist!', timer: 1000, showConfirmButton: false });
+    } else {
+      btn.classList.remove('active'); // Heart becomes grey
+      Swal.fire({ icon: 'info', title: 'Removed from wishlist', timer: 1000, showConfirmButton: false });
+    }
+  })
+  .catch(err => {
+    console.error('Wishlist toggle error:', err);
+    Swal.fire({ icon: 'error', title: 'Please Check Your Loggin' });
+  });
+}
+</script>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  fetch('/wishlist/count')
+    .then(res => res.json())
+    .then(data => {
+      const badge = document.getElementById('wishlist-count');
+      if (badge) {
+        badge.textContent = data.count || 0;
+      }
+    })
+    .catch(err => console.error('Error fetching wishlist count:', err));
+});
+</script>
 
 </body>
 

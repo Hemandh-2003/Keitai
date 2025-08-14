@@ -96,21 +96,10 @@ router.post('/logout', (req, res) => {
 });
 //order Management Routes
 router.get('/orders', isAdmin, listOrders);
-router.post('/orders/update-status/:orderId', isAdmin, adminController.changeOrderStatus); 
-router.post('/orders/cancel/:orderId', isAdmin, cancelOrder); 
-router.get('/admin/orders', async (req, res) => {
-  try {
-    // Fetch orders from the database
-    const orders = await Order.find().populate('userId').populate('productId').populate('selectedAddress');
-    
-    // Render orders page for admin, passing the orders data
-    res.render('admin/orders', { orders });
-  } catch (err) {
-    console.error('Admin Orders Route - Error:', err.message);
-    res.status(500).send('Internal Server Error');
-  }
-});
-router.post('/orders/:id/return-status', adminController.updateReturnStatus);
+router.post('/orders/update-status/:orderId', isAdmin, adminController.changeOrderStatus);
+router.post('/orders/cancel/:orderId', isAdmin, cancelOrder);
+router.post('/orders/:id/return-status', isAdmin, adminController.updateReturnStatus);
+
 
 // Offer Management Routes
 router.get('/offers', isAdmin, adminController.listOffers);

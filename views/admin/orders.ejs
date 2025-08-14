@@ -5,14 +5,6 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Order Management</title>
-  <style>
-    .status-label.return-requested {
-      background-color: orange;
-      color: white;
-      padding: 4px 8px;
-      border-radius: 4px;
-    }
-  </style>
 </head>
 
 <body>
@@ -34,127 +26,159 @@
         <li><a href="/admin/offers">Offers</a></li>
       </ul>
     </nav>
-    <h1>Order Management</h1>
-
-    <div class="sorting-container">
-      <form method="GET" action="/admin/orders">
-        <select name="sort" onchange="this.form.submit()">
-          <option value="new" <%=sort==='new' ? 'selected' : '' %>>Newest</option>
-          <option value="old" <%=sort==='old' ? 'selected' : '' %>>Oldest</option>
-          <option value="cancelled" <%=sort==='cancelled' ? 'selected' : '' %>>Cancelled (Admin)</option>
-          <option value="user-cancelled" <%=sort==='user-cancelled' ? 'selected' : '' %>>Cancelled (User)</option>
-          <option value="shipped" <%=sort==='shipped' ? 'selected' : '' %>>Shipped</option>
-          <option value="delivered" <%=sort==='delivered' ? 'selected' : '' %>>Delivered</option>
-          <option value="pending" <%=sort==='pending' ? 'selected' : '' %>>Pending</option>
-          <option value="return-requested" <%=sort==='return-requested' ? 'selected' : '' %>>Return Requested</option>
-        </select>
-      </form>
-    </div>
-
-    <% if (orders.length===0) { %>
-      <p>No orders found.</p>
-      <% } else { %>
-        <table>
-          <thead>
-            <tr>
-              <th>Order ID</th>
-              <th>User</th>
-              <th>Status</th>
-              <th>Payment</th>
-              <th>Total Price</th>
-              <th>Products</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            <% orders.forEach(order=> { %>
-              <tr>
-                <td>
-                  <strong>#<%= order.orderId %></strong><br>
-                  <small>
-                    <%= new Date(order.createdAt).toLocaleDateString() %>
-                  </small>
-                </td>
-                <td>
-                  <%= order.user ? order.user.name : 'Unknown User' %>
-                </td>
-                <td>
-                  <span class="status-label <%= order.status.toLowerCase().replace(/\s+/g, '-') %>">
-                    <%= order.status %>
-                  </span>
-
-                  <% if (order.returnStatus==='Requested' ) { %>
-                    <form action="/admin/orders/<%= order._id %>/return-status" method="POST">
-                      <input type="hidden" name="action" value="Approved">
-                      <button type="submit">Approve Return</button>
-                    </form>
-                    <form action="/admin/orders/<%= order._id %>/return-status" method="POST">
-                      <input type="hidden" name="action" value="Rejected">
-                      <button type="submit">Reject Return</button>
-                    </form>
-                    <% } %>
-
-                </td>
-
-                <td>
-                  <%= order.paymentMethod %>
-                </td>
-                <td>
-                  ₹<%= order.totalAmount.toLocaleString('en-IN', { maximumFractionDigits: 2 }) %>
-                </td>
-                <td>
-                  <ul>
-                    <% order.products.forEach(item=> { %>
-                      <li>
-                        <%= item.product.name %> (Qty: <%= item.quantity %>)
-                      </li>
-                      <% }) %>
-                        <% if (order.returnedItems && order.returnedItems.length> 0) { %>
-                          <hr>
-                          <% order.returnedItems.forEach(item=> { %>
-                            <li><strong>Return:</strong>
-                              <%= item.product.name %> (Qty: <%= item.quantity %>)
-                            </li>
-                            <% }) %>
-                              <% } %>
-                  </ul>
-                </td>
-                <td>
-                  <form action="/admin/orders/update-status/<%= order.orderId %>" method="POST">
-                    <select name="status" <%=(order.status.includes('Cancelled')) ? 'disabled' : '' %>>
-                      <option value="Pending" <%=order.status==='Pending' ? 'selected' : '' %>>Pending</option>
-                      <option value="Shipped" <%=order.status==='Shipped' ? 'selected' : '' %>>Shipped</option>
-                      <option value="Delivered" <%=order.status==='Delivered' ? 'selected' : '' %>>Delivered</option>
-                      <option value="Cancelled" <%=order.status==='Cancelled' ? 'selected' : '' %>>Cancelled</option>
-                      <option value="User Cancelled" <%=order.status==='User Cancelled' ? 'selected' : '' %>>User
-                        Cancelled</option>
-                      <option value="Return Requested" <%=order.status==='Return Requested' ? 'selected' : '' %>>Return
-                        Requested</option>
-                    </select>
-                    <button type="submit" class="update-status" <%=(order.status.includes('Cancelled')) ? 'disabled'
-                      : '' %>>Update</button>
-                  </form>
-                  <form action="/admin/orders/cancel/<%= order.orderId %>" method="POST">
-                    <button type="submit" class="cancel-order" <%=(order.status.includes('Cancelled')) ? 'disabled' : ''
-                      %>>Cancel</button>
-                  </form>
-                </td>
-              </tr>
-              <% }) %>
-          </tbody>
-        </table>
-
-        <div class="pagination">
-          <% if (currentPage> 1) { %>
-            <a href="/admin/orders?sort=<%= sort %>&page=<%= currentPage - 1 %>">Previous</a>
-            <% } %>
-              <span>Page <%= currentPage %> of <%= totalPages %></span>
-              <% if (currentPage < totalPages) { %>
-                <a href="/admin/orders?sort=<%= sort %>&page=<%= currentPage + 1 %>">Next</a>
-                <% } %>
+    <div class="orders-container">
+      <div class="orders-header">
+        <h1>Order Management</h1>
+        <div class="sorting-container">
+          <form method="GET" action="/admin/orders">
+            <select name="sort" onchange="this.form.submit()" class="sort-select">
+              <option value="new" <%=sort==='new' ? 'selected' : '' %>>Newest</option>
+              <option value="old" <%=sort==='old' ? 'selected' : '' %>>Oldest</option>
+              <option value="cancelled" <%=sort==='cancelled' ? 'selected' : '' %>>Cancelled (Admin)</option>
+              <option value="user-cancelled" <%=sort==='user-cancelled' ? 'selected' : '' %>>Cancelled (User)</option>
+              <option value="shipped" <%=sort==='shipped' ? 'selected' : '' %>>Shipped</option>
+              <option value="delivered" <%=sort==='delivered' ? 'selected' : '' %>>Delivered</option>
+              <option value="pending" <%=sort==='pending' ? 'selected' : '' %>>Pending</option>
+              <option value="return-requested" <%=sort==='return-requested' ? 'selected' : '' %>>Return Requested
+              </option>
+            </select>
+          </form>
         </div>
-        <% } %>
-  </div>
+      </div>
+
+      <% if (orders.length===0) { %>
+        <div class="no-orders">
+          <img src="/images/empty-box.svg" alt="No orders" class="empty-icon">
+          <p>No orders found</p>
+        </div>
+        <% } else { %>
+          <div class="orders-table-container">
+            <table class="orders-table">
+              <thead>
+                <tr>
+                  <th class="order-id-col">Order ID</th>
+                  <th class="user-col">User</th>
+                  <th class="status-col">Status</th>
+                  <th class="payment-col">Payment</th>
+                  <th class="price-col">Total</th>
+                  <th class="products-col">Products</th>
+                  <th class="actions-col">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% orders.forEach(order=> { %>
+                  <tr>
+                    <td class="order-id-cell">
+                      <div class="order-id">#<%= order.orderId %>
+                      </div>
+                      <div class="order-date">
+                        <%= new Date(order.createdAt).toLocaleDateString() %>
+                      </div>
+                    </td>
+                    <td class="user-cell">
+                      <div class="user-name">
+                        <%= order.user ? order.user.name : 'Unknown User' %>
+                      </div>
+                      <% if (order.user && order.user.email) { %>
+                        <div class="user-email">
+                          <%= order.user.email %>
+                        </div>
+                        <% } %>
+                    </td>
+                    <td class="status-cell">
+                      <% let displayStatus=order.returnStatus && order.returnStatus !=='Pending' ? `Return
+                        ${order.returnStatus}` : order.status; %>
+                        <div class="status-badge <%= displayStatus.toLowerCase().replace(/\s+/g, '-') %>">
+                          <%= displayStatus %>
+                        </div>
+
+                        <% if (order.returnStatus==='Requested' ) { %>
+                          <div class="return-actions">
+                            <form action="/admin/orders/<%= order._id %>/return-status" method="POST">
+                              <input type="hidden" name="action" value="Approved">
+                              <button type="submit" class="action-btn approve-btn">Approve</button>
+                            </form>
+                            <form action="/admin/orders/<%= order._id %>/return-status" method="POST">
+                              <input type="hidden" name="action" value="Rejected">
+                              <button type="submit" class="action-btn reject-btn">Reject</button>
+                            </form>
+                          </div>
+                          <% } %>
+                    </td>
+
+                    <td class="payment-cell">
+                      <div class="payment-method <%= order.paymentMethod.toLowerCase().replace(/\s+/g, '-') %>">
+                        <%= order.paymentMethod %>
+                      </div>
+                    </td>
+                    <td class="price-cell">
+                      <div class="total-amount">₹<%= order.totalAmount.toLocaleString('en-IN', { maximumFractionDigits:
+                          2 }) %>
+                      </div>
+                    </td>
+                    <td class="products-cell">
+                      <div class="products-list">
+                        <% order.products.forEach(item=> { %>
+                          <div class="product-item">
+                            <div class="product-name">
+                              <%= item.product.name %>
+                            </div>
+                            <div class="product-details">
+                              <span class="product-qty">Qty: <%= item.quantity %></span>
+                              <span class="product-status <%= item.status.toLowerCase() %>">
+                                <%= item.status %>
+                              </span>
+                            </div>
+                          </div>
+                          <% }) %>
+                      </div>
+                    </td>
+                    <td class="actions-cell">
+                      <form action="/admin/orders/update-status/<%= order.orderId %>" method="POST" class="status-form">
+                        <select name="status" class="status-select" <%=(order.status.includes('Cancelled')) ? 'disabled'
+                          : '' %>>
+                          <option value="Pending" <%=order.status==='Pending' ? 'selected' : '' %>>Pending</option>
+                          <option value="Shipped" <%=order.status==='Shipped' ? 'selected' : '' %>>Shipped</option>
+                          <option value="Delivered" <%=order.status==='Delivered' ? 'selected' : '' %>>Delivered
+                          </option>
+                          <option value="Cancelled" <%=order.status==='Cancelled' ? 'selected' : '' %>>Cancelled
+                          </option>
+                          <option value="User Cancelled" <%=order.status==='User Cancelled' ? 'selected' : '' %>>User
+                            Cancelled</option>
+                          <option value="Return Requested" <%=order.status==='Return Requested' ? 'selected' : '' %>
+                            >Return Requested</option>
+                        </select>
+                        <button type="submit" class="action-btn update-btn" <%=(order.status.includes('Cancelled'))
+                          ? 'disabled' : '' %>>Update</button>
+                      </form>
+                      <form action="/admin/orders/cancel/<%= order.orderId %>" method="POST" class="cancel-form">
+                        <button type="submit" class="action-btn cancel-btn" <%=(order.status.includes('Cancelled'))
+                          ? 'disabled' : '' %>>Cancel</button>
+                      </form>
+                    </td>
+                  </tr>
+                  <% }) %>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="pagination">
+            <% if (currentPage> 1) { %>
+              <a href="/admin/orders?sort=<%= sort %>&page=<%= currentPage - 1 %>" class="pagination-btn prev-btn">
+                <i class="fas fa-chevron-left"></i> Previous
+              </a>
+              <% } %>
+                <div class="page-info">
+                  Page <%= currentPage %> of <%= totalPages %>
+                </div>
+                <% if (currentPage < totalPages) { %>
+                  <a href="/admin/orders?sort=<%= sort %>&page=<%= currentPage + 1 %>" class="pagination-btn next-btn">
+                    Next <i class="fas fa-chevron-right"></i>
+                  </a>
+                  <% } %>
+          </div>
+          <% } %>
+    </div>
 </body>
 
 </html>

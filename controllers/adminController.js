@@ -729,53 +729,61 @@ exports.updateReturnStatus = async (req, res) => {
       return res.status(400).send('Invalid action');
     }
 
-    const order = await Order.findById(orderId).populate('user').populate('returnedItems.product');
+    const order = await Order.findById(orderId).populate('user');
+console.log('Order:', order);  // After fetching order
 
-    if (!order || !order.returnRequested || order.returnStatus !== 'Requested') {
-      return res.status(400).send('Invalid return request');
-    }
+if (!order || order.returnStatus !== 'Requested') {
+  return res.status(400).send('Invalid return request');
+}
 
-    order.returnStatus = action;
-    order.returnRequested = false;
-    order.statusHistory.push({
-      status: `Return ${action}`,
-      updatedAt: new Date(),
-    });
+order.returnStatus = action;
+order.returnRequested = false;
+order.statusHistory.push({
+  status: `Return ${action}`,
+  updatedAt: new Date(),
+});
 
-    // If approved, calculate refund and add to user's wallet
-    if (action === 'Approved') {
-      let refundAmount = 0;
+if (action === 'Approved') {
+  const user = order.user;
 
-      for (const item of order.returnedItems) {
-        const matchedProduct = order.products.find(
-          p => p.product.toString() === item.product._id.toString()
-        );
+  console.log('Returned Items:', order.returnedItems);  // Before refund calculation
 
-        const unitPrice = matchedProduct?.salesPrice || matchedProduct?.regularPrice || 0;
-        refundAmount += unitPrice * item.quantity;
-      }
+  let refundAmount = 0;
+  for (const item of order.returnedItems || []) {
+    const productInOrder = order.products.find(p => p.product.toString() === item.product.toString());
+    const unitPrice = productInOrder ? productInOrder.price || 0 : 0;
+    refundAmount += unitPrice * item.quantity;
+  }
 
-      // Update user wallet
-      const user = order.user;
-      user.wallet.balance += refundAmount;
-      user.wallet.transactions.push({
-        type: 'Credit',
-        amount: refundAmount,
-        reason: 'Refund for returned items',
-        orderId: order._id,
-      });
+  console.log('Refund amount:', refundAmount);  // After calculation
+  console.log('User wallet before:', user.wallet);  // Before wallet update
 
-      await user.save();
-    }
+  if (!user.wallet) user.wallet = { balance: 0, transactions: [] };
+  if (!user.wallet.transactions) user.wallet.transactions = [];
+
+  user.wallet.balance += refundAmount;
+  user.wallet.transactions.push({
+  type: 'Credit',      // ✅ Use 'Credit' for adding money
+  amount: refundAmount,
+  reason: 'Refund for returned items',  // ✅ Non-empty string required
+  orderId: order._id,
+});
+
+
+
+  await user.save();
+}
+
 
     await order.save();
-    res.redirect('/admin/orders?sort=return-requested');
 
-  } catch (err) {
-    console.error('Error updating return status:', err);
+    res.redirect('/admin/orders?sort=return-requested');
+  } catch (error) {
+    console.error('Error updating return status:', error);
     res.status(500).send('Server error');
   }
 };
+
 
 
 // Cancel Order
@@ -1025,42 +1033,6 @@ exports.adminCancelOrder = async (req, res) => {
     res.status(500).send('Cancellation failed');
   }
 };
-
-exports.approveReturn = async (req, res) => {
-  try {
-    const { orderId } = req.params;
-
-    const order = await Order.findOne({ orderId });
-    if (!order) return res.status(404).send('Order not found');
-
-    if (order.status !== 'Returned') {
-      return res.status(400).send('Order is not marked for return');
-    }
-
-    order.returnStatus = 'Approved';
-    order.returnApprovalDate = new Date();
-    await order.save();
-
-    // Refund to user's wallet
-    const user = await User.findById(order.user);
-    const refundAmount = order.totalAmount;
-
-    user.wallet.balance += refundAmount;
-    user.wallet.transactions.push({
-      type: 'Credit',
-      amount: refundAmount,
-      reason: 'Return Approved',
-      orderId: order._id,
-    });
-    await user.save();
-
-    res.redirect(`/admin/orders/${order.orderId}`);
-  } catch (err) {
-    console.error(err);
-    res.status(500).send('Return approval failed');
-  }
-};
-
 
 // [Keep all your remaining existing methods...]
 

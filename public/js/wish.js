@@ -48,30 +48,37 @@ document.getElementById('wishlist-btn')?.addEventListener('click', async functio
   }
 });
 
-// Add to Cart functionality
-document.querySelectorAll('.add-to-cart-btn').forEach(button => {
-  button.addEventListener('click', async () => {
-    const productId = button.getAttribute('data-product-id');
-    try {
-      const response = await axios.post('/cart/add', {
-        productId: productId,
-        quantity: 1,
-      });
+document.addEventListener("DOMContentLoaded", function () {
+  const addToCartButtons = document.querySelectorAll(".add-to-cart-btn");
 
-      if (response.data.message) {
-        Swal.fire({
-          icon: 'success',
-          title: 'Success!',
-          text: response.data.message,
-        });
+  addToCartButtons.forEach(button => {
+    button.addEventListener("click", async () => {
+      const productId = button.getAttribute("data-product-id");
+
+      try {
+        const response = await axios.post(`/user/add-to-cart-from-wishlist/${productId}`);
+
+        if (response.data.success) {
+          Swal.fire({
+            icon: "success",
+            title: "Added to cart",
+            text: "Item has been moved from wishlist to cart.",
+            timer: 2000,
+            showConfirmButton: false,
+          }).then(() => {
+            // Optionally remove the item from the DOM
+            button.closest(".wishlist-item").remove();
+
+            // Optionally reload page if needed:
+            // location.reload();
+          });
+        } else {
+          Swal.fire("Oops!", response.data.message || "Failed to add to cart", "error");
+        }
+      } catch (error) {
+        Swal.fire("Error", error.response?.data?.message || "Something went wrong", "error");
       }
-    } catch (error) {
-      Swal.fire({
-        icon: 'error',
-        title: 'Oops...',
-        text: error.response?.data?.error || 'Failed to add item to cart',
-      });
-    }
+    });
   });
 });
 
