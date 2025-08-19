@@ -85,27 +85,47 @@
                         </div>
                         <% } %>
                     </td>
-                    <td class="status-cell">
-                      <% let displayStatus=order.returnStatus && order.returnStatus !=='Pending' ? `Return
-                        ${order.returnStatus}` : order.status; %>
-                        <div class="status-badge <%= displayStatus.toLowerCase().replace(/\s+/g, '-') %>">
-                          <%= displayStatus %>
-                        </div>
+                   <td class="status-cell">
+  <% 
+    let displayStatus = order.status;
+    let returnReason = '';
+    let returnItems = [];
+    
+    if (order.returnedItems && order.returnedItems.length > 0) {
+      returnReason = order.returnedItems[0].reason;
+      returnItems = order.returnedItems;
+    }
+    
+    if (order.returnStatus && order.returnStatus !== 'None') {
+      displayStatus = `Return ${order.returnStatus}`;
+    }
+  %>
+  
+  <div class="status-badge <%= displayStatus.toLowerCase().replace(/\s+/g, '-') %>">
+    <%= displayStatus %>
+    <% if (returnReason) { %>
+      <button class="view-reason-btn" 
+              data-order-id="<%= order._id %>"
+              data-reason="<%= returnReason %>"
+              data-items='<%= JSON.stringify(returnItems) %>'>
+        View Reason
+      </button>
+    <% } %>
+  </div>
 
-                        <% if (order.returnStatus==='Requested' ) { %>
-                          <div class="return-actions">
-                            <form action="/admin/orders/<%= order._id %>/return-status" method="POST">
-                              <input type="hidden" name="action" value="Approved">
-                              <button type="submit" class="action-btn approve-btn">Approve</button>
-                            </form>
-                            <form action="/admin/orders/<%= order._id %>/return-status" method="POST">
-                              <input type="hidden" name="action" value="Rejected">
-                              <button type="submit" class="action-btn reject-btn">Reject</button>
-                            </form>
-                          </div>
-                          <% } %>
-                    </td>
-
+  <% if (order.returnStatus === 'Requested') { %>
+    <div class="return-actions">
+      <form action="/admin/orders/<%= order._id %>/return-status" method="POST">
+        <input type="hidden" name="action" value="Approved">
+        <button type="submit" class="action-btn approve-btn">Approve</button>
+      </form>
+      <form action="/admin/orders/<%= order._id %>/return-status" method="POST">
+        <input type="hidden" name="action" value="Rejected">
+        <button type="submit" class="action-btn reject-btn">Reject</button>
+      </form>
+    </div>
+  <% } %>
+</td>
                     <td class="payment-cell">
                       <div class="payment-method <%= order.paymentMethod.toLowerCase().replace(/\s+/g, '-') %>">
                         <%= order.paymentMethod %>
@@ -179,6 +199,57 @@
           </div>
           <% } %>
     </div>
+    <div id="returnReasonModal" class="modal">
+  <div class="modal-content">
+    <span class="close-modal">&times;</span>
+    <h3>Return Details</h3>
+    <div id="modalReturnReason"></div>
+    <div id="modalReturnItems"></div>
+  </div>
+</div>
+
+<script>
+  // Modal functionality
+  document.addEventListener('DOMContentLoaded', function() {
+    const modal = document.getElementById('returnReasonModal');
+    const closeBtn = document.querySelector('.close-modal');
+    
+    document.querySelectorAll('.view-reason-btn').forEach(btn => {
+      btn.addEventListener('click', function() {
+        const reason = this.dataset.reason;
+        const items = JSON.parse(this.dataset.items);
+        
+        document.getElementById('modalReturnReason').innerHTML = 
+          `<p><strong>Return Reason:</strong> ${reason || 'No reason provided'}</p>`;
+        
+        let itemsHtml = '<h4>Returned Items:</h4><ul>';
+        items.forEach(item => {
+          itemsHtml += `
+            <li>
+              ${item.product?.name || 'Unknown Product'} 
+              (Qty: ${item.quantity})
+              ${item.reason ? `<br><em>Reason: ${item.reason}</em>` : ''}
+            </li>`;
+        });
+        itemsHtml += '</ul>';
+        
+        document.getElementById('modalReturnItems').innerHTML = itemsHtml;
+        modal.style.display = 'block';
+      });
+    });
+
+    closeBtn.addEventListener('click', function() {
+      modal.style.display = 'none';
+    });
+
+    window.addEventListener('click', function(event) {
+      if (event.target === modal) {
+        modal.style.display = 'none';
+      }
+    });
+  });
+</script>
+</div>
 </body>
 
 </html>

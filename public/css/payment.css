@@ -19,31 +19,23 @@ body {
 
 /* Sidebar styles */
 .sidebar {
-  width: 197px;
+  width: 195px;
   background: linear-gradient(to right, #232526, #414345);
   height: 100vh;
-  padding: 20px 10px;
   position: fixed;
   top: 0;
   left: 0;
+  padding-top: 20px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  box-shadow: 2px 0 10px rgba(0, 0, 0, 0.2);
-  z-index: 100;
 }
 
 .sidebar .logo img {
-  width: 150px;
+  width: 100px;
   margin-bottom: 30px;
-  transition: all 0.3s ease;
 }
 
-.sidebar .logo img:hover {
-  transform: scale(1.1);
-}
-
-/* Sidebar Navigation Links */
 .sidebar ul {
   list-style: none;
   padding: 0;
@@ -51,27 +43,27 @@ body {
 }
 
 .sidebar ul li {
-  margin: 15px 0;
+  width: 100%;
 }
 
 .sidebar ul li a {
+  display: block;
+  padding: 12px 20px;
   color: #ffffff;
   text-decoration: none;
-  font-size: 15px;
-  display: block;
-  padding: 10px 15px;
-  border-radius: 5px;
-  transition: all 0.3s ease;
+  font-size: 14px;
+  transition: background 0.3s ease;
 }
 
 .sidebar ul li a:hover {
-  background-color: #007bff;
-  transform: translateX(10px);
+  background-color: rgba(0, 123, 255, 0.3);
 }
 
 .sidebar ul li a.active {
-  background-color: #0056b3;
+  background-color: #007bff;
+  color: #fff;
 }
+
 
 /* Container inside dashboard */
 .container {

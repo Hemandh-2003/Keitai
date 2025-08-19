@@ -374,8 +374,17 @@ exports.downloadInvoice = async (req, res) => {
       return res.status(404).send('Address not found');
     }
 
-    const doc = new PDFDocument({ margin: 50 });
+    const doc = new PDFDocument({ 
+      size: 'A4',
+      margin: 50,
+      bufferPages: true,
+      info: {
+        Title: `Invoice ${order.orderId}`,
+        Author: 'Keitai',
+      }
+    });
 
+    // Set response headers
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader(
       'Content-Disposition',
@@ -384,58 +393,155 @@ exports.downloadInvoice = async (req, res) => {
 
     doc.pipe(res);
 
-    doc.fontSize(20).text('INVOICE', { align: 'center' });
-    doc.moveDown();
+    // Colors
+    const primaryColor = '#3498db';
+    const secondaryColor = '#2c3e50';
+    const lightColor = '#f8f9fa';
+    const darkColor = '#343a40';
+    const successColor = '#28a745';
 
-    doc.fontSize(12).text(`Order ID: ${order.orderId}`);
-    doc.text(`Order Date: ${new Date(order.createdAt).toLocaleDateString()}`);
-    doc.text(`Payment Method: ${order.paymentMethod}`);
-    doc.text(`Status: ${order.status}`);
-    doc.moveDown();
+    // Helper function for horizontal line
+    const addHorizontalLine = (y, width = 550) => {
+      doc.moveTo(50, y).lineTo(50 + width, y).stroke(primaryColor).lineWidth(1);
+    };
 
-    doc.fontSize(14).text('Shipping Address', { underline: true });
-    doc.text(`${selectedAddress.name}`);
-    doc.text(`${selectedAddress.street}`);
-    doc.text(`${selectedAddress.city}, ${selectedAddress.state} - ${selectedAddress.zip}`);
-    doc.text(`${selectedAddress.country}`);
-    doc.text(`Phone: ${selectedAddress.phone}`);
-    doc.moveDown();
+    // Header
+    doc.fillColor(secondaryColor)
+       .fontSize(24)
+       .font('Helvetica-Bold')
+       .text('INVOICE', 50, 50, { align: 'left' });
 
-    doc.fontSize(14).text('Product Details', { underline: true });
+    doc.fillColor(primaryColor)
+       .fontSize(10)
+       .text(`#${order.orderId}`, 50, 80);
 
+    // Company Info
+    doc.fillColor(darkColor)
+       .fontSize(10)
+       .text('Keitai', 400, 50, { align: 'right' })
+       .text('Pai Road, Palluruthy', 400, 65, { align: 'right' })
+       .text('Kochi, ernakulam, 682006', 400, 80, { align: 'right' })
+       .text('Phone: 89211xxxxx', 400, 95, { align: 'right' })
+       .text('Email: keitai@gmail.com', 400, 110, { align: 'right' });
+
+    addHorizontalLine(130);
+
+    // Invoice Details
+    doc.fillColor(secondaryColor)
+       .fontSize(12)
+       .text('Invoice Date:', 50, 150)
+       .text(new Date(order.createdAt).toLocaleDateString(), 150, 150);
+
+    doc.text('Payment Method:', 50, 170)
+       .fillColor(primaryColor)
+       .text(order.paymentMethod, 150, 170);
+
+    doc.fillColor(secondaryColor)
+       .text('Status:', 50, 190)
+       .fillColor(successColor)
+       .text(order.status, 150, 190);
+
+    // Billing Address
+    doc.fillColor(secondaryColor)
+       .fontSize(14)
+       .font('Helvetica-Bold')
+       .text('BILLING ADDRESS', 50, 230);
+
+    doc.fillColor(darkColor)
+       .fontSize(11)
+       .text(selectedAddress.name, 50, 255)
+       .text(selectedAddress.street, 50, 270)
+       .text(`${selectedAddress.city}, ${selectedAddress.state} ${selectedAddress.zip}`, 50, 285)
+       .text(selectedAddress.country, 50, 300)
+       .text(`Phone: ${selectedAddress.phone}`, 50, 315);
+
+    addHorizontalLine(350);
+
+    // Products Table Header
+    const productsStartY = 370;
+    doc.fillColor(lightColor)
+       .rect(50, productsStartY, 500, 20)
+       .fill();
+
+    doc.fillColor(secondaryColor)
+       .fontSize(12)
+       .font('Helvetica-Bold')
+       .text('#', 50, productsStartY + 5)
+       .text('Product', 80, productsStartY + 5)
+       .text('Price', 350, productsStartY + 5, { width: 80, align: 'right' })
+       .text('Qty', 430, productsStartY + 5, { width: 40, align: 'right' })
+       .text('Total', 470, productsStartY + 5, { width: 80, align: 'right' });
+
+    // Products List
     let subtotal = 0;
+    let currentY = productsStartY + 30;
 
     order.products.forEach((item, index) => {
       const price = item.product.salesPrice || item.product.regularPrice || 0;
       const total = price * item.quantity;
       subtotal += total;
 
-      doc.text(
-        `${index + 1}. ${item.product.name} - ₹${price} x ${item.quantity} = ₹${total.toFixed(2)}`
-      );
+      if (index % 2 === 0) {
+        doc.fillColor(lightColor)
+           .rect(50, currentY - 10, 500, 20)
+           .fill();
+      }
+
+      doc.fillColor(darkColor)
+         .fontSize(10)
+         .text(`${index + 1}.`, 50, currentY)
+         .text(item.product.name, 80, currentY, { width: 250 })
+         .text(`₹${price.toFixed(2)}`, 350, currentY, { width: 80, align: 'right' })
+         .text(item.quantity.toString(), 430, currentY, { width: 40, align: 'right' })
+         .text(`₹${total.toFixed(2)}`, 470, currentY, { width: 80, align: 'right' });
+
+      currentY += 20;
     });
 
-    doc.moveDown();
-    doc.fontSize(12).text(`Subtotal: ₹${subtotal.toFixed(2)}`);
+    // Summary
+    const summaryStartY = currentY + 20;
+    addHorizontalLine(summaryStartY - 10);
+
+    doc.fillColor(secondaryColor)
+       .fontSize(12)
+       .text('Subtotal:', 400, summaryStartY, { width: 80, align: 'right' })
+       .text(`₹${subtotal.toFixed(2)}`, 470, summaryStartY, { width: 80, align: 'right' });
 
     if (order.deliveryCharge && order.deliveryCharge > 0) {
-      doc.text(`Delivery Charge: ₹${order.deliveryCharge.toFixed(2)}`);
+      doc.text('Delivery:', 400, summaryStartY + 20, { width: 80, align: 'right' })
+         .text(`₹${order.deliveryCharge.toFixed(2)}`, 470, summaryStartY + 20, { width: 80, align: 'right' });
     }
 
     if (order.coupon) {
-      doc.moveDown();
-      doc.fontSize(14).text('Coupon Details', { underline: true });
-      doc.fontSize(12).text(`Code: ${order.coupon.code}`);
-      doc.text(`Type: ${order.coupon.discountType === 'percentage' ? 'Percentage' : 'Fixed Amount'}`);
-      doc.text(`Discount: ${order.coupon.discountType === 'percentage'
-        ? `${order.coupon.discount}%`
-        : `₹${order.coupon.discount}`}`);
-      doc.text(`Discount Applied: -₹${(order.couponDiscount || 0).toFixed(2)}`);
+      doc.text('Discount:', 400, summaryStartY + 40, { width: 80, align: 'right' })
+         .fillColor(successColor)
+         .text(`-₹${(order.couponDiscount || 0).toFixed(2)}`, 470, summaryStartY + 40, { width: 80, align: 'right' })
+         .fillColor(secondaryColor);
     }
 
-    doc.moveDown();
-    doc.font('Helvetica-Bold').text(`Total Amount: ₹${order.totalAmount.toFixed(2)}`, {
-      align: 'right',
+    // Total
+    doc.fillColor(secondaryColor)
+       .font('Helvetica-Bold')
+       .text('Total Amount:', 400, summaryStartY + 70, { width: 80, align: 'right' })
+       .fillColor(primaryColor)
+       .fontSize(14)
+       .text(`₹${order.totalAmount.toFixed(2)}`, 470, summaryStartY + 70, { width: 80, align: 'right' });
+
+    // Footer
+    const footerY = doc.page.height - 100;
+    addHorizontalLine(footerY - 20);
+
+    doc.fillColor(secondaryColor)
+       .fontSize(10)
+       .text('Thank you for your business!', 50, footerY, { align: 'center' })
+       .text('Terms & Conditions: Payment due within 15 days', 50, footerY + 15, { align: 'center' })
+       .text('Questions? Email: support@yourcompany.com', 50, footerY + 30, { align: 'center' });
+
+    // Add page numbers
+    doc.on('pageAdded', () => {
+      doc.fontSize(10)
+         .fillColor(darkColor)
+         .text(`Page ${doc.bufferedPageRange().count}`, 50, doc.page.height - 30);
     });
 
     doc.end();
@@ -1622,10 +1728,9 @@ exports.returnProduct = async (req, res) => {
 
 
 exports.returnOrder = async (req, res) => {
+  const orderId = req.params.id;  // define outside try-catch
   try {
-    const orderId = req.params.id;
-    const order = await Order.findById(orderId)
-      .populate('coupon');
+    const order = await Order.findById(orderId).populate('coupon');
 
     if (!order) {
       req.flash('error', 'Order not found');
@@ -1653,9 +1758,10 @@ exports.returnOrder = async (req, res) => {
   } catch (err) {
     console.error('Error returning order:', err);
     req.flash('error', 'Failed to process return request');
-    res.redirect(`/user/orders/${orderId}`);
+    res.redirect('/user/orders'); 
   }
 };
+
 
 exports.cancelSingleItem = async (req, res) => {
   const { orderId, productId } = req.params;

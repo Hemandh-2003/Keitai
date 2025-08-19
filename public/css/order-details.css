@@ -234,7 +234,20 @@ body {
   transition: 0.2s all;
   width: 13%;
 }
-
+.btn-cancel, .btn-return{
+  display: flex;
+  align-items: normal;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.75rem 3rem;
+  font-size: 1rem;
+  border: none;
+  border-radius: 0.5rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: 0.2s all;
+  width: 13%;
+}
 .btn i {
   font-size: 1rem;
 }

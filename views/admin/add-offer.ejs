@@ -201,15 +201,40 @@
     // Set default date values
     document.addEventListener('DOMContentLoaded', () => {
       const now = new Date();
-      document.getElementById('startDate').value = formatDateForInput(now);
-      document.getElementById('endDate').value = formatDateForInput(new Date(now.getTime() + 86400000)); // +1 day
+      const startDateInput = document.getElementById('startDate');
+      const endDateInput = document.getElementById('endDate');
+      
+      // Set initial values
+      startDateInput.value = formatDateForInput(now);
+      endDateInput.value = formatDateForInput(new Date(now.getTime() + 86400000)); // +1 day
+      
+      // Set minimum end date to start date
+      endDateInput.min = startDateInput.value;
     });
 
-    // Validate date logic
+    // Date validation logic
+    document.getElementById('startDate').addEventListener('change', function() {
+      const startDate = this.value;
+      const endDateInput = document.getElementById('endDate');
+      
+      // Set the minimum end date to be the same as start date
+      endDateInput.min = startDate;
+      
+      // If current end date is before start date, reset it
+      if (endDateInput.value && endDateInput.value < startDate) {
+        endDateInput.value = startDate;
+      }
+    });
+
+    // Form validation
     document.querySelector('.offer-form').addEventListener('submit', function (e) {
-      const start = new Date(document.getElementById('startDate').value);
-      const end = new Date(document.getElementById('endDate').value);
-      if (start >= end) {
+      const discountType = document.getElementById('discountType').value;
+      const discountValue = parseFloat(document.getElementById('discountValue').value);
+      const startDate = new Date(document.getElementById('startDate').value);
+      const endDate = new Date(document.getElementById('endDate').value);
+
+      // Date validation
+      if (startDate >= endDate) {
         e.preventDefault();
         Swal.fire({
           icon: 'warning',
@@ -217,58 +242,40 @@
           text: 'End date must be after start date',
         });
         document.getElementById('endDate').focus();
+        return;
+      }
+
+      // Discount validation
+      if (discountType === 'percentage') {
+        if (discountValue < 1 || discountValue > 90) {
+          e.preventDefault();
+          Swal.fire({
+            icon: 'error',
+            title: 'Invalid Discount',
+            text: 'Percentage discount must be between 1% and 90%',
+          });
+          return;
+        }
+      } else if (discountType === 'fixed') {
+        if (discountValue < 1 || discountValue > 50000) {
+          e.preventDefault();
+          Swal.fire({
+            icon: 'error',
+            title: 'Invalid Discount',
+            text: 'Fixed discount must be between ₹1 and ₹50,000',
+          });
+          return;
+        }
+      } else {
+        e.preventDefault();
+        Swal.fire({
+          icon: 'warning',
+          title: 'Missing Discount Type',
+          text: 'Please select a discount type',
+        });
+        return;
       }
     });
-    document.querySelector('.offer-form').addEventListener('submit', function (e) {
-  const discountType = document.getElementById('discountType').value;
-  const discountValue = parseFloat(document.getElementById('discountValue').value);
-
-  // Existing start/end date validation
-  const start = new Date(document.getElementById('startDate').value);
-  const end = new Date(document.getElementById('endDate').value);
-  if (start >= end) {
-    e.preventDefault();
-    Swal.fire({
-      icon: 'warning',
-      title: 'Invalid Dates',
-      text: 'End date must be after start date',
-    });
-    document.getElementById('endDate').focus();
-    return;
-  }
-
-  // Discount validation
-  if (discountType === 'percentage') {
-    if (discountValue < 1 || discountValue > 90) {
-      e.preventDefault();
-      Swal.fire({
-        icon: 'error',
-        title: 'Invalid Discount',
-        text: 'Percentage discount must be between 1% and 90%',
-      });
-      return;
-    }
-  } else if (discountType === 'fixed') {
-    if (discountValue < 1 || discountValue > 50000) {
-      e.preventDefault();
-      Swal.fire({
-        icon: 'error',
-        title: 'Invalid Discount',
-        text: 'Fixed discount must be between ₹1 and ₹50,000',
-      });
-      return;
-    }
-  } else {
-    e.preventDefault();
-    Swal.fire({
-      icon: 'warning',
-      title: 'Missing Discount Type',
-      text: 'Please select a discount type',
-    });
-    return;
-  }
-});
   </script>
 </body>
-
 </html>

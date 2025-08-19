@@ -16,70 +16,51 @@ body {
   
   /* Sidebar */
   .sidebar {
-    width: 155px;
-    background: linear-gradient(to right, #232526, #414345); /* Gradient background */
-    height: 100vh;
-    padding: 20px;
-    position: fixed;
-    top: 0;
-    left: 0;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
-    z-index: 10; /* Make sure sidebar is above the background but below the content */
-  }
-  
-  /* Logo */
-  .sidebar .logo img {
-    width: 150px;
-    margin-bottom: 30px;
-    transition: all 0.3s ease;
-  }
-  
-  .sidebar .logo img:hover {
-    transform: scale(1.1); /* Slightly scale the logo on hover */
-  }
-  
-  /* Sidebar Links */
-  .sidebar ul {
-    list-style: none;
-    padding: 0;
-    width: 100%;
-  }
-  
-  .sidebar ul li {
-    margin: 20px 0;
-    width: 100%;
-  }
-  
-  .sidebar ul li a {
-    color: #fff;
-    text-decoration: none;
-    font-size: 16px;
-    display: flex;
-    align-items: center;
-    padding: 10px 15px;
-    border-radius: 5px;
-    transition: background-color 0.3s ease, transform 0.3s ease;
-  }
-  
-  .sidebar ul li a i {
-    margin-right: 15px;
-    font-size: 18px;
-  }
-  
-  /* Hover Effect */
-  .sidebar ul li a:hover {
-    background-color: #007bff;
-    transform: translateX(10px);
-  }
-  
-  /* Active link styles */
-  .sidebar ul li a.active {
-    background-color: #0056b3;
-    color: #fff;
-  }
+  width: 195px;
+  background: linear-gradient(to right, #232526, #414345);
+  height: 100vh;
+  position: fixed;
+  top: 0;
+  left: 0;
+  padding-top: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.sidebar .logo img {
+  width: 100px;
+  margin-bottom: 30px;
+}
+
+.sidebar ul {
+  list-style: none;
+  padding: 0;
+  width: 100%;
+}
+
+.sidebar ul li {
+  width: 100%;
+}
+
+.sidebar ul li a {
+  display: block;
+  padding: 12px 20px;
+  color: #ffffff;
+  text-decoration: none;
+  font-size: 14px;
+  transition: background 0.3s ease;
+}
+
+.sidebar ul li a:hover {
+  background-color: rgba(0, 123, 255, 0.3);
+}
+
+.sidebar ul li a.active {
+  background-color: #007bff;
+  color: #fff;
+}
+
   .icon-logout {
     color: #fff;
     text-decoration: none;

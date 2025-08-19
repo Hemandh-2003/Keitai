@@ -73,6 +73,28 @@ const orderSchema = new mongoose.Schema({
     type: Number,
     default: 80,
   },
+  returnedItems: [
+  {
+    product: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Product',
+    },
+    quantity: {
+      type: Number,
+      min: 1,
+    },
+    reason: { type: String },
+    status: {
+      type: String,
+      enum: ['Pending', 'Approved', 'Rejected'],
+      default: 'Pending',
+    },
+    refundAmount: {
+      type: Number,
+      default: 0,
+    },
+  }
+],
 discountAmount: {
     type: Number,
     default: 0

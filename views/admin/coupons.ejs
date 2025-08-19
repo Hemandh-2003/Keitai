@@ -22,6 +22,7 @@
         <li><a href="/admin/users"><i class="fas fa-users"></i> Users</a></li>
         <li><a href="/admin/categories"><i class="fas fa-th-large"></i> Categories</a></li>
         <li><a href="/admin/coupons" class="active"><i class="fas fa-ticket-alt"></i> Coupons</a></li>
+        <li><a href="/admin/payments">Payments</a></li>
         <li><a href="/admin/offers"><i class="fas fa-tags"></i> Offers</a></li>
       </ul>
     </nav>
@@ -72,13 +73,12 @@
                     <input type="number" name="discount" placeholder="Discount Value" min="1" required
                       style="flex: 1; padding: 10px;">
 
-                    <input type="date" name="startDate" required style="flex: 1; padding: 10px;">
-                    <input type="date" name="endDate" required style="flex: 1; padding: 10px;">
+                    <input type="date" name="startDate" id="couponStartDate" required style="flex: 1; padding: 10px;">
+                    <input type="date" name="endDate" id="couponEndDate" required style="flex: 1; padding: 10px;">
 
                     <button type="submit" class="btn btn-primary"><i class="fas fa-plus"></i> Add Coupon</button>
                   </div>
                 </form>
-
 
                 <!-- Coupons Table -->
                 <div class="table-responsive">
@@ -131,60 +131,88 @@
   </div>
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   <script>
-  const couponForm = document.querySelector('form[action="/admin/coupons/create"]');
+    // Date validation for coupon form
+    document.getElementById('couponStartDate').addEventListener('change', function() {
+      const startDate = this.value;
+      const endDateInput = document.getElementById('couponEndDate');
+      
+      // Set the minimum end date to be the same as start date
+      endDateInput.min = startDate;
+      
+      // If current end date is before start date, reset it
+      if (endDateInput.value && endDateInput.value < startDate) {
+        endDateInput.value = startDate;
+      }
+    });
 
-  couponForm.addEventListener('submit', function (e) {
-    const discountType = couponForm.querySelector('select[name="discountType"]').value;
-    const discount = parseFloat(couponForm.querySelector('input[name="discount"]').value);
+    // Form validation
+    const couponForm = document.querySelector('form[action="/admin/coupons/create"]');
 
-    if (discountType === 'percentage') {
-      if (discount < 1 || discount > 90) {
+    couponForm.addEventListener('submit', function (e) {
+      const discountType = couponForm.querySelector('select[name="discountType"]').value;
+      const discount = parseFloat(couponForm.querySelector('input[name="discount"]').value);
+      const startDate = couponForm.querySelector('input[name="startDate"]').value;
+      const endDate = couponForm.querySelector('input[name="endDate"]').value;
+
+      // Date validation
+      if (new Date(endDate) < new Date(startDate)) {
         e.preventDefault();
         Swal.fire({
           icon: 'error',
-          title: 'Invalid Discount',
-          text: 'Percentage discount must be between 1% and 90%.'
+          title: 'Invalid Date Range',
+          text: 'End date cannot be before start date.'
         });
         return;
       }
-    } else if (discountType === 'fixed') {
-      if (discount < 1 || discount > 50000) {
+
+      // Discount validation
+      if (discountType === 'percentage') {
+        if (discount < 1 || discount > 90) {
+          e.preventDefault();
+          Swal.fire({
+            icon: 'error',
+            title: 'Invalid Discount',
+            text: 'Percentage discount must be between 1% and 90%.'
+          });
+          return;
+        }
+      } else if (discountType === 'fixed') {
+        if (discount < 1 || discount > 50000) {
+          e.preventDefault();
+          Swal.fire({
+            icon: 'error',
+            title: 'Invalid Discount',
+            text: 'Fixed discount must be between ₹1 and ₹50,000.'
+          });
+          return;
+        }
+      } else {
         e.preventDefault();
         Swal.fire({
-          icon: 'error',
-          title: 'Invalid Discount',
-          text: 'Fixed discount must be between ₹1 and ₹50,000.'
+          icon: 'warning',
+          title: 'Discount Type Required',
+          text: 'Please select a discount type.'
         });
         return;
       }
-    } else {
-      e.preventDefault();
+    });
+
+    // Show flash messages as SweetAlerts
+    `<% if (messages && messages.success) { %>
       Swal.fire({
-        icon: 'warning',
-        title: 'Discount Type Required',
-        text: 'Please select a discount type.'
+        icon: 'success',
+        title: 'Success!',
+        text: "<%- messages.success %>"
       });
-      return;
-    }
-  });
-  `<% if (messages && messages.success) { %>
-    Swal.fire({
-      icon: 'success',
-      title: 'Success!',
-      text: "<%- messages.success %>"
-    });
-  <% } %>
+    <% } %>
 
-  <% if (messages && messages.error) { %>
-    Swal.fire({
-      icon: 'error',
-      title: 'Oops!',
-      text: "<%- messages.error %>"
-    });
-  <% } %>`
-
-</script>
-
+    <% if (messages && messages.error) { %>
+      Swal.fire({
+        icon: 'error',
+        title: 'Oops!',
+        text: "<%- messages.error %>"
+      });
+    <% } %>`
+  </script>
 </body>
-
 </html>

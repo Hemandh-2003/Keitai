@@ -45,8 +45,8 @@
             </div>
             <% // Show the return button only if not already requested, approved, or rejected %>
               <% if (!order.returnStatus && order.status==='Delivered' ) { %>
-                <form action="/return/<%= order._id %>" method="POST" style="display:inline;">
-                  <button type="submit" class="btn btn-warning">Return Item</button>
+                <form action="/user/orders/return/<%= order._id %>" method="POST" style="display:inline;">
+                  <button type="submit" class="btn btn-warning">Return Order</button>
                 </form>
                 <% } %>
                   <div class="meta-item">
@@ -99,37 +99,53 @@
                             <% } else { %>
                               <% if (!couponApplied) { %>
                                 <% if (order.status==='Pending' ) { %>
-                                  <form class="cancel-item-form" data-max-qty="<%= item.quantity %>"
-                                    action="/user/orders/cancel-item/<%= order._id %>/<%= item.product._id %>"
-                                    method="POST">
-                                    <input type="hidden" name="quantity" value="" />
-                                    <input type="hidden" name="reason" value="" />
-                                    <button type="button" class="btn btn-cancel">Cancel Item</button>
-                                  </form>
 
-                                  <% } else if (order.status==='Delivered' ) { %>
-                                    <% if (item.returnStatus==='Approved' ) { %>
-                                      <p class="text-success">Your return request has been approved.</p>
-                                      <% } else if (item.returnStatus==='Rejected' ) { %>
-                                        <p class="text-danger">Your return request has been rejected.</p>
-                                        <% } else if (item.returnStatus==='Requested' ) { %>
-                                          <p class="text-warning">Return request pending approval.</p>
-                                          <% } else { %>
-                                            <form action="/user/orders/<%= order._id %>/return/<%= item.product._id %>"
-                                              method="POST" class="action-form return-item-form">
-                                              <input type="hidden" name="quantity" value="<%= item.quantity %>" />
-                                              <input type="hidden" name="reason" value="Damaged" />
-                                              <button type="submit" class="btn btn-return">Return Item</button>
-                                            </form>
-                                            <% } %>
+                                  <% if ((order.products.length> 1) || (item.quantity > 1)) { %>
+                                    <form class="cancel-item-form" data-max-qty="<%= item.quantity %>"
+                                      action="/user/orders/cancel-item/<%= order._id %>/<%= item.product._id %>"
+                                      method="POST">
+                                      <input type="hidden" name="quantity" value="" />
+                                      <input type="hidden" name="reason" value="" />
+                                      <button type="button" class="btn-cancel">Cancel Item</button>
+                                    </form>
+                                    <% } %>
+                                      <% } else if (order.status==='Delivered' ) { %>
+                                        <% if (item.returnStatus==='Approved' ) { %>
+                                          <p class="text-success">Your return request has been approved.</p>
+                                          <% } else if (item.returnStatus==='Rejected' ) { %>
+                                            <p class="text-danger">Your return request has been rejected.</p>
+                                            <% if (item.rejectionReason) { %>
+                                              <p class="text-muted">Reason: <%= item.rejectionReason %>
+                                              </p>
                                               <% } %>
-                                                <% } else { %>
-                                                  <p class="info-note">
-                                                    <i class="fas fa-exclamation-circle"></i> Coupon orders cannot be
-                                                    cancelled or returned.
-                                                  </p>
-                                                  <% } %>
-                                                    <% } %>
+                                                <% } else if (item.returnStatus==='Requested' ) { %>
+                                                  <p class="text-warning">Return request pending approval.</p>
+                                                  <% } else { %>
+
+                                                    <% if ((order.products.length> 1) || (item.quantity > 1)) { %>
+                                                      <form
+                                                        action="/user/orders/<%= order._id %>/return/<%= item.product._id %>"
+                                                        method="POST" class="action-form return-item-form">
+                                                        <input type="hidden" name="quantity"
+                                                          value="<%= item.quantity %>" />
+                                                        <input type="hidden" name="reason" value="Damaged" />
+                                                        <button type="submit" class="btn-return">Return Item</button>
+                                                      </form>
+                                                      <% } %>
+
+                                                        <% } %>
+                                                          <% } %>
+                                                            <% } else { %>
+                                                              <p class="info-note">
+                                                                <i class="fas fa-exclamation-circle"></i> Coupon orders
+                                                                cannot
+                                                                be
+                                                                cancelled or returned.
+                                                              </p>
+                                                              <% } %>
+                                                                <% } %>
+
+
                     </div>
               </div>
               <% }) %>
@@ -252,26 +268,78 @@
         if (document.referrer) {
           window.history.back();
         } else {
-          window.location.href = '/user/orders';
+          window.location.href = '/user/order';
         }
       }
 
-      // Return Order Confirmation
+      // Return Order Confirmation with reason
       document.querySelectorAll('.return-order-form').forEach(form => {
         form.addEventListener('submit', function (e) {
           e.preventDefault();
+
+          // Step 1: Confirm return
           Swal.fire({
             title: 'Are you sure?',
-            text: 'Do you want to return this order?',
+            text: 'Do you really want to return this order?',
             icon: 'warning',
             showCancelButton: true,
             confirmButtonText: 'Yes, return it!',
             cancelButtonText: 'Cancel'
-          }).then(result => {
-            if (result.isConfirmed) form.submit();
+          }).then(confirmResult => {
+            if (!confirmResult.isConfirmed) return;
+
+            // Step 2: Ask for reason
+            Swal.fire({
+              title: 'Reason for Return',
+              input: 'select',
+              inputOptions: {
+                'Damaged or Defective': 'Damaged or Defective',
+                'Wrong Item Delivered': 'Wrong Item Delivered',
+                'Not as Described': 'Not as Described',
+                'Better Price Elsewhere': 'Better Price Elsewhere',
+                'Other': 'Other'
+              },
+              inputPlaceholder: 'Select a reason',
+              showCancelButton: true,
+              confirmButtonText: 'Submit',
+              cancelButtonText: 'Cancel'
+            }).then(reasonResult => {
+              if (!reasonResult.isConfirmed) return;
+
+              if (reasonResult.value === 'Other') {
+                Swal.fire({
+                  title: 'Please specify your reason',
+                  input: 'textarea',
+                  inputPlaceholder: 'Type your reason here...',
+                  showCancelButton: true,
+                  confirmButtonText: 'Submit',
+                  cancelButtonText: 'Cancel',
+                  inputValidator: (value) => {
+                    if (!value.trim()) return 'Please enter a reason';
+                  }
+                }).then(customReason => {
+                  if (customReason.isConfirmed && customReason.value.trim() !== '') {
+                    let hiddenReason = document.createElement('input');
+                    hiddenReason.type = 'hidden';
+                    hiddenReason.name = 'reason';
+                    hiddenReason.value = customReason.value.trim();
+                    form.appendChild(hiddenReason);
+                    form.submit();
+                  }
+                });
+              } else {
+                let hiddenReason = document.createElement('input');
+                hiddenReason.type = 'hidden';
+                hiddenReason.name = 'reason';
+                hiddenReason.value = reasonResult.value;
+                form.appendChild(hiddenReason);
+                form.submit();
+              }
+            });
           });
         });
       });
+
 
       // Cancel Item with reason & quantity
       document.querySelectorAll('.cancel-item-form .btn-cancel').forEach(button => {

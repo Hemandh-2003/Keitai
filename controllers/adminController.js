@@ -586,7 +586,7 @@ exports.getProductDetailsWithRelated = async (req, res) => {
       product,
       relatedProducts,
       offerDetails,
-      finalPrice: offerDetails.price
+      finalPrice: offerDetails.price,
     });
 
   } catch (error) {
@@ -743,37 +743,51 @@ order.statusHistory.push({
   updatedAt: new Date(),
 });
 
-if (action === 'Approved') {
-  const user = order.user;
+ if (action === 'Approved') {
+      const user = order.user;
+      let totalRefund = 0;
 
-  console.log('Returned Items:', order.returnedItems);  // Before refund calculation
+      // Process each returned item
+      for (const returnedItem of order.returnedItems) {
+        if (returnedItem.status !== 'Pending') continue;
 
-  let refundAmount = 0;
-  for (const item of order.returnedItems || []) {
-    const productInOrder = order.products.find(p => p.product.toString() === item.product.toString());
-    const unitPrice = productInOrder ? productInOrder.price || 0 : 0;
-    refundAmount += unitPrice * item.quantity;
-  }
+        // Find the original ordered product
+        const orderedProduct = order.products.find(p => 
+          p.product && p.product._id.toString() === returnedItem.product._id.toString()
+        );
 
-  console.log('Refund amount:', refundAmount);  // After calculation
-  console.log('User wallet before:', user.wallet);  // Before wallet update
+        if (orderedProduct) {
+          const price = returnedItem.refundAmount / returnedItem.quantity || 
+                       orderedProduct.unitPrice || 
+                       orderedProduct.price || 
+                       orderedProduct.product?.salesPrice || 
+                       orderedProduct.product?.regularPrice || 
+                       0;
 
-  if (!user.wallet) user.wallet = { balance: 0, transactions: [] };
-  if (!user.wallet.transactions) user.wallet.transactions = [];
+          const itemRefund = price * returnedItem.quantity;
+          totalRefund += itemRefund;
 
-  user.wallet.balance += refundAmount;
-  user.wallet.transactions.push({
-  type: 'Credit',      // ✅ Use 'Credit' for adding money
-  amount: refundAmount,
-  reason: 'Refund for returned items',  // ✅ Non-empty string required
-  orderId: order._id,
-});
+          // Mark item as processed
+          returnedItem.status = 'Approved';
+        }
+      }
 
-
-
-  await user.save();
+    if (totalRefund > 0) {
+  await User.findByIdAndUpdate(user._id, {
+    $inc: { 'wallet.balance': totalRefund },
+    $push: {
+      'wallet.transactions': {
+        type: 'Credit',
+        amount: totalRefund,
+        reason: `Refund for returned items from order #${order.orderId}`,
+        orderId: order._id,
+        date: new Date()
+      }
+    }
+  });
 }
 
+    }
 
     await order.save();
 
@@ -856,7 +870,7 @@ exports.initiatePayment = async (req, res) => {
     order.razorpayOrderId = razorpayOrder.id;
     order.amount=razorpayOrder.amount;
     await order.save();
-    console.log(razorpayOrder)
+    //console.log(razorpayOrder)
 
     res.json({
       id: razorpayOrder.id,
@@ -902,8 +916,6 @@ exports.verifyPayment = async (req, res) => {
     res.redirect('/payment/failed');
   }
 };
-
-// ====== ORDER MANAGEMENT ====== //
 
 exports.viewOrderDetails = async (req, res) => {
   try {
@@ -1002,7 +1014,6 @@ exports.processReturnRequest = async (req, res) => {
   }
 };
 
-// ====== ADMIN ORDER ACTIONS ====== //
 
 exports.adminCancelOrder = async (req, res) => {
   try {
