@@ -59,13 +59,18 @@
             <!-- Filter Section -->
             <section class="phone-lineup">
                 <div class="promo-banner">
-                    <div class="banner">
-                        <img src="/images/mac-banner1.jpg" alt="iPhone Promo 1">
-                    </div>
-                    <div class="banner">
-                        <img src="/images/sambanner.jpg" alt="iPhone Promo 2">
-                    </div>
-                </div>
+          <% if (banners && banners.length> 0) { %>
+            <% banners.forEach(banner=> { %>
+              <div class="banner">
+                <img src="/uploads/banners/<%= banner.image %>" alt="<%= banner.title %>">
+              </div>
+              <% }) %>
+                <% } else { %>
+                  <div class="banner">
+                    <img src="/images/default-banner.jpg" alt="Default Banner">
+                  </div>
+                  <% } %>
+        </div>
             </section>
             <section class="filter-section">
                 <!-- Filter Toggle Button -->
@@ -132,7 +137,7 @@
                                      <div class="icon-stack">
   <!-- Wishlist Icon -->
    <button
-  class="wishlist-icon <%= wishlist && wishlist.products.some(p => p._id.toString() === product._id.toString()) ? 'active' : '' %>"
+  class="wishlist-icon <%= wishlist && Array.isArray(wishlist.products) && wishlist.products.some(p => p._id.toString() === product._id.toString()) ? 'active' : '' %>"
   onclick="toggleWishlist('<%= product._id %>', this, event)">
   <i class="fas fa-heart"></i>
 </button>

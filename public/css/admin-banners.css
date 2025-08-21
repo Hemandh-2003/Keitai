@@ -1,0 +1,325 @@
+/* admin-banners.css */
+
+/* Global Styles */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Poppins', 'Segoe UI', sans-serif;
+}
+
+body {
+    background-color: #181828;
+    color: #f0f0f0;
+    line-height: 1.6;
+    min-height: 100vh;
+}
+
+.dashboard-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem;
+}
+
+/* Back Link */
+.dashboard-container > a {
+    display: inline-flex;
+    align-items: center;
+    color: #ffcc00;
+    text-decoration: none;
+    margin-bottom: 2rem;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.dashboard-container > a:hover {
+    color: #ffdd33;
+    transform: translateX(-5px);
+}
+
+/* Header */
+.container h1 {
+    color: #ffcc00;
+    font-size: 2.5rem;
+    margin-bottom: 2rem;
+    text-align: center;
+    position: relative;
+    padding-bottom: 0.5rem;
+}
+
+.container h1::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 100px;
+    height: 4px;
+    background: linear-gradient(90deg, #ffcc00, #ffaa00);
+    border-radius: 2px;
+}
+
+/* Add Banner Form */
+.add-banner-form {
+    background: #232339;
+    padding: 2rem;
+    border-radius: 12px;
+    margin-bottom: 3rem;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    border: 1px solid #33334d;
+}
+
+.add-banner-form div {
+    margin-bottom: 1.5rem;
+}
+
+.add-banner-form label {
+    display: block;
+    margin-bottom: 0.5rem;
+    color: #ffcc00;
+    font-weight: 500;
+}
+
+.add-banner-form input[type="text"],
+.add-banner-form select {
+    width: 100%;
+    padding: 0.8rem 1rem;
+    border: 2px solid #33334d;
+    border-radius: 8px;
+    background-color: #2a2a45;
+    color: #f0f0f0;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+}
+
+.add-banner-form input[type="text"]:focus,
+.add-banner-form select:focus {
+    outline: none;
+    border-color: #ffcc00;
+    box-shadow: 0 0 0 3px rgba(255, 204, 0, 0.2);
+}
+
+.add-banner-form input[type="file"] {
+    width: 100%;
+    padding: 0.8rem;
+    border: 2px dashed #33334d;
+    border-radius: 8px;
+    background-color: #2a2a45;
+    color: #f0f0f0;
+    transition: all 0.3s ease;
+}
+
+.add-banner-form input[type="file"]:hover {
+    border-color: #ffcc00;
+}
+
+.add-banner-form button {
+    background: linear-gradient(135deg, #ffcc00, #ffaa00);
+    color: #181828;
+    border: none;
+    padding: 1rem 2rem;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: block;
+    width: 100%;
+    margin-top: 1rem;
+}
+
+.add-banner-form button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(255, 204, 0, 0.4);
+}
+
+/* Banners Table */
+.banners-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: #232339;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+}
+
+.banners-table thead {
+    background: linear-gradient(90deg, #ffcc00, #ffaa00);
+}
+
+.banners-table th {
+    padding: 1.2rem 1rem;
+    text-align: left;
+    color: #181828;
+    font-weight: 600;
+    font-size: 1.1rem;
+}
+
+.banners-table tbody tr {
+    border-bottom: 1px solid #33334d;
+    transition: all 0.3s ease;
+}
+
+.banners-table tbody tr:last-child {
+    border-bottom: none;
+}
+
+.banners-table tbody tr:hover {
+    background-color: #2a2a45;
+}
+
+.banners-table td {
+    padding: 1.2rem 1rem;
+}
+
+.banners-table td:first-child {
+    font-weight: 500;
+    color: #ffcc00;
+}
+
+.banners-table img {
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    transition: all 0.3s ease;
+}
+
+.banners-table img:hover {
+    transform: scale(1.05);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+}
+
+/* Delete Button */
+.btn-delete {
+    background: #e74c3c;
+    color: white;
+    border: none;
+    padding: 0.6rem 1.2rem;
+    border-radius: 6px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.btn-delete:hover {
+    background: #c0392b;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(231, 76, 60, 0.3);
+}
+
+/* Empty State */
+.banners-table tbody:empty::after {
+    content: "No banners found. Add your first banner above.";
+    display: block;
+    text-align: center;
+    padding: 2rem;
+    color: #8888aa;
+    font-style: italic;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .dashboard-container {
+        padding: 1rem;
+    }
+    
+    .container h1 {
+        font-size: 2rem;
+    }
+    
+    .add-banner-form {
+        padding: 1.5rem;
+    }
+    
+    .banners-table {
+        display: block;
+        overflow-x: auto;
+    }
+    
+    .banners-table thead {
+        display: none;
+    }
+    
+    .banners-table tbody tr {
+        display: block;
+        margin-bottom: 1rem;
+        border: 1px solid #33334d;
+        border-radius: 8px;
+    }
+    
+    .banners-table td {
+        display: block;
+        text-align: right;
+        padding: 0.8rem;
+        position: relative;
+        border-bottom: 1px solid #33334d;
+    }
+    
+    .banners-table td:last-child {
+        border-bottom: none;
+    }
+    
+    .banners-table td::before {
+        content: attr(data-label);
+        position: absolute;
+        left: 0.8rem;
+        font-weight: 600;
+        color: #ffcc00;
+    }
+    
+    .banners-table img {
+        max-width: 100%;
+        height: auto;
+    }
+}
+
+/* Animation for new elements */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.add-banner-form,
+.banners-table {
+    animation: fadeIn 0.5s ease;
+}
+
+/* Custom file input styling */
+.add-banner-form input[type="file"]::-webkit-file-upload-button {
+    background: #ffcc00;
+    color: #181828;
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+    margin-right: 1rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.add-banner-form input[type="file"]::-webkit-file-upload-button:hover {
+    background: #ffdd33;
+}
+
+/* SweetAlert2 customization */
+.swal2-popup {
+    background: #232339 !important;
+    color: #f0f0f0 !important;
+    border-radius: 12px !important;
+}
+
+.swal2-title {
+    color: #ffcc00 !important;
+}
+
+.swal2-confirm {
+    background: linear-gradient(135deg, #ffcc00, #ffaa00) !important;
+    color: #181828 !important;
+    border: none !important;
+    border-radius: 6px !important;
+}
+
+.swal2-cancel {
+    background: #6c757d !important;
+    border: none !important;
+    border-radius: 6px !important;
+}

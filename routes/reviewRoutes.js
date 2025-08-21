@@ -2,33 +2,31 @@ const express = require('express');
 const router = express.Router();
 const reviewController = require('../controllers/reviewController');
 const { isLoggedIn } = require('../middleware/authMiddleware');
-const { isAdmin } = require('../middleware/adminMiddleware');
 const checkBlockedUser = require('../middleware/checkBlocked');
+const { getProductDetailsWithRelated } = require('../controllers/adminController');
+const { isAdmin } = require('../middleware/adminMiddleware');
 const multer = require('multer');
 
-// Image upload config
+// Multer config
 const storage = multer.diskStorage({
   destination: (req, file, cb) => cb(null, 'public/uploads'),
   filename: (req, file, cb) => cb(null, Date.now() + '-' + file.originalname),
 });
 const upload = multer({ storage });
 
-// User adds a review
-router.post(
-  '/submit',
-  isLoggedIn,
-  checkBlockedUser,
-  upload.single('image'),
-  reviewController.addReview
-);
+// Submit a review
+router.post('/submit', isLoggedIn, checkBlockedUser, upload.array('images', 3), reviewController.addReview);
 
-// Get all reviews for a product (AJAX call if needed)
-router.get('/product/:productId', reviewController.getReviewsByProduct);
+// Correct route for product page with reviews
+router.get('/product/:productId', getProductDetailsWithRelated);
 
-// Admin replies to a review
-router.post('/reply/:reviewId', isAdmin, reviewController.replyToReview);
+// Admin reviews page
+router.get('/admin/reviews', isAdmin, reviewController.listAllReviews);
 
-// Admin view all reviews
-router.get('/admin', isAdmin, reviewController.listAllReviews);
+// Admin reply to review
+router.post('/admin/reviews/:reviewId/reply', isAdmin, reviewController.replyToReview);
+
+// Admin delete review
+router.delete('/admin/reviews/:reviewId', isAdmin, reviewController.deleteReview);
 
 module.exports = router;

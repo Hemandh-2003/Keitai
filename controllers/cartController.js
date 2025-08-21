@@ -11,6 +11,11 @@ exports.addToCart = async (req, res) => {
       return res.status(404).json({ error: 'Product not found or unavailable' });
     }
 
+    // 🚨 Check stock
+    if (product.stock <= 0) {
+      return res.status(400).json({ error: 'Product is out of stock' });
+    }
+
     let cart = await Cart.findOne({ user: req.session.user._id });
     if (!cart) {
       cart = new Cart({ user: req.session.user._id, items: [] });
@@ -23,20 +28,21 @@ exports.addToCart = async (req, res) => {
     if (existingItem) {
       const newTotalQuantity = existingItem.quantity + requestedQuantity;
 
-if (newTotalQuantity > maxQuantity) {
-  return res.status(400).json({
-    error: `You can only have up to ${maxQuantity} units of this product in your cart.`,
-    currentQuantity: existingItem.quantity,
-  });
-}
+      if (newTotalQuantity > maxQuantity) {
+        return res.status(400).json({
+          error: `You can only have up to ${maxQuantity} units of this product in your cart.`,
+          currentQuantity: existingItem.quantity,
+        });
+      }
 
-if (newTotalQuantity > product.quantity) {
-  return res.status(400).json({
-    error: `Only ${product.quantity - existingItem.quantity} more unit(s) available in stock.`,
-    currentQuantity: existingItem.quantity,
-    stock: product.quantity
-  });
-}
+      // 🚨 Ensure not exceeding stock
+      if (newTotalQuantity > product.stock) {
+        return res.status(400).json({
+          error: `Only ${product.stock - existingItem.quantity} more unit(s) available in stock.`,
+          currentQuantity: existingItem.quantity,
+          stock: product.stock
+        });
+      }
 
       existingItem.quantity = newTotalQuantity;
     } else {
@@ -45,17 +51,27 @@ if (newTotalQuantity > product.quantity) {
           error: `You can only have up to ${maxQuantity} units of this product in your cart.`,
         });
       }
+
+      if (requestedQuantity > product.stock) {
+        return res.status(400).json({
+          error: `Only ${product.stock} unit(s) available in stock.`,
+          stock: product.stock
+        });
+      }
+
       cart.items.push({ product: productId, quantity: requestedQuantity });
     }
 
     await cart.calculateTotal();
     await cart.save();
-   res.status(200).json({ success: true, message: 'Item added to cart', cart });
+
+    res.status(200).json({ success: true, message: 'Item added to cart', cart });
   } catch (error) {
     console.error(`Error adding item to cart: ${error.message}`);
     res.status(500).json({ error: 'Failed to add item to cart' });
   }
 };
+
 //display the items in cart
 exports.getCart = async (req, res) => {
   try {

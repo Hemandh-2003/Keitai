@@ -15,11 +15,20 @@ exports.addToWishlist = async (req, res) => {
       });
     }
 
-    const productExists = await Product.findById(productId);
-    if (!productExists) {
+    const product = await Product.findById(productId);
+
+    if (!product || product.isDeleted || product.isBlocked) {
       return res.status(404).json({
         success: false,
-        message: 'Product not found'
+        message: 'Product not found or unavailable'
+      });
+    }
+
+    // 🚨 Block out-of-stock products
+    if (product.stock <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Product is out of stock and cannot be added to wishlist'
       });
     }
 

@@ -86,7 +86,7 @@ main {
     display: flex;
     flex-direction: column;
     gap: 20px;
-    margin-top: 20px;
+    margin-top: -47px;
 }
 /* Filter Section */
 .filter-section {

@@ -1,4 +1,5 @@
 const express = require('express');
+const adminController = require('../controllers/adminController');
 const { isLoggedIn } = require('../middleware/authMiddleware');
 const userController = require('../controllers/userController');
 const orderController = require('../controllers/orderController');
@@ -30,7 +31,7 @@ router.get('/order/:id/invoice', userController.downloadInvoice);
 
 // Product Routes
 // router.get('/home', userController.getProducts);
-// router.get('/product/:productId', userController.getProductDetailsWithRelated);
+router.get('/product/:productId', adminController.getProductDetailsWithRelated);
 // Checkout Routes
 router.get('/checkout', ...protect, userController.getCheckout);
 router.post('/checkout', ...protect, userController.checkout);

@@ -17,19 +17,18 @@ const couponSchema = new mongoose.Schema({
     required: true,
     min: 1
   },
+  minPurchase: {
+    type: Number,
+    default: 0  // minimum cart total required
+  },
+  maxDiscount: {
+    type: Number,
+    default: 0  // only applies for percentage coupons
+  },
   startDate: {
     type: Date,
     required: true
   },
-  coupon: {
-  type: mongoose.Schema.Types.ObjectId,
-  ref: 'Coupon',
-  default: null
-},
-couponDiscount: {
-  type: Number,
-  default: 0
-},
   endDate: {
     type: Date,
     required: true

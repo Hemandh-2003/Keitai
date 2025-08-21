@@ -17,6 +17,9 @@ const { createProduct } = require('./controllers/adminController');
 const checkBlockedUser = require('./middleware/checkBlocked');
 const paymentRoutes = require('./routes/paymentRoutes');
 const methodOverride = require('method-override');
+const reviewRoutes = require('./routes/reviewRoutes');
+const bannerRoutes = require('./routes/bannerRoutes');
+const Banner = require('./models/Banner');
 // Load environment variables
 dotenv.config();
 
@@ -66,8 +69,9 @@ app.use((req, res, next) => {
   };
   next();
 });
-
+app.use('/', reviewRoutes);
 app.use('/cart', cartRoutes);
+app.use('/', bannerRoutes);
 
 // Set EJS as the view engine
 app.set('view engine', 'ejs');
@@ -77,6 +81,7 @@ app.set('views', path.join(__dirname, 'views'));
 
 // Static files middleware (for CSS, JS, images, etc.)
 app.use(express.static(path.join(__dirname, 'public')));
+app.use('/uploads', express.static(path.join(__dirname, 'public/uploads')));
 app.use('/payment', paymentRoutes);
 app.use(methodOverride('_method'));
 // Ensure the 'public/uploads' directory exists
@@ -152,7 +157,8 @@ app.use(async (req, res, next) => {
 });
 
 // Routes
-app.use('/admin', checkBlockedUser, adminRoutes); // Mount admin routes once with middleware
+app.use('/admin', checkBlockedUser, adminRoutes);
+app.use('/review', reviewRoutes); // Mount admin routes once with middleware
 app.use('/', authRoutes);
 app.use('/user', userRoutes);
 app.use('/wishlist', wishlistRoutes);
@@ -175,16 +181,18 @@ app.get('/:slug', async (req, res) => {
     const { slug } = req.params;
     const { sort, brand, price } = req.query;
 
+    // 1️⃣ Fetch the category
     const category = await Category.findOne({ slug });
     if (!category) {
       return res.status(404).render('user/404', { activePage: '404' });
     }
 
-    // Building filter conditions
+    // 2️⃣ Fetch banners for this category
+    const banners = await Banner.find({ category: category._id });
+
+    // 3️⃣ Build product filter conditions
     const filterConditions = { category: category._id };
-    if (brand) {
-      filterConditions.brand = brand; // Assuming "brand" field exists in the Product schema
-    }
+    if (brand) filterConditions.brand = brand;
 
     if (price) {
       if (price === 'below-50000') filterConditions.salesPrice = { $lt: 50000 };
@@ -192,45 +200,48 @@ app.get('/:slug', async (req, res) => {
       else if (price === 'above-100000') filterConditions.salesPrice = { $gt: 100000 };
     }
 
-    // Sorting logic
+    // 4️⃣ Sorting logic
     let sortCondition = {};
     if (sort === 'price-asc') sortCondition.salesPrice = 1;
     else if (sort === 'price-desc') sortCondition.salesPrice = -1;
     else if (sort === 'name-asc') sortCondition.name = 1;
     else if (sort === 'name-desc') sortCondition.name = -1;
- console.log("sort cond:",sortCondition)
-   const products = await Product.find(filterConditions)
-  .sort(sortCondition)
-  .populate('offers')
-  .populate('category');
-  
-      let wishlist = [];
-      const userId = req.session.user || null
-      console.log(userId)
-      if (userId) {
-        wishlist = await Wishlist.findOne({ user: userId._id }).populate('products');
-        console.log("this is wishlist",wishlist)
-      }
 
-const productsWithOffers = await Promise.all(products.map(async (product) => {
-  const offerDetails = await product.getBestOfferPrice(); // This calculates product + category offers
-  return {
-    ...product.toObject(),
-    offerDetails
-  };
-}));
+    // 5️⃣ Fetch products
+    const products = await Product.find(filterConditions)
+      .sort(sortCondition)
+      .populate('offers')
+      .populate('category');
+
+    // 6️⃣ Fetch wishlist if user logged in
+    let wishlist = [];
+    const userId = req.session.user || null;
+    if (userId) {
+      wishlist = await Wishlist.findOne({ user: userId._id }).populate('products');
+    }
+
+    // 7️⃣ Apply offer calculations
+    const productsWithOffers = await Promise.all(products.map(async (product) => {
+      const offerDetails = await product.getBestOfferPrice();
+      return { ...product.toObject(), offerDetails };
+    }));
+
+    // 8️⃣ Render the category page with banners
     res.render(`user/${category.slug}`, {
-  activePage: category.slug,
-  category,
-  products: productsWithOffers, // ✅ Updated list with offerDetails
-  query: req.query,
-  wishlist:wishlist
-});
+      activePage: category.slug,
+      category,
+      products: productsWithOffers,
+      query: req.query,
+      wishlist,
+      banners // ✅ pass banners to template
+    });
+
   } catch (error) {
     console.error('Error loading category page:', error);
     res.status(500).send('Server Error');
   }
 });
+
 
 // Search endpoint
 app.get('/api/search', async (req, res) => {

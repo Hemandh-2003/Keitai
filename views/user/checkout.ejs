@@ -385,71 +385,67 @@
 
 
     // Coupon Apply
-    document.getElementById('applyCouponBtn')?.addEventListener('click', async () => {
-      const code = document.getElementById('couponCode').value.trim();
-      const total = `<%= totalPrice + deliveryCharge %>`;
+    // Coupon Apply
+document.getElementById('applyCouponBtn')?.addEventListener('click', async () => {
+  const code = document.getElementById('couponCode').value.trim();
+  const total = `<%= totalPrice + deliveryCharge %>`;
 
-      if (!code) {
-        return Swal.fire({
-          icon: 'warning',
-          title: 'Select a Coupon',
-          text: 'Please choose a coupon to apply.'
-        });
-      }
-
-      if (total < 200000) {
-        return Swal.fire({
-          icon: 'info',
-          title: 'Not Eligible',
-          text: 'You need to spend ₹2,00,000 or more to apply a coupon.'
-        });
-      }
-
-      const confirm = await Swal.fire({
-        title: 'Apply Coupon?',
-        text: `Do you want to apply the coupon "${code}"?`,
-        icon: 'question',
-        showCancelButton: true,
-        confirmButtonText: 'Yes, Apply',
-        cancelButtonText: 'Cancel',
-        reverseButtons: true
-      });
-
-      if (!confirm.isConfirmed) return;
-
-      try {
-        const res = await fetch('/user/apply-coupon', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ code, total })
-        });
-
-        const data = await res.json();
-
-        if (data.success) {
-          await Swal.fire({
-            icon: 'success',
-            title: 'Coupon Applied!',
-            text: `You saved ₹${data.discountAmount}`,
-            timer: 2000,
-            showConfirmButton: false
-          });
-          window.location.reload();
-        } else {
-          Swal.fire({
-            icon: 'error',
-            title: 'Coupon Error',
-            text: data.message || 'Failed to apply coupon.'
-          });
-        }
-      } catch (err) {
-        Swal.fire({
-          icon: 'error',
-          title: 'Server Error',
-          text: 'Something went wrong. Please try again.'
-        });
-      }
+  if (!code) {
+    return Swal.fire({
+      icon: 'warning',
+      title: 'Select a Coupon',
+      text: 'Please choose a coupon to apply.'
     });
+  }
+
+  // ❌ Removed 2 lakh restriction ✅
+
+  const confirm = await Swal.fire({
+    title: 'Apply Coupon?',
+    text: `Do you want to apply the coupon "${code}"?`,
+    icon: 'question',
+    showCancelButton: true,
+    confirmButtonText: 'Yes, Apply',
+    cancelButtonText: 'Cancel',
+    reverseButtons: true
+  });
+
+  if (!confirm.isConfirmed) return;
+
+  try {
+    const res = await fetch('/user/apply-coupon', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ code, total })
+    });
+
+    const data = await res.json();
+
+    if (data.success) {
+      await Swal.fire({
+        icon: 'success',
+        title: 'Coupon Applied!',
+        text: `You saved ₹${data.discountAmount}`,
+        timer: 2000,
+        showConfirmButton: false
+      });
+      window.location.reload();
+    } else {
+      Swal.fire({
+        icon: 'error',
+        title: 'Coupon Error',
+        text: data.message || 'Failed to apply coupon.'
+      });
+    }
+  } catch (err) {
+    Swal.fire({
+      icon: 'error',
+      title: 'Server Error',
+      text: 'Something went wrong. Please try again.'
+    });
+  }
+});
+
 
     // Coupon Remove
     document.getElementById('removeCouponBtn')?.addEventListener('click', async () => {
@@ -539,6 +535,26 @@
       }
     });
   </script>
+<script>
+async function applyCoupon() {
+  const code = document.getElementById("couponCode").value;
+
+  const res = await fetch("/apply-coupon", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ code })
+  });
+
+  const data = await res.json();
+
+  if (data.success) {
+    document.getElementById("discount").innerText = "Discount: ₹" + data.discount;
+    document.getElementById("finalAmount").innerText = "Final: ₹" + data.finalAmount;
+  } else {
+    Swal.fire("Error", data.message, "error");
+  }
+}
+</script>
 
 </body>
 

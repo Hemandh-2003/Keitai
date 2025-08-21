@@ -39,7 +39,6 @@
               <th>User</th>
               <th>Email</th>
               <th>Payment</th>
-              <th>Status</th>
               <th>Total</th>
               <th>Date</th>
               <th>Action</th>
@@ -55,7 +54,6 @@
                 <td><%= order.user?.name || 'N/A' %></td>
                 <td><%= order.user?.email || 'N/A' %></td>
                 <td><%= order.paymentMethod %></td>
-                <td><%= order.status %></td>
                 <td>₹<%= order.totalAmount?.toFixed(2) %></td>
                 <td><%= new Date(order.createdAt).toLocaleDateString() %></td>
                 <td><a href="/admin/orders/<%= order._id %>/payment">View</a></td>

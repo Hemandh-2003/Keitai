@@ -31,24 +31,34 @@
 
     <!-- Filter Form -->
     <form action="/admin/sales-report/filter" method="POST">
-      <label for="startDate">Start Date:</label>
-      <input type="date" name="startDate" id="startDate" value="<%= startDate %>" required>
+  <label for="filterType">Filter By:</label>
+  <select name="filterType" id="filterType" onchange="toggleCustomDates(this.value)">
+    <option value="daily" <%= filterType === "daily" ? "selected" : "" %>>Daily</option>
+    <option value="monthly" <%= filterType === "monthly" ? "selected" : "" %>>Monthly</option>
+    <option value="yearly" <%= filterType === "yearly" ? "selected" : "" %>>Yearly</option>
+    <option value="custom" <%= filterType === "custom" ? "selected" : "" %>>Custom</option>
+  </select>
 
-      <label for="endDate">End Date:</label>
-      <input type="date" name="endDate" id="endDate" value="<%= endDate %>" required>
+  <div id="customDateInputs" style="display:<%= filterType === 'custom' ? 'block' : 'none' %>;">
+    <label for="startDate">Start Date:</label>
+    <input type="date" name="startDate" id="startDate" value="<%= startDate %>">
 
-      <button type="submit">Apply Filter</button>
-    </form>
+    <label for="endDate">End Date:</label>
+    <input type="date" name="endDate" id="endDate" value="<%= endDate %>">
+  </div>
+
+  <button type="submit">Apply Filter</button>
+</form>
 
     <!-- Summary -->
-    <section class="summary">
-      <h3>Summary</h3>
-      <ul>
-        <li>Total Orders: <%= summary.totalSales %></li>
-        <li>Total Amount: ₹<%= summary.totalAmount.toLocaleString('en-IN', { minimumFractionDigits: 2 }) %></li>
-        <li>Total Discount: ₹<%= summary.totalDiscount.toLocaleString('en-IN', { minimumFractionDigits: 2 }) %></li>
-      </ul>
-    </section>
+    <section>
+  <h3>Summary</h3>
+  <ul>
+    <li>Total Orders: <%= summary?.totalSales || 0 %></li>
+    <li>Total Amount: ₹<%= (summary?.totalAmount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 }) %></li>
+    <li>Total Discount: ₹<%= (summary?.totalDiscount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 }) %></li>
+  </ul>
+</section>
 
     <!-- Orders Table -->
     <table>
@@ -104,5 +114,10 @@
       <button type="submit">Download PDF</button>
     </form>
   </div>
+  <script>
+function toggleCustomDates(value) {
+  document.getElementById("customDateInputs").style.display = value === "custom" ? "block" : "none";
+}
+</script>
 </body>
 </html>

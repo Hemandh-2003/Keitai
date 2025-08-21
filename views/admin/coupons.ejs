@@ -60,6 +60,7 @@
               <% } %>
 
                 <!-- Create New Coupon Form -->
+                <!-- Create New Coupon Form -->
                 <form action="/admin/coupons/create" method="POST" style="margin-bottom: 30px;">
                   <div style="display: flex; flex-wrap: wrap; gap: 15px;">
                     <input type="text" name="code" placeholder="Coupon Code" required style="flex: 1; padding: 10px;">
@@ -73,12 +74,21 @@
                     <input type="number" name="discount" placeholder="Discount Value" min="1" required
                       style="flex: 1; padding: 10px;">
 
+                    <!-- NEW FIELD: Minimum Purchase -->
+                    <input type="number" name="minPurchase" placeholder="Min Purchase Amount (₹)" min="0" required
+                      style="flex: 1; padding: 10px;">
+
+                    <!-- NEW FIELD: Max Discount (only applies to percentage) -->
+                    <input type="number" name="maxDiscount" placeholder="Max Discount Amount (₹)" min="0"
+                      style="flex: 1; padding: 10px;">
+
                     <input type="date" name="startDate" id="couponStartDate" required style="flex: 1; padding: 10px;">
                     <input type="date" name="endDate" id="couponEndDate" required style="flex: 1; padding: 10px;">
 
                     <button type="submit" class="btn btn-primary"><i class="fas fa-plus"></i> Add Coupon</button>
                   </div>
                 </form>
+
 
                 <!-- Coupons Table -->
                 <div class="table-responsive">
@@ -88,6 +98,8 @@
                         <th>Code</th>
                         <th>Type</th>
                         <th>Discount</th>
+                        <th>Min Purchase</th>
+                        <th>Max Discount</th>
                         <th>Start Date</th>
                         <th>End Date</th>
                         <th>Status</th>
@@ -106,6 +118,11 @@
                           <td>
                             <%= coupon.discountType==='percentage' ? coupon.discount + ' %' : '₹' + coupon.discount %>
                           </td>
+                          <td>₹<%= coupon.minPurchase || 0 %>
+                          </td>
+                          <td>
+                            <%= coupon.discountType==='percentage' ? '₹' + (coupon.maxDiscount || 'No Limit' ) : '-' %>
+                          </td>
                           <td>
                             <%= new Date(coupon.startDate).toLocaleDateString() %>
                           </td>
@@ -113,7 +130,7 @@
                             <%= new Date(coupon.endDate).toLocaleDateString() %>
                           </td>
                           <td>
-                           <%= new Date(coupon.endDate)> new Date() ? 'Active' : 'Expired' %>
+                            <%= new Date(coupon.endDate)> new Date() ? 'Active' : 'Expired' %>
                           </td>
                           <td class="actions">
                             <form action="/admin/coupons/delete/<%= coupon._id %>" method="POST"
@@ -124,6 +141,7 @@
                         </tr>
                         <% }) %>
                     </tbody>
+
                   </table>
                 </div>
       </section>
@@ -132,13 +150,13 @@
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   <script>
     // Date validation for coupon form
-    document.getElementById('couponStartDate').addEventListener('change', function() {
+    document.getElementById('couponStartDate').addEventListener('change', function () {
       const startDate = this.value;
       const endDateInput = document.getElementById('couponEndDate');
-      
+
       // Set the minimum end date to be the same as start date
       endDateInput.min = startDate;
-      
+
       // If current end date is before start date, reset it
       if (endDateInput.value && endDateInput.value < startDate) {
         endDateInput.value = startDate;
@@ -215,4 +233,5 @@
     <% } %>`
   </script>
 </body>
+
 </html>

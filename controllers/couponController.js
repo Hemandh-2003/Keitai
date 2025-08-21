@@ -6,16 +6,10 @@ exports.applyCoupon = async (req, res) => {
   try {
     const formattedCode = code.toUpperCase();
 
+    // ✅ prevent duplicate application
     if (req.session.coupon && req.session.coupon.code === formattedCode) {
       return res.status(400).json({ success: false, message: 'Coupon already applied' });
     }
-
-if (total < 200000) {//allow only the orders which are above and equal to 2 lahks
-  return res.status(400).json({
-    success: false,
-    message: 'Minimum order value for applying coupon is ₹2,00,000'
-  });
-}
 
     const coupon = await Coupon.findOne({ code: formattedCode, isActive: true });
 
@@ -28,9 +22,22 @@ if (total < 200000) {//allow only the orders which are above and equal to 2 lahk
       return res.status(400).json({ success: false, message: 'Coupon is not valid at this time' });
     }
 
+    // ✅ Check minimum purchase
+    if (total < coupon.minPurchase) {
+      return res.status(400).json({
+        success: false,
+        message: `Minimum order value for this coupon is ₹${coupon.minPurchase}`
+      });
+    }
+
     let discountAmount = 0;
     if (coupon.discountType === 'percentage') {
       discountAmount = Math.round((total * coupon.discount) / 100);
+
+      // ✅ Cap discount if maxDiscount is set
+      if (coupon.maxDiscount && discountAmount > coupon.maxDiscount) {
+        discountAmount = coupon.maxDiscount;
+      }
     } else if (coupon.discountType === 'fixed') {
       discountAmount = Math.min(coupon.discount, total);
     }

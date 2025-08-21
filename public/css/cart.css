@@ -260,6 +260,7 @@ header {
   font-weight: 600;
   cursor: pointer;
   transition: 0.3s;
+  margin-top: 10px;
 }
 
 .delete-btn {

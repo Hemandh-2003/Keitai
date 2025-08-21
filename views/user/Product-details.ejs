@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 
@@ -8,6 +9,7 @@
         <%= product.name %> - Product Details
     </title>
     <link rel="stylesheet" href="/css/search.css">
+    <link rel="stylesheet" href="/css/review.css">
     <link rel="stylesheet" href="/css/products.css">
     <link rel="icon" href="/images/favicon.jpg">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
@@ -152,7 +154,7 @@
     </p>
   <% } %>
 </div>
-            <!-- Stock Availability -->
+            
             <p class="stock-status" style="
                 color: <%= product.quantity > 10 ? 'green' : product.quantity > 0 ? 'orange' : 'red' %>;
                 font-weight: bold;">
@@ -193,6 +195,28 @@
             </form>
         </div>
     </section>
+<% if (variants.length > 0) { %>
+  <section class="product-variants">
+    <div class="container">
+      <h2>Available Variants</h2>
+      <div class="variant-row">
+        <% variants.forEach(variant => { %>
+          <div class="variant-item">
+            <a href="/product/<%= variant._id %>">
+              <% if (variant.images && variant.images.length > 0) { %>
+                <img src="/uploads/<%= variant.images[0] %>" alt="<%= variant.name %>">
+              <% } else { %>
+                <img src="/images/default-product.jpg" alt="<%= variant.name %>">
+              <% } %>
+              <h3><%= variant.name %></h3>
+              <p>₹<%= variant.offerDetails ? variant.offerDetails.price : variant.price %></p>
+            </a>
+          </div>
+        <% }) %>
+      </div>
+    </div>
+  </section>
+<% } %>
 
     <div class="product-description">
         <h3>Description</h3>
@@ -243,37 +267,213 @@
                     <% } %>
         </div>
     </section>
+<section id="reviews" class="reviews-section">
+  <div class="container">
+    <h2 class="section-title">Customer Reviews</h2>
 
-    <!-- Reviews Section -->
-    <!--section class="reviews">
-        <div class="container">
-            <h2>Customer Reviews</h2>
-            <div class="review">
-                <textarea placeholder="Share your thoughts with other customers"></textarea>
-                <button class="submit-review">Write a product review</button><br>
-                <h3>Review this product</h3>
-                <p><strong>John Doe</strong> ⭐⭐⭐⭐☆</p>
-                <p>"Amazing performance and build quality. Perfect for my daily work and creative tasks."</p>
-            </div>
-            <div class="review">
-                <p><strong>Jane Smith</strong> ⭐⭐⭐⭐⭐</p>
-                <p>"The M4 chip is truly a game-changer. Battery life is excellent, and the display is stunning."</p>
-            </div>
-            <div class="review">
-                <p><strong>Raj Kumar</strong> ⭐⭐⭐⭐☆</p>
-                <p>"Price is a bit high, but the performance justifies it. Highly recommend for professionals."</p>
-            </div>
-            <div class="review">
-                <p><strong>Emily Johnson</strong> ⭐⭐⭐⭐☆</p>
-                <p>"I love the new AI features, but I wish it came with more ports. Still, a fantastic device."</p>
-            </div>
-            <div class="review">
-                <p><strong>David Lee</strong> ⭐⭐⭐⭐⭐</p>
-                <p>"Switched from Windows, and I couldn't be happier. MacOS runs incredibly smoothly on this machine."
-                </p>
-            </div>
+    <!-- Overall Rating Summary -->
+    <div class="rating-summary">
+      <div class="average-rating">
+        <div class="rating-number"><%= product.averageRating ? product.averageRating.toFixed(1) : "0.0" %></div>
+        <div class="stars">
+          <% for (let i = 1; i <= 5; i++) { %>
+            <span class="star <%= i <= Math.round(product.averageRating || 0) ? 'filled' : '' %>">★</span>
+          <% } %>
         </div>
-    </section-->
+        <p class="review-count">Based on <%= product.reviewCount || 0 %> reviews</p>
+      </div>
+      
+      <!-- Rating Breakdown -->
+      <div class="rating-breakdown">
+        <% for (let i = 5; i >= 1; i--) { %>
+          <div class="rating-bar">
+            <span class="star-count"><%= i %> ★</span>
+            <div class="bar-container">
+              <div class="bar" style="width: <%= (product.ratingDistribution && product.ratingDistribution[i] || 0) / (product.reviewCount || 1) * 100 %>%;"></div>
+            </div>
+            <span class="percentage"><%= Math.round((product.ratingDistribution && product.ratingDistribution[i] || 0) / (product.reviewCount || 1) * 100) || 0 %>%</span>
+          </div>
+        <% } %>
+      </div>
+    </div>
+
+    <!-- Review Form -->
+    <% if (user) { %>
+      <div class="review-form-container">
+        <h3>Write a Review</h3>
+        <form action="/review/submit" method="POST" enctype="multipart/form-data" class="review-form">
+          <input type="hidden" name="productId" value="<%= product._id %>">
+          
+          <div class="form-group">
+            <label for="rating">Your Rating</label>
+            <div class="star-rating-input">
+              <% for (let i = 1; i <= 5; i++) { %>
+                <span class="star" data-value="<%= i %>">★</span>
+              <% } %>
+              <input type="hidden" name="rating" id="rating" required>
+            </div>
+          </div>
+          
+          <div class="form-group">
+            <label for="title">Review Title</label>
+            <input type="text" name="title" id="title" placeholder="Summarize your experience" required>
+          </div>
+          
+          <div class="form-group">
+            <label for="comment">Your Review</label>
+            <textarea name="comment" id="comment" rows="4" placeholder="Share details of your experience with this product" required></textarea>
+          </div>
+          
+          <div class="form-group">
+            <label for="images">Upload Images (optional)</label>
+            <div class="image-upload-container">
+              <div class="image-preview"></div>
+              <label for="images" class="upload-btn">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M11 15H13V9H16L12 4L8 9H11V15Z" fill="currentColor"/>
+                  <path d="M20 18H4V11H2V18C2 19.103 2.897 20 4 20H20C21.103 20 22 19.103 22 18V11H20V18Z" fill="currentColor"/>
+                </svg>
+                <span>Add Photos</span>
+              </label>
+              <input type="file" name="images" id="images" multiple accept="image/*" style="display: none;">
+            </div>
+          </div>
+          
+          <button type="submit" class="btn-submit">Submit Review</button>
+        </form>
+      </div>
+    <% } else { %>
+      <div class="login-prompt">
+        <p><a href="/login">Login</a> to write a review and share your experience.</p>
+      </div>
+    <% } %>
+
+    <!-- Reviews Filter and Sort -->
+    <div class="reviews-header">
+      <h3>Customer Reviews</h3>
+      <div class="filter-sort">
+        <select class="sort-select">
+          <option value="newest">Newest First</option>
+          <option value="highest">Highest Rated</option>
+          <option value="lowest">Lowest Rated</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Display Reviews -->
+    <div class="review-list">
+      <% if (reviews && reviews.length > 0) { %>
+        <% reviews.forEach(r => { %>
+          <div class="review-item">
+            <div class="review-header">
+              <div class="user-info">
+                <div class="avatar">
+                  <%= r.user.name.charAt(0).toUpperCase() %>
+                </div>
+                <div class="user-details">
+                  <h4 class="user-name"><%= r.user.name %></h4>
+                  <div class="review-meta">
+                    <div class="stars">
+                      <% for (let i = 1; i <= 5; i++) { %>
+                        <span class="star <%= i <= r.rating ? 'filled' : '' %>">★</span>
+                      <% } %>
+                    </div>
+                    <span class="review-date"><%= new Date(r.createdAt).toLocaleDateString() %></span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <h4 class="review-title"><%= r.title %></h4>
+            <p class="review-comment"><%= r.comment %></p>
+
+            <% if (r.images && r.images.length > 0) { %>
+              <div class="review-images">
+                <% r.images.forEach(img => { %>
+                  <div class="review-image">
+                    <img src="/uploads/<%= img %>" alt="Review Image" loading="lazy">
+                  </div>
+                <% }) %>
+              </div>
+            <% } %>
+
+            <% if (r.adminReply && r.adminReply.text) { %>
+              <div class="admin-reply">
+                <div class="admin-badge">Admin Response</div>
+                <p><%= r.adminReply.text %></p>
+                <% if (r.adminReply.date) { %>
+                  <span class="reply-date"><%= new Date(r.adminReply.date).toLocaleDateString() %></span>
+                <% } %>
+              </div>
+            <% } %>
+
+            <div class="review-actions">
+              <button class="helpful-btn" data-review-id="<%= r._id %>">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M14 6H20C21.1 6 22 6.9 22 8V19C22 20.1 21.1 21 20 21H14C12.9 21 12 20.1 12 19V8C12 6.9 12.9 6 14 6Z" stroke="currentColor" stroke-width="2"/>
+                  <path d="M2 15H6V21H2V15Z" stroke="currentColor" stroke-width="2"/>
+                  <path d="M6 15V5C6 3.9 6.9 3 8 3H9C10.1 3 11 3.9 11 5V15H6Z" stroke="currentColor" stroke-width="2"/>
+                </svg>
+                Helpful (<span class="helpful-count"><%= r.helpfulCount || 0 %></span>)
+              </button>
+            </div>
+          </div>
+        <% }) %>
+      <% } else { %>
+        <div class="no-reviews">
+          <svg width="64" height="64" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M20 2H4C2.9 2 2 2.9 2 4V22L6 18H20C21.1 18 22 17.1 22 16V4C22 2.9 21.1 2 20 2Z" stroke="currentColor" stroke-width="2"/>
+            <path d="M12 8V12M12 16H12.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+          <h4>No reviews yet</h4>
+          <p>Be the first to share your thoughts about this product!</p>
+        </div>
+      <% } %>
+    </div>
+
+    <!-- Pagination -->
+   <% if (reviews && reviews.length > 0 && totalPages > 1) { %>
+  <div class="pagination">
+    
+    <!-- Prev button -->
+    <button 
+      class="pagination-btn prev" 
+      onclick="window.location.href='?page=<%= currentPage - 1 %>'" 
+      <%= currentPage === 1 ? 'disabled' : '' %>>
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M15 18L9 12L15 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      Previous
+    </button>
+
+    <!-- Page numbers -->
+    <div class="page-numbers">
+      <% for (let i = 1; i <= totalPages; i++) { %>
+        <% if (i === currentPage) { %>
+          <span class="page-active"><%= i %></span>
+        <% } else { %>
+          <span onclick="window.location.href='?page=<%= i %>'"><%= i %></span>
+        <% } %>
+      <% } %>
+    </div>
+
+    <!-- Next button -->
+    <button 
+      class="pagination-btn next" 
+      onclick="window.location.href='?page=<%= currentPage + 1 %>'" 
+      <%= currentPage === totalPages ? 'disabled' : '' %>>
+      Next
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M9 18L15 12L9 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </button>
+
+  </div>
+<% } %>
+
+  </div>
+</section>
+
 
     <!-- Related Products Section -->
     <section class="related-products">
@@ -547,7 +747,47 @@ document.getElementById("quantity").addEventListener("keypress", function (e) {
 });
 
 </script>
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const stars = document.querySelectorAll('.star-rating-input .star');
+    const ratingInput = document.getElementById('rating');
 
+    stars.forEach(star => {
+      star.addEventListener('mouseover', () => {
+        const val = parseInt(star.dataset.value);
+        stars.forEach(s => s.classList.toggle('filled', s.dataset.value <= val));
+      });
+
+      star.addEventListener('mouseout', () => {
+        const val = ratingInput.value || 0;
+        stars.forEach(s => s.classList.toggle('filled', s.dataset.value <= val));
+      });
+
+      star.addEventListener('click', () => {
+        ratingInput.value = star.dataset.value;
+        stars.forEach(s => s.classList.toggle('filled', s.dataset.value <= ratingInput.value));
+      });
+    });
+  });
+</script>
+<script>
+  const imageInput = document.getElementById('images');
+  const previewContainer = document.querySelector('.image-preview');
+
+  imageInput.addEventListener('change', () => {
+    previewContainer.innerHTML = '';
+    Array.from(imageInput.files).forEach(file => {
+      const reader = new FileReader();
+      reader.onload = e => {
+        const img = document.createElement('img');
+        img.src = e.target.result;
+        img.classList.add('preview-img');
+        previewContainer.appendChild(img);
+      };
+      reader.readAsDataURL(file);
+    });
+  });
+</script>
 
 </body>
 

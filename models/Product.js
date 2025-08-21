@@ -51,17 +51,22 @@ const productSchema = new mongoose.Schema(
       type: Boolean, 
       default: false 
     },
-    // Add offers reference
     offers: [{
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Offer'
     }],
-    // Keep product-specific offer (optional)
     productOffer: { 
       type: String, 
       trim: true, 
       default: '' 
-    }
+    },
+    // New: Variants array
+    variants: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Product'
+      }
+    ]
   },
   { 
     timestamps: true,
@@ -106,7 +111,7 @@ productSchema.virtual('availability').get(function () {
   return this.quantity > 0 ? 'In Stock' : 'Out of Stock';
 });
 
-// New method to calculate best offer price
+// Method to calculate best offer price
 productSchema.methods.getBestOfferPrice = async function() {
   try {
     const Offer = mongoose.model('Offer');
@@ -114,7 +119,6 @@ productSchema.methods.getBestOfferPrice = async function() {
 
     const basePrice = this.salesPrice || this.regularPrice;
 
-    // Get active product offers
     const productOffers = await Offer.find({
       _id: { $in: this.offers || [] },
       isActive: true,
@@ -122,7 +126,6 @@ productSchema.methods.getBestOfferPrice = async function() {
       endDate: { $gte: now }
     });
 
-    // Get active category offers
     let categoryOffers = [];
     if (this.category) {
       const category = await mongoose.model('Category').findById(this.category).populate('offers');
@@ -135,7 +138,6 @@ productSchema.methods.getBestOfferPrice = async function() {
 
     const allOffers = [...productOffers, ...categoryOffers];
 
-    // Track the best offer
     let bestDiscount = 0;
     let bestOffer = null;
 
@@ -173,6 +175,5 @@ productSchema.methods.getBestOfferPrice = async function() {
     };
   }
 };
-
 
 module.exports = mongoose.model('Product', productSchema);

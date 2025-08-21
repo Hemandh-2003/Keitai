@@ -623,7 +623,7 @@ exports.getProducts = async (req, res) => {
     const skip = (page - 1) * perPage;
     const query = { isBlocked: false };
 
-    // Your existing filtering logic for category, search, etc.
+    // Your existing filtering logic for category, search.
 
     let sortOption = {};
     if (sort === 'price-asc') sortOption = { salesPrice: 1 };
@@ -662,11 +662,11 @@ exports.getProducts = async (req, res) => {
       return {
         ...product.toObject(),
         pricing,
-        stock: typeof product.stock === 'number' ? product.stock : 0 // ✅ Ensure it's a number
+        stock: typeof product.stock === 'number' ? product.stock : 0 
       };
     }));
 
-    // Re-sort if needed
+    // Re-sort 
     if (sort === 'price-asc' || sort === 'price-desc') {
       products.sort((a, b) =>
         sort === 'price-asc'
@@ -680,7 +680,7 @@ exports.getProducts = async (req, res) => {
     if (userId) {
       wishlist = await Wishlist.findOne({ user: userId }).populate('products');
     }
-    console.log("this is wishlist",wishlist)
+    /*console.log("this is wishlist",wishlist)*/
 
     const totalProducts = await Product.countDocuments(query);
     const totalPages = Math.ceil(totalProducts / perPage);
@@ -1681,13 +1681,13 @@ exports.returnProduct = async (req, res) => {
     const unitPrice = Number(productEntry.unitPrice || productEntry.price || 0);
     const refundAmount = unitPrice * qty;
 
-    console.log('Refund calculation:', {
+   /* console.log('Refund calculation:', {
       qty,
       storedUnitPrice: productEntry.unitPrice,
       productEntryPrice: productEntry.price,
       populatedProductPrice: productEntry.product?.price,
       refundAmount
-    });
+    });*/
 
     // Save return request in order
     order.returnedItems.push({

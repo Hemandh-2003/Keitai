@@ -37,6 +37,7 @@ const walletTransactionSchema = new mongoose.Schema({
 });
 
 // User Schema
+// User Schema
 const userSchema = new mongoose.Schema({
   name: { type: String, required: true },
   email: { type: String, required: true, unique: true },
@@ -45,16 +46,25 @@ const userSchema = new mongoose.Schema({
   googleId: { type: String },
   addresses: { type: [addressSchema], default: [] },
 
-  // ✅ Wallet Section
+  // Wallet Section
   wallet: {
     balance: { type: Number, default: 0 },
     transactions: [walletTransactionSchema],
   },
- // ✅ Track used coupons
-  usedCoupons: {
-    type: [String],
-    default: []
-  }
+
+  // Track used coupons
+  usedCoupons: { type: [String], default: [] },
+
+  // ✅ 6-digit User ID
+  userCode: { type: String, unique: true },
 });
+
+userSchema.pre('save', async function(next) {
+  if (!this.userCode) {
+    this.userCode = await generateUniqueUserCode();
+  }
+  next();
+});
+
 
 module.exports = mongoose.model('User', userSchema);

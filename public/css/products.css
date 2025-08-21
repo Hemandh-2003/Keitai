@@ -263,6 +263,7 @@ header {
     transition: background-color 0.3s ease;
     margin-bottom: 7px;
     margin-left: 0px;
+    margin-top: 10px;
 }
 .btn-cart {
     width: 55%;
@@ -395,6 +396,91 @@ header {
     width: 89%;
     height: auto;
     margin-bottom: 15px;
+}
+/* Container for the variants section */
+.product-variants {
+  padding: 40px 20px;
+  background-color: #f9f9f9;
+}
+
+.product-variants h2 {
+  text-align: center;
+  margin-bottom: 30px;
+  font-size: 28px;
+  color: #333;
+  font-weight: 600;
+}
+
+/* Flex row for variant items */
+.variant-row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 20px; /* spacing between items */
+}
+
+/* Individual variant item */
+.variant-item {
+  background-color: #fff;
+  border: 1px solid #e0e0e0;
+  border-radius: 12px;
+  width: 200px; /* fixed width for desktop */
+  text-align: center;
+  padding: 15px;
+  transition: transform 0.3s, box-shadow 0.3s;
+  cursor: pointer;
+}
+
+.variant-item:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+}
+
+/* Variant image */
+.variant-item img {
+  width: 100%;
+  height: 150px;
+  object-fit: cover;
+  border-radius: 10px;
+  margin-bottom: 10px;
+}
+
+/* Variant name */
+.variant-item h3 {
+  font-size: 16px;
+  color: #333;
+  margin-bottom: 5px;
+  font-weight: 500;
+}
+
+/* Variant price */
+.variant-item p {
+  font-size: 14px;
+  color: #e53935;
+  font-weight: 600;
+}
+
+/* Responsive adjustments */
+@media (max-width: 1024px) {
+  .variant-item {
+    width: 180px;
+  }
+}
+
+@media (max-width: 768px) {
+  .variant-row {
+    justify-content: space-around;
+  }
+  .variant-item {
+    width: 45%;
+    margin-bottom: 20px;
+  }
+}
+
+@media (max-width: 480px) {
+  .variant-item {
+    width: 90%;
+  }
 }
 
 /* Related Products */
@@ -543,153 +629,6 @@ footer {
 }
 .wishlist-icon .wishlist-added {
   color: red; /* Change heart color */
-}
-
-/* Reviews Section */
-.reviews {
-    padding: 2rem 0;
-    border-top: 1px solid #eee;
-    margin-top: 2rem;
-}
-
-.write-review {
-    background: #f9f9f9;
-    padding: 1.5rem;
-    border-radius: 8px;
-    margin-bottom: 2rem;
-}
-
-.write-review h3 {
-    margin-bottom: 1rem;
-}
-
-.rating-input {
-    margin-bottom: 1rem;
-}
-
-.stars {
-    display: inline-block;
-    margin-left: 1rem;
-    cursor: pointer;
-}
-
-.stars i {
-    color: #ffc107;
-    font-size: 1.5rem;
-    transition: all 0.2s;
-}
-
-.stars i:hover {
-    transform: scale(1.2);
-}
-
-.review-form textarea {
-    width: 100%;
-    padding: 0.8rem;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    margin-bottom: 1rem;
-    min-height: 120px;
-}
-
-.image-upload {
-    margin-bottom: 1rem;
-}
-
-.image-preview {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.5rem;
-    margin-top: 0.5rem;
-}
-
-.image-preview img {
-    width: 80px;
-    height: 80px;
-    object-fit: cover;
-    border-radius: 4px;
-}
-
-.reviews-list {
-    margin-top: 2rem;
-}
-
-.review {
-    padding: 1.5rem;
-    border-bottom: 1px solid #eee;
-}
-
-.review:last-child {
-    border-bottom: none;
-}
-
-.review-header {
-    margin-bottom: 1rem;
-}
-
-.user-info {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    margin-bottom: 0.5rem;
-}
-
-.review-rating {
-    color: #ffc107;
-}
-
-.review-date {
-    color: #777;
-    font-size: 0.9rem;
-}
-
-.review-title {
-    margin: 0.5rem 0;
-}
-
-.review-images {
-    display: flex;
-    gap: 0.5rem;
-    margin: 1rem 0;
-}
-
-.review-images img {
-    width: 100px;
-    height: 100px;
-    object-fit: cover;
-    border-radius: 4px;
-    cursor: pointer;
-}
-
-.review-images img:hover {
-    opacity: 0.8;
-}
-
-.admin-reply {
-    background: #f0f8ff;
-    padding: 1rem;
-    border-left: 3px solid #4285f4;
-    margin-top: 1rem;
-    border-radius: 0 4px 4px 0;
-}
-
-.login-prompt {
-    background: #fff8e1;
-    padding: 1rem;
-    border-radius: 4px;
-    margin-bottom: 2rem;
-}
-
-.no-reviews {
-    padding: 1rem;
-    background: #f5f5f5;
-    border-radius: 4px;
-    text-align: center;
-}
-  .quantity-control {
-    display: flex;
-    align-items: center;
-    gap: 5px;
 }
 
 .btn-quantity {

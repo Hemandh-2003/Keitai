@@ -1,5 +1,6 @@
 const razorpay = require('../config/razorpay');
 const User = require('../models/User');
+const Review = require('../models/review'); 
 const Category = require('../models/Category');
 const Product = require('../models/Product');
 const Order = require('../models/Order');
@@ -296,18 +297,18 @@ exports.editCategory = async (req, res) => {
 // Product management
 exports.listProducts = async (req, res) => {
   try {
-    // Get the category ID from query parameters (if available)
+   
     const categoryId = req.query.category || '';
 
-    // Get the current page from query parameters, defaulting to page 1
+  
     const page = parseInt(req.query.page) || 1;
-    const limit = 10; // Number of products per page
-    const skip = (page - 1) * limit; // Skip the products for the previous pages
+    const limit = 10; 
+    const skip = (page - 1) * limit; 
 
-    // Find categories for the dropdown
+    
     const categories = await Category.find();
 
-    // Find total count of products (filtered by category if needed)
+    
     let totalProducts;
     if (categoryId) {
       totalProducts = await Product.countDocuments({ category: categoryId, isDeleted: false });
@@ -315,10 +316,10 @@ exports.listProducts = async (req, res) => {
       totalProducts = await Product.countDocuments({ isDeleted: false });
     }
 
-    // Calculate the total number of pages
+    
     const totalPages = Math.ceil(totalProducts / limit);
 
-    // Fetch the products for the current page
+  
     let products;
     if (categoryId) {
       products = await Product.find({ category: categoryId, isDeleted: false })
@@ -332,7 +333,7 @@ exports.listProducts = async (req, res) => {
         .populate('category');
     }
 
-    // Render the products page with pagination info
+   
     res.render('admin/products', {
       products,
       categories,
@@ -533,88 +534,128 @@ exports.unblockProduct = async (req, res) => {
   }
 };
 
-
-
 exports.getProductDetailsWithRelated = async (req, res) => {
   try {
     const productId = req.params.productId;
+    const page = parseInt(req.query.page) || 1;
+    const limit = 4;
+    const skip = (page - 1) * limit;
 
+    // Fetch main product
     const product = await Product.findById(productId)
       .populate('category')
       .populate('offers');
 
-    // swal for blocked products
     if (!product || product.isBlocked) {
-      return res.send(`
-        <html>
-          <head>
-            <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-          </head>
-          <body>
-            <script>
-              Swal.fire({
-                icon: 'warning',
-                title: 'Product Unavailable',
-                text: "${!product ? 'Product not found or removed.' : 'This product is currently blocked.'}",
-                confirmButtonText: 'Go Back',
-                allowOutsideClick: false
-              }).then(() => {
-                window.location.href = "${req.get('referer') || '/'}";
-              });
-            </script>
-          </body>
-        </html>
-      `);
+      return res.render("user/Product-details", {
+        user: req.session.user,
+        product: null,          // <-- pass null
+        variants: [],
+        relatedProducts: [],
+        offerDetails: null,
+        finalPrice: null,
+        reviews: [],
+        currentPage: page,
+        totalPages: 0,
+        errorMessage: !product ? "Product not found." : "This product is blocked."
+      });
     }
 
-   
+    // Compute main product offer
     const offerDetails = await product.getBestOfferPrice();
     product.offerDetails = offerDetails;
 
+    // --- VARIANTS ---
+    let variants = [];
+    try {
+      const nameParts = product.name.split(" ");
+      const modelName = nameParts.slice(0, 3).join(" ");
+      const variantRegex = new RegExp(`^${modelName}`, "i");
+
+     const allVariants = await Product.find({
+  _id: { $ne: productId },
+  isBlocked: false,
+  name: variantRegex
+}).populate("offers category");
+
+
+      variants = [];
+      for (const variant of allVariants) {
+        const variantOffer = await variant.getBestOfferPrice();
+        if (variantOffer.price > 50000) {
+          variant.offerDetails = variantOffer;
+          variants.push(variant);
+        }
+      }
+    } catch (err) {
+      console.error("Error fetching variants:", err);
+    }
+
+    // --- RELATED PRODUCTS ---
     const relatedProducts = await Product.find({
       category: product.category._id,
-      _id: { $ne: productId },
+      _id: { $nin: [productId, ...variants.map(v => v._id)] },
       isBlocked: false
-    }).limit(4).populate('offers category');
+    })
+      .limit(4)
+      .populate("offers category");
 
     for (const related of relatedProducts) {
       related.offerDetails = await related.getBestOfferPrice();
     }
 
-    res.render('user/Product-details', {
+    // --- REVIEWS ---
+    const reviews = await Review.find({ product: productId })
+      .populate("user")
+      .skip(skip)
+      .limit(limit)
+      .sort({ createdAt: -1 });
+
+    const totalReviews = await Review.countDocuments({ product: productId });
+    const totalPages = Math.ceil(totalReviews / limit);
+
+    const ratingDistribution = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+    const allReviews = await Review.find({ product: productId });
+    allReviews.forEach(r => {
+      const star = Math.round(r.rating);
+      ratingDistribution[star] = (ratingDistribution[star] || 0) + 1;
+    });
+
+    product.reviewCount = allReviews.length;
+    product.averageRating = allReviews.length
+      ? allReviews.reduce((sum, r) => sum + r.rating, 0) / allReviews.length
+      : 0;
+    product.ratingDistribution = ratingDistribution;
+
+    // --- RENDER ---
+    res.render("user/Product-details", {
       user: req.session.user,
       product,
+      variants,
       relatedProducts,
       offerDetails,
       finalPrice: offerDetails.price,
+      reviews,
+      currentPage: page,
+      totalPages,
+      errorMessage: null       // no error
     });
-
   } catch (error) {
-    //console.error('Error in product details:', error);
-    //swal for 404
-    return res.status(404).send(`
-      <html>
-        <head>
-          <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-        </head>
-        <body>
-          <script>
-            Swal.fire({
-              icon: 'error',
-              title: '404 Page Not Found',
-              text: 'Something went wrong while loading the product.',
-              confirmButtonText: 'Go Home',
-              allowOutsideClick: false
-            }).then(() => {
-              window.location.href = "/home";
-            });
-          </script>
-        </body>
-      </html>
-    `);
+    console.error(error);
+    res.render("user/Product-details", {
+      user: req.session.user,
+      product: null,
+      variants: [],
+      relatedProducts: [],
+      offerDetails: null,
+      finalPrice: null,
+      reviews: [],
+      currentPage: 1,
+      totalPages: 0,
+      errorMessage: "Something went wrong while loading the product."
+    });
   }
 };
-
 
 exports.viewProductDetails = async (req, res) => {
   try {
@@ -1110,7 +1151,7 @@ exports.addOfferForm = async (req, res) => {
 
 // Create new offer
 exports.createOffer = async (req, res) => {
-  console.log('➡️ createOffer body:', req.body);
+ // console.log('➡️ createOffer body:', req.body);
 
   try {
     let {
@@ -1479,7 +1520,8 @@ exports.renderSalesReportPage = async (req, res) => {
       startDate: startOfDay.toISOString().split('T')[0],
       endDate: endOfDay.toISOString().split('T')[0],
       currentPage: page,
-      totalPages
+      totalPages,
+      filterType: "daily"  // 👈 default filter type
     });
   } catch (err) {
     console.error('Error loading sales report:', err.message);
@@ -1488,55 +1530,77 @@ exports.renderSalesReportPage = async (req, res) => {
 };
 
 
-
 exports.filterSalesReport = async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
     const limit = 10;
     const skip = (page - 1) * limit;
 
-    // Use req.body for POST or req.query for GET (pagination)
-    const startDate = req.body.startDate || req.query.startDate;
-    const endDate = req.body.endDate || req.query.endDate;
+    const filterType = req.body.filterType || req.query.filterType || "custom"; 
+    let { startDate, endDate } = req.body.startDate ? req.body : req.query;
 
-    if (!startDate || !endDate) {
-      return res.status(400).send('Start and End Date are required');
+    const today = new Date();
+
+    if (filterType === "daily") {
+      startDate = new Date(today.setHours(0, 0, 0, 0));
+      endDate = new Date(today.setHours(23, 59, 59, 999));
+    } 
+    else if (filterType === "monthly") {
+      const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
+      const lastDay = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+      startDate = firstDay;
+      endDate = new Date(lastDay.setHours(23, 59, 59, 999));
+    } 
+    else if (filterType === "yearly") {
+      const firstDay = new Date(today.getFullYear(), 0, 1);
+      const lastDay = new Date(today.getFullYear(), 11, 31);
+      startDate = firstDay;
+      endDate = new Date(lastDay.setHours(23, 59, 59, 999));
+    } 
+    else {
+      if (!startDate || !endDate) {
+        return res.status(400).send("Start and End Date are required for custom filter");
+      }
+      startDate = new Date(startDate);
+      endDate = new Date(endDate);
+      endDate.setHours(23, 59, 59, 999);
     }
 
-    const start = new Date(startDate);
-    const end = new Date(endDate);
-    end.setHours(23, 59, 59, 999);
-
-    const allOrders = await Order.find({ createdAt: { $gte: start, $lte: end } }).populate('user', 'name');
+    // Fetch orders
+    const allOrders = await Order.find({
+      createdAt: { $gte: startDate, $lte: endDate }
+    }).populate("user", "name");
 
     const totalOrders = allOrders.length;
     const totalPages = Math.ceil(totalOrders / limit);
-    const orders = allOrders.slice(skip, skip + limit); // client-side pagination
+    const orders = allOrders.slice(skip, skip + limit);
 
     const summary = calculateSummary(allOrders);
 
-    res.render('admin/salesReport', {
+    res.render("admin/salesReport", {
       orders,
       summary,
-      startDate,
-      endDate,
+      startDate: startDate.toISOString().split("T")[0],
+      endDate: endDate.toISOString().split("T")[0],
       currentPage: page,
-      totalPages
+      totalPages,
+      filterType
     });
   } catch (err) {
-    console.error('Filter Error:', err);
-    res.status(500).send('Filter error');
+    console.error("Filter Error:", err);
+    res.status(500).send("Filter error");
   }
 };
 
 
+
 function calculateSummary(orders) {
-  let totalSales = orders.length;
+  let totalSales = orders.length || 0;
   let totalAmount = 0;
   let totalDiscount = 0;
 
   orders.forEach(order => {
-    totalAmount += order.totalAmount;
+    totalAmount += order.totalAmount || 0;
     totalDiscount += (order.discountAmount || 0) + (order.couponDiscount || 0);
   });
 
@@ -1546,6 +1610,7 @@ function calculateSummary(orders) {
     totalDiscount
   };
 }
+
 exports.downloadSalesReportExcel = async (req, res) => {
   try {
     const { startDate, endDate } = req.body;
@@ -1654,43 +1719,58 @@ exports.downloadSalesReportPDF = async (req, res) => {
 
     const orders = await Order.find({ createdAt: { $gte: start, $lte: end } }).populate('user', 'name');
 
-
     const doc = new PDFDocument({ margin: 40, size: 'A4' });
 
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', 'attachment; filename=SalesReport.pdf');
     doc.pipe(res);
 
-    // Logo (optional)
+    // --- Logo ---
     const logoPath = path.join(__dirname, '../public/images/logo1.png');
     if (fs.existsSync(logoPath)) {
       doc.image(logoPath, 40, 30, { width: 100 });
     }
 
     doc.moveDown(2);
-    doc
-      .fontSize(20)
-      .fillColor('#000000')
-      .text('Sales Report', { align: 'center' });
+    doc.fontSize(20).fillColor('#000000').text('Sales Report', { align: 'center' });
+    doc.fontSize(12).fillColor('#555').text(`From: ${moment(start).format('YYYY-MM-DD')}   To: ${moment(end).format('YYYY-MM-DD')}`, { align: 'center' });
+    doc.moveDown(1.5);
+
+    // --- SUMMARY AT THE TOP ---
+    let totalAmount = 0;
+    let totalDiscount = 0;
+
+    orders.forEach(order => {
+      totalAmount += order.totalAmount;
+      totalDiscount += (order.discountAmount || 0) + (order.couponDiscount || 0);
+    });
+
+    // Generated timestamp
+    const generatedAt = moment().format('YYYY-MM-DD HH:mm:ss');
 
     doc
       .fontSize(12)
-      .fillColor('#555')
-      .text(`From: ${moment(start).format('YYYY-MM-DD')}   To: ${moment(end).format('YYYY-MM-DD')}`, {
-        align: 'center'
-      })
-      .moveDown(1.2);
+      .fillColor('#000')
+      .font('Helvetica-Bold')
+      .text('Summary', { underline: true });
 
-    // Table Headers
+    doc
+      .moveDown(0.3)
+      .font('Helvetica')
+      .fontSize(11)
+      .text(`Generated At: ${generatedAt}`)
+      .text(`Total Orders: ${orders.length}`)
+      .text(`Total Sales Amount: ₹${totalAmount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`)
+      .text(`Total Discounts (incl. coupon): ₹${totalDiscount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`);
+
+    doc.moveDown(1.5);
+
+    // --- TABLE ---
     const tableTop = doc.y;
     const colSpacing = [90, 100, 90, 90, 90];
 
     const drawRow = (y, row, isHeader = false, alt = false) => {
-      const fillColor = isHeader
-        ? '#3f3f3f'
-        : alt
-        ? '#f8f8f8'
-        : '#ffffff';
+      const fillColor = isHeader ? '#3f3f3f' : alt ? '#f8f8f8' : '#ffffff';
 
       doc
         .rect(40, y, 515, 20)
@@ -1710,45 +1790,21 @@ exports.downloadSalesReportPDF = async (req, res) => {
     };
 
     drawRow(tableTop, ['User Name', 'Date', 'Amount (₹)', 'Discount (₹)', 'Coupon (₹)'], true);
+
     let y = tableTop + 20;
-
-    let totalAmount = 0;
-    let totalDiscount = 0;
-
     orders.forEach((order, i) => {
       const alt = i % 2 === 0;
- const orderRow = [
-  order.user?.name || 'N/A',
-  moment(order.createdAt).format('YYYY-MM-DD'),
-  order.totalAmount.toLocaleString('en-IN', { minimumFractionDigits: 2 }),
-  (order.discountAmount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 }),
-  (order.couponDiscount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 }),
-];
-
-
-
+      const orderRow = [
+        order.user?.name || 'N/A',
+        moment(order.createdAt).format('YYYY-MM-DD'),
+        order.totalAmount.toLocaleString('en-IN', { minimumFractionDigits: 2 }),
+        (order.discountAmount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 }),
+        (order.couponDiscount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 }),
+      ];
       drawRow(y, orderRow, false, alt);
       y += 20;
-
-      totalAmount += order.totalAmount;
-      totalDiscount += (order.discountAmount || 0) + (order.couponDiscount || 0);
     });
 
-    // Summary section
-    doc.moveDown(2);
-    doc
-      .fontSize(12)
-      .fillColor('#000')
-      .font('Helvetica-Bold')
-      .text('Summary', { underline: true });
-
-    doc
-      .moveDown(0.5)
-      .font('Helvetica')
-      .fontSize(11)
-      .text(`Total Orders: ${orders.length}`)
-.text(`Total Sales Amount: ₹${totalAmount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`)
-.text(`Total Discounts (incl. coupon): ₹${totalDiscount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`);
     doc.end();
   } catch (err) {
     console.error('PDF generation error:', err);

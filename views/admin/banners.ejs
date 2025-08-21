@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Admin - Banners</title>
+    <link rel="stylesheet" href="/css/admin-banners.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+</head>
+
+<body>
+    <div class="dashboard-container">
+        <a href="/admin/dashboard">← Back to Dashboard</a>
+        <div class="container">
+            <h1>Manage Banners</h1>
+
+            <!-- Add Banner Form -->
+            <form action="/admin/banners/add" method="POST" enctype="multipart/form-data" class="add-banner-form">
+                <div>
+                    <label for="title">Banner Title:</label>
+                    <input type="text" name="title" id="title" required>
+                </div>
+                <div>
+                    <label for="category">Select Category</label>
+                    <select name="category" id="category">
+                        <option value="">All Categories</option>
+                        <% categories.forEach(cat=> { %>
+                            <option value="<%= cat._id %>">
+                                <%= cat.name %>
+                            </option>
+                            <% }); %>
+                    </select>
+                </div>
+                <div>
+                    <label for="image">Banner Image:</label>
+                    <input type="file" name="image" id="image" accept="image/*" required>
+                </div>
+                <button type="submit">Add Banner</button>
+            </form>
+
+            <!-- Existing Banners Table -->
+            <table class="banners-table">
+                <thead>
+                    <tr>
+                        <th>Title</th>
+                        <th>Category</th>
+                        <th>Image</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <% banners.forEach(banner=> { %>
+                        <tr>
+                            <td>
+                                <%= banner.title %>
+                            </td>
+                            <td>
+                                <%= banner.category?.name || 'All Categories' %>
+                            </td> <!-- optional chaining -->
+                            <td>
+                                <img src="/uploads/banners/<%= banner.image %>" alt="<%= banner.title %>" width="150">
+                            </td>
+                            <td>
+                                <button class="btn-delete" onclick="deleteBanner('<%= banner._id %>')">Delete</button>
+                            </td>
+                        </tr>
+                        <% }); %>
+
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        async function deleteBanner(id) {
+            const confirmDelete = await Swal.fire({
+                title: 'Are you sure?',
+                text: "You won't be able to revert this!",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#3085d6',
+                confirmButtonText: 'Yes, delete it!'
+            });
+
+            if (confirmDelete.isConfirmed) {
+                try {
+                    const response = await fetch(`/admin/banners/${id}`, { method: 'DELETE' });
+                    const result = await response.json();
+
+                    if (response.ok) {
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Deleted!',
+                            text: 'The banner has been deleted.',
+                            timer: 2000,
+                            showConfirmButton: false
+                        }).then(() => window.location.reload());
+                    } else {
+                        Swal.fire({ icon: 'error', title: 'Error', text: result.error || 'Failed to delete.' });
+                    }
+                } catch (error) {
+                    console.error(error);
+                    Swal.fire({ icon: 'error', title: 'Error', text: 'Something went wrong.' });
+                }
+            }
+        }
+    </script>
+</body>
+
+</html>
