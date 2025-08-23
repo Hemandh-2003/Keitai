@@ -49,17 +49,97 @@ h2 {
   margin-bottom: 1.25rem;
 }
 
-/* ----------------- */
-/* LAYOUT            */
-/* ----------------- */
 .checkout-container {
-  max-width: 1200px;
-  margin: 2rem auto;
-  padding: 2rem;
-  background-color: white;
+  max-width: 2500px;
+  background-color: #fff;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.05);
   border-radius: 12px;
   animation: popIn 0.4s ease forwards;
+}
+
+/* Optional: responsive padding for smaller screens */
+@media (max-width: 768px) {
+  .checkout-container {
+    padding: 1.5rem;
+    margin: 1rem auto;
+  }
+}
+
+.navbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 15px 30px;
+  background-color: #000000;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+}
+
+.navbar .logo img {
+  height: 50px;
+  object-fit: contain;
+}
+
+.checkout-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 30px;
+  background-color: #f8f9fa;
+  border-bottom: 1px solid #eaeaea;
+  margin-bottom: 20px;
+}
+
+.checkout-header h1 {
+  font-family: 'Poppins', sans-serif;
+  font-size: 1.8rem;
+  font-weight: 600;
+  color: #333;
+  margin: 0;
+}
+
+.checkout-header .cancel-btn {
+  display: flex;
+  align-items: center;
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: #ff4d4f;
+  text-decoration: none;
+  padding: 6px 12px;
+  border: 1px solid #ff4d4f;
+  border-radius: 5px;
+  transition: all 0.2s ease-in-out;
+}
+
+.checkout-header .cancel-btn i {
+  margin-right: 6px;
+}
+
+.checkout-header .cancel-btn:hover {
+  background-color: #ff4d4f;
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(255, 77, 79, 0.3);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .checkout-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .checkout-header h1 {
+    font-size: 1.5rem;
+  }
+
+  .checkout-header .cancel-btn {
+    padding: 5px 10px;
+    font-size: 0.9rem;
+  }
 }
 
 .checkout-header {

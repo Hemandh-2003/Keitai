@@ -25,6 +25,10 @@ const orderSchema = new mongoose.Schema({
       required: true,
       min: 1,
     },
+     unitPrice: {   // ✅ NEW FIELD
+      type: Number,
+      required: true,
+    },
     status: {
       type: String,
       enum: ['Active', 'Cancelled'],

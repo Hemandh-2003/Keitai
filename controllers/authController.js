@@ -12,14 +12,11 @@ exports.loadLandingPage = (req, res) => {
 
 
 // Load login page
+// Load login page
 exports.loadLogin = (req, res) => {
-if (req.session.user || req.user) {
-  req.session.user = user; 
-  req.session.loginSuccess = true;
-  return res.redirect('/home');
-}
   res.render('user/login', { error: null });
 };
+
 
 
 

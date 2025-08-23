@@ -105,7 +105,19 @@
             <h1>
                 <%= product.name %>
             </h1>
-            <p>⭐⭐⭐⭐☆ (<%= Math.floor(Math.random() * 100) + 50 %> Reviews)</p>
+            <p>
+  <% let avg = product.averageRating || 0; %>
+  <% for (let i = 1; i <= 5; i++) { %>
+    <% if (i <= Math.floor(avg)) { %>
+      <span class="star filled">★</span>
+    <% } else if (i - avg <= 0.5) { %>
+      <span class="star half">★</span>
+    <% } else { %>
+      <span class="star">☆</span>
+    <% } %>
+  <% } %>
+  (<%= product.reviewCount || 0 %> Reviews)
+</p>
 
             <!-- Updated Price Display Section -->
        <div class="price-container">

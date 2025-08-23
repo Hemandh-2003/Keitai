@@ -948,7 +948,7 @@ exports.verifyPayment = async (req, res) => {
 
     order.paymentStatus = 'Paid';
     order.razorpayPaymentId = razorpay_payment_id;
-    order.status = 'Pending'; // Change from 'Paid' to 'Pending' as per your order flow
+    order.status = 'Pending'; 
     await order.save();
 
     res.redirect(`/payment/success/${order.orderId}`);
@@ -1401,10 +1401,10 @@ exports.getCoupons = async (req, res) => {
 // Create coupon
 exports.createCoupon = async (req, res) => {
   try {
-    const { code, discountType, discount, startDate, endDate } = req.body;
+    const { code, discountType, discount, minPurchase, maxDiscount, startDate, endDate } = req.body;
 
     const trimmedCode = code.trim().toUpperCase();
-    const coupons = await Coupon.find(); // Fetch all for re-rendering on errors
+    const coupons = await Coupon.find();
 
     // Check if coupon code already exists
     const existingCoupon = await Coupon.findOne({ code: trimmedCode });
@@ -1415,7 +1415,7 @@ exports.createCoupon = async (req, res) => {
       });
     }
 
-    // Check if start date is before end date
+    // Date validation
     const start = new Date(startDate);
     const end = new Date(endDate);
     if (start > end) {
@@ -1425,10 +1425,12 @@ exports.createCoupon = async (req, res) => {
       });
     }
 
-    // Parse discount value
+    // Parse numbers
     const parsedDiscount = parseFloat(discount);
+    const parsedMinPurchase = parseFloat(minPurchase) || 0;
+    const parsedMaxDiscount = parseFloat(maxDiscount) || 0;
 
-    // Validate discount based on type
+    // Validate discount
     if (discountType === 'percentage') {
       if (parsedDiscount < 1 || parsedDiscount > 90) {
         return res.render('admin/coupons', {
@@ -1443,20 +1445,17 @@ exports.createCoupon = async (req, res) => {
           messages: { error: 'Fixed discount must be between ₹1 and ₹50,000.' }
         });
       }
-    } else {
-      return res.render('admin/coupons', {
-        coupons,
-        messages: { error: 'Invalid discount type selected.' }
-      });
     }
 
-    // Save new coupon
+    // Save coupon
     const newCoupon = new Coupon({
       code: trimmedCode,
       discountType,
       discount: parsedDiscount,
+      minPurchase: parsedMinPurchase,
+      maxDiscount: parsedMaxDiscount,
       startDate: start,
-      endDate: end,
+      endDate: end
     });
 
     await newCoupon.save();

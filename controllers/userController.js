@@ -853,7 +853,7 @@ exports.getCheckout = async (req, res) => {
       return res.redirect('/cart');
     }
 
-    const { productIds, quantities, offerPrices, totalAmount } = checkout;
+    const { productIds, quantities, totalAmount } = checkout;
     const cart = [];
 
     for (let i = 0; i < productIds.length; i++) {
@@ -863,18 +863,28 @@ exports.getCheckout = async (req, res) => {
     }
 
     const now = new Date();
+
+    // ✅ Fetch coupons
     const coupons = await Coupon.find({
       isActive: true,
       startDate: { $lte: now },
       endDate: { $gte: now }
     }).sort({ createdAt: -1 });
 
+    // ✅ Filter coupons by minPurchase and maxDiscount
+    const validCoupons = coupons.filter(coupon => {
+      return (
+        totalAmount >= coupon.minPurchase &&
+        (coupon.maxDiscount === 0 || totalAmount <= coupon.maxDiscount)
+      );
+    });
+
     res.render('user/checkout', {
       user,
       cart,
       addresses: user.addresses || [],
       totalAmount,
-      coupons,
+      coupons: validCoupons, 
       session: req.session,
       razorpayKeyId: process.env.RAZORPAY_KEY_ID,
       walletBalance: (user.wallet && user.wallet.balance) || 0
@@ -885,6 +895,7 @@ exports.getCheckout = async (req, res) => {
     res.status(500).render('user/error', { message: 'Failed to load checkout' });
   }
 };
+
 
 exports.retryPayment = async (req, res) => {
   const { orderId } = req.params;
@@ -1122,7 +1133,8 @@ exports.placeOrder = async (req, res) => {
       selectedAddress: address._id,
       products: orderItems.map(item => ({
         product: item.product._id,
-        quantity: item.quantity
+        quantity: item.quantity,
+        unitPrice: item.offerPrice
       })),
       totalAmount,
       paymentMethod,
@@ -1274,6 +1286,7 @@ exports.confirmPayment = async (req, res) => {
       products: orderItems.map(item => ({
         product: item.product._id,
         quantity: item.quantity,
+        unitPrice: item.offerPrice 
       })),
       totalAmount,
       selectedAddress: address._id,
@@ -1674,70 +1687,70 @@ exports.returnProduct = async (req, res) => {
       return res.redirect(`/user/orders/${orderId}`);
     }
 
+    // Prevent double return
+    const alreadyReturned = order.returnedItems.find(
+      item => item.product.toString() === productId
+    );
+    if (alreadyReturned) {
+      req.flash('error', 'This product has already been returned');
+      return res.redirect(`/user/orders/${orderId}`);
+    }
+
     // Parse quantity safely
     const qty = parseInt(quantity || productEntry.quantity, 10);
 
-    // Use stored price snapshot from order, fallback to populated product price
-    const unitPrice = Number(productEntry.unitPrice || productEntry.price || 0);
+    // Use stored price snapshot from order
+    const unitPrice = Number(productEntry.unitPrice || 0);
     const refundAmount = unitPrice * qty;
-
-   /* console.log('Refund calculation:', {
-      qty,
-      storedUnitPrice: productEntry.unitPrice,
-      productEntryPrice: productEntry.price,
-      populatedProductPrice: productEntry.product?.price,
-      refundAmount
-    });*/
 
     // Save return request in order
     order.returnedItems.push({
       product: productEntry.product._id,
       quantity: qty,
       reason: reason.trim(),
+      refundAmount,
+      status: 'Pending'
     });
 
     order.returnRequested = true;
     order.returnStatus = 'Requested';
     await order.save();
 
-    // Update user wallet
+    // Update user wallet (only once here, no duplicate)
     const user = await User.findById(order.user);
     if (!user) {
       req.flash('error', 'User not found');
       return res.redirect(`/user/orders/${orderId}`);
     }
 
-    user.wallet.balance = (user.wallet.balance || 0) + refundAmount;
-    user.wallet.transactions.push({
-      type: 'Credit',
-      amount: refundAmount,
-      reason: `Refund for returned product: ${productEntry.product.name || 'Product'}`,
-      orderId: order._id.toString(),
-    });
-
-    await user.save();
-
+    if (!user.wallet) {
+      user.wallet = { balance: 0, transactions: [] };
+    }
     req.flash('success', `Return request submitted. ₹${refundAmount.toFixed(2)} credited to wallet.`);
     res.redirect(`/user/orders/${orderId}`);
   } catch (err) {
     console.error('Return product error:', err);
     req.flash('error', 'Failed to process return request');
-    res.redirect(`/user/orders`);
+    res.redirect('/user/orders');
   }
 };
 
 
+
 exports.returnOrder = async (req, res) => {
-  const orderId = req.params.id;  // define outside try-catch
+  const orderId = req.params.id;
+
   try {
-    const order = await Order.findById(orderId).populate('coupon');
+    const { reason, items } = req.body;  
+    // items should come as [{ productId, quantity, reason }] if you're returning per-item
+
+    const order = await Order.findById(orderId).populate('coupon').populate('user');
 
     if (!order) {
       req.flash('error', 'Order not found');
       return res.redirect('/user/orders');
     }
 
-    // Check if coupon was used
     if (order.coupon) {
       req.flash('error', 'Cannot return orders with applied coupons');
       return res.redirect(`/user/orders/${orderId}`);
@@ -1748,17 +1761,75 @@ exports.returnOrder = async (req, res) => {
       return res.redirect(`/user/orders/${orderId}`);
     }
 
-    order.status = 'Return Requested';
+    // 🟢 Case 1: Full Order Return
+    if (!items || items.length === 0) {
+      order.returnRequested = true;
+      order.returnStatus = 'Requested';
+      order.returnReason = reason || 'No reason provided';
+      order.status = 'Return Requested';
+
+      // Refund full amount
+      const user = await User.findById(order.user);
+      if (user) {
+        user.wallet += order.totalAmount;
+        await user.save();
+      }
+
+      order.statusHistory.push({ status: 'Return Requested' });
+      await order.save();
+
+      req.flash('success', 'Full order return requested. Amount refunded to wallet.');
+      return res.redirect(`/user/orders/${orderId}`);
+    }
+
+    // 🟢 Case 2: Partial Return
+    let refundTotal = 0;
+
+    items.forEach((item) => {
+      const orderedProduct = order.products.find(
+        (p) => p.product.toString() === item.productId
+      );
+
+      if (orderedProduct && item.quantity <= orderedProduct.quantity) {
+        const refundAmount = orderedProduct.unitPrice * item.quantity;
+
+        refundTotal += refundAmount;
+
+        order.returnedItems.push({
+          product: item.productId,
+          quantity: item.quantity,
+          reason: item.reason || reason,
+          refundAmount,
+          status: 'Pending',
+        });
+      }
+    });
+
+    if (refundTotal > 0) {
+      const user = await User.findById(order.user);
+      if (user) {
+        user.wallet += refundTotal;
+        await user.save();
+      }
+    }
+
     order.returnRequested = true;
     order.returnStatus = 'Requested';
+    order.status = 'Return Requested';
+    order.statusHistory.push({ status: 'Return Requested' });
+
     await order.save();
 
-    req.flash('success', 'Return request submitted successfully');
+    req.flash(
+      'success',
+      `Return request submitted. Refund of ₹${refundTotal || order.totalAmount} added to wallet.`
+    );
     res.redirect(`/user/orders/${orderId}`);
+
   } catch (err) {
     console.error('Error returning order:', err);
     req.flash('error', 'Failed to process return request');
-    res.redirect('/user/orders'); 
+    res.redirect('/user/orders');
   }
 };
 

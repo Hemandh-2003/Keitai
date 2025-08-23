@@ -1,14 +1,22 @@
 // authMiddleware.js
 module.exports = {
   isLoggedIn: (req, res, next) => {
-    console.log('Session Data:', req.session);
-    console.log('Checking user login status...');
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
+
     if (!req.session.user) {
-      console.log('User not logged in, redirecting to /login');
       return res.redirect('/login');
     }
-    console.log('User authenticated');
-    req.user = req.session.user; // Attach user to req object
+    req.user = req.session.user;
     next();
   },
+
+  preventAuthPages: (req, res, next) => {
+    // If user is already logged in, block access to /login or /signup
+    if (req.session.user) {
+      return res.redirect('/home'); // redirect to home/dashboard
+    }
+    next();
+  }
 };

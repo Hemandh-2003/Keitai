@@ -1,12 +1,14 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Admin Dashboard</title>
   <link rel="stylesheet" href="/css/admin.css" />
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
+
 <body>
   <div class="dashboard-container">
     <!-- Sidebar -->
@@ -34,26 +36,30 @@
         <input type="text" placeholder="Search" />
         <div class="admin-controls">
           <span>Admin</span>
-          <form action="/admin/logout" method="POST">
+          <form action="/admin/logout" id="logout-btn" method="POST">
             <button type="submit" style="background: none; border: none; cursor: pointer; color: #fff;">Logout</button>
           </form>
         </div>
       </header>
 
       <!-- Filters -->
+      <!-- Filters -->
       <section class="filters-section">
         <h3>Dashboard Filters</h3>
-        <select id="range">
+        <select id="range" onchange="toggleDateFields()">
           <option value="daily">Today</option>
-          <option value="monthly">This Month</option>
+          <option value="monthly" selected>This Month</option>
           <option value="yearly">This Year</option>
           <option value="custom">Custom</option>
         </select>
-        <input type="date" id="startDate" />
-        <input type="date" id="endDate" />
+
+        <div id="custom-date-fields" style="display: none;">
+          <input type="date" id="startDate" />
+          <input type="date" id="endDate" />
+        </div>
+
         <button onclick="applyFilter()">Apply Filter</button>
       </section>
-
       <!-- Stats Overview -->
       <section class="stats-section">
         <div class="stat-card">Total Sales <span id="totalSales">₹0</span></div>
@@ -75,17 +81,17 @@
   </div>
 
   <!-- JS Logic -->
- <script>
+  <script>
     let productChart, categoryChart;
 
     // Date input handling
-    document.getElementById('startDate').addEventListener('change', function() {
+    document.getElementById('startDate').addEventListener('change', function () {
       const startDate = this.value;
       const endDateInput = document.getElementById('endDate');
-      
+
       // Set the minimum end date to be the same as start date
       endDateInput.min = startDate;
-      
+
       // If current end date is before start date, reset it
       if (endDateInput.value && endDateInput.value < startDate) {
         endDateInput.value = startDate;
@@ -172,5 +178,41 @@
     // Initial load
     loadDashboardStats();
   </script>
+  <script>
+    document.getElementById("logout-btn").addEventListener("click", function (e) {
+      e.preventDefault(); // stop direct navigation
+
+      Swal.fire({
+        title: "Good Work Today",
+        text: "Have a Nice Day Mr.Aizen",
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonColor: "#d33",
+        cancelButtonColor: "#3085d6",
+        confirmButtonText: "Yes, Logout",
+        cancelButtonText: "Cancel"
+      }).then((result) => {
+        if (result.isConfirmed) {
+          window.location.href = "/admin/adminlog"; // redirect only if confirmed
+        }
+      });
+    });
+  </script>
+  <script>
+  function toggleDateFields() {
+    const range = document.getElementById('range').value;
+    const customFields = document.getElementById('custom-date-fields');
+
+    if (range === 'custom') {
+      customFields.style.display = 'inline-block';
+    } else {
+      customFields.style.display = 'none';
+    }
+  }
+  toggleDateFields();
+</script>
+
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </body>
+
 </html>

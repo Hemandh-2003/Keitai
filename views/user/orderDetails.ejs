@@ -54,60 +54,49 @@
       <section class="order-section">
         <h2 class="section-title">Products</h2>
         <div class="product-grid">
-          <% (order.products || []).forEach(item => { 
-              const price = item.product.salesPrice || item.product.regularPrice;
-              const subtotal = price * item.quantity;
-          %>
-            <div class="product-card">
-              <% if (item.product.images && item.product.images.length > 0) { %>
-                <img src="/uploads/<%= item.product.images[0] %>" alt="Product" class="product-image" />
-              <% } %>
-              <div class="product-info">
-                <h3 class="product-name"><%= item.product.name %></h3>
-                <div class="product-meta">
-                  <div class="meta-row"><span>Quantity:</span> <span><%= item.quantity %></span></div>
-                  <div class="meta-row"><span>Price:</span> <span>₹<%= price %></span></div>
-                  <div class="meta-row"><span>Subtotal:</span> <span class="text-bold">₹<%= subtotal %></span></div>
-                </div>
+         <% (order.products || []).forEach(item => { 
+    const price = item.product.salesPrice || item.product.regularPrice;
+    const subtotal = price * item.quantity;
 
-                <% if (item.status==='Cancelled') { %>
-                  <span class="badge bg-danger">Cancelled</span>
-                  <% if (item.cancellationReason) { %>
-                    <p class="text-muted">Reason: <%= item.cancellationReason %></p>
-                  <% } %>
-                <% } else { %>
-                  <% if (order.status==='Pending') { %>
-                    <% if ((order.products.length > 1) || (item.quantity > 1)) { %>
-                      <form class="cancel-item-form" data-max-qty="<%= item.quantity %>" action="/user/orders/cancel-item/<%= order._id %>/<%= item.product._id %>" method="POST">
-                        <input type="hidden" name="quantity" value="" />
-                        <input type="hidden" name="reason" value="" />
-                        <button type="button" class="btn-cancel">Cancel Item</button>
-                      </form>
-                    <% } %>
-                  <% } else if (order.status==='Delivered') { %>
-                    <% if (item.returnStatus==='Approved') { %>
-                      <p class="text-success">Your return request has been approved.</p>
-                    <% } else if (item.returnStatus==='Rejected') { %>
-                      <p class="text-danger">Your return request has been rejected.</p>
-                      <% if (item.rejectionReason) { %>
-                        <p class="text-muted">Reason: <%= item.rejectionReason %></p>
-                      <% } %>
-                    <% } else if (item.returnStatus==='Requested') { %>
-                      <p class="text-warning">Return request pending approval.</p>
-                    <% } else { %>
-                      <% if ((order.products.length > 1) || (item.quantity > 1)) { %>
-                        <form action="/user/orders/<%= order._id %>/return/<%= item.product._id %>" method="POST" class="action-form return-item-form" data-max-qty="<%= item.quantity %>">
-                          <input type="hidden" name="quantity" value="<%= item.quantity %>" />
-                          <input type="hidden" name="reason" value="Damaged" />
-                          <button type="submit" class="btn-return">Return Item</button>
-                        </form>
-                      <% } %>
-                    <% } %>
-                  <% } %>
-                <% } %>
-              </div>
-            </div>
-          <% }) %>
+    // find if this product was returned
+    const returnedItem = (order.returnedItems || []).find(r => r.product.toString() === item.product._id.toString());
+%>
+  <div class="product-card">
+    <% if (item.product.images && item.product.images.length > 0) { %>
+      <img src="/uploads/<%= item.product.images[0] %>" alt="Product" class="product-image" />
+    <% } %>
+    <div class="product-info">
+      <h3 class="product-name"><%= item.product.name %></h3>
+      <div class="product-meta">
+        <div class="meta-row"><span>Quantity:</span> <span><%= item.quantity %></span></div>
+        <div class="meta-row"><span>Price:</span> <span>₹<%= price %></span></div>
+        <div class="meta-row"><span>Subtotal:</span> <span class="text-bold">₹<%= subtotal %></span></div>
+      </div>
+
+      <% if (returnedItem) { %>
+        <% if (returnedItem.status === 'Approved') { %>
+          <span class="badge bg-success">Returned</span>
+          <p class="text-muted">Reason: <%= returnedItem.reason %></p>
+        <% } else if (returnedItem.status === 'Rejected') { %>
+          <span class="badge bg-danger">Return Rejected</span>
+          <p class="text-muted">Reason: <%= returnedItem.reason %></p>
+        <% } else if (returnedItem.status === 'Pending') { %>
+          <span class="badge bg-warning">Return Requested</span>
+          <p class="text-muted">Reason: <%= returnedItem.reason %></p>
+        <% } %>
+      <% } else { %>
+      <% if (order.status === 'Delivered' && (order.products.length > 1 || item.quantity > 1)) { %>
+  <form action="/user/orders/<%= order._id %>/return/<%= item.product._id %>" method="POST" class="action-form return-item-form" data-max-qty="<%= item.quantity %>">
+    <input type="hidden" name="quantity" value="<%= item.quantity %>" />
+    <input type="hidden" name="reason" value="Damaged" />
+    <button type="submit" class="btn-return">Return Item</button>
+  </form>
+<% } %>
+      <% } %>
+    </div>
+  </div>
+<% }) %>
+
         </div>
       </section>
 

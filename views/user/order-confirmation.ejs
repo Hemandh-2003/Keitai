@@ -12,10 +12,14 @@
 
 <body>
   <div class="order-confirmation-container">
+    <nav class="navbar">
+      <div class="logo">
+        <a href="/"><img src="/images/logo1.png" alt="Keitai Logo" /></a>
+      </div>
+    </nav>
     <!-- Header -->
     <header class="order-confirmation-header">
       <h1>Order Confirmation</h1>
-      <a href="<%= checkoutUrl %>" class="back-link"><i class="fas fa-arrow-left"></i> Back to Checkout</a>
     </header>
 
     <main>
@@ -111,7 +115,6 @@
                   <input type="hidden" name="totalAmount" value="<%= totalAmount %>">
                   <input type="hidden" name="paymentMethod" value="<%= paymentMethod %>">
                   <button type="submit" class="place-order-btn" id="submitOrder">Continue With Your Order</button>
-                  <a href="/user/product-details" class="cancel-btn">Cancel</a>
             </form>
           </section>
     </main>

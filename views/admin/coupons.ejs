@@ -60,7 +60,6 @@
               <% } %>
 
                 <!-- Create New Coupon Form -->
-                <!-- Create New Coupon Form -->
                 <form action="/admin/coupons/create" method="POST" style="margin-bottom: 30px;">
                   <div style="display: flex; flex-wrap: wrap; gap: 15px;">
                     <input type="text" name="code" placeholder="Coupon Code" required style="flex: 1; padding: 10px;">
@@ -75,12 +74,16 @@
                       style="flex: 1; padding: 10px;">
 
                     <!-- NEW FIELD: Minimum Purchase -->
-                    <input type="number" name="minPurchase" placeholder="Min Purchase Amount (₹)" min="0" required
-                      style="flex: 1; padding: 10px;">
+                    <div id="minPurchaseField" style="flex: 1; display: none;">
+                      <input type="number" name="minPurchase" placeholder="Min Purchase Amount (₹)" min="0"
+                        style="width: 100%; padding: 10px;">
+                    </div>
 
-                    <!-- NEW FIELD: Max Discount (only applies to percentage) -->
-                    <input type="number" name="maxDiscount" placeholder="Max Discount Amount (₹)" min="0"
-                      style="flex: 1; padding: 10px;">
+                    <!-- Max Discount (only applies to percentage) -->
+                    <div id="maxDiscountField" style="flex: 1; display: none;">
+                      <input type="number" name="maxDiscount" placeholder="Max Discount Amount (₹)" min="0"
+                        style="width: 100%; padding: 10px;">
+                    </div>
 
                     <input type="date" name="startDate" id="couponStartDate" required style="flex: 1; padding: 10px;">
                     <input type="date" name="endDate" id="couponEndDate" required style="flex: 1; padding: 10px;">
@@ -231,6 +234,33 @@
         text: "<%- messages.error %>"
       });
     <% } %>`
+    const discountTypeSelect = document.querySelector('select[name="discountType"]');
+const minPurchaseField = document.getElementById('minPurchaseField');
+const maxDiscountField = document.getElementById('maxDiscountField');
+
+discountTypeSelect.addEventListener('change', function () {
+  if (this.value === 'percentage') {
+    minPurchaseField.style.display = 'block';
+    maxDiscountField.style.display = 'block';
+    minPurchaseField.querySelector('input').required = true;
+    maxDiscountField.querySelector('input').required = true;
+  } else if (this.value === 'fixed') {
+    minPurchaseField.style.display = 'block';
+    maxDiscountField.style.display = 'none';
+    minPurchaseField.querySelector('input').required = true;
+    maxDiscountField.querySelector('input').required = false;
+  } else {
+    minPurchaseField.style.display = 'none';
+    maxDiscountField.style.display = 'none';
+    minPurchaseField.querySelector('input').required = false;
+    maxDiscountField.querySelector('input').required = false;
+  }
+});
+
+
+// Run once on page load to set correct visibility
+discountTypeSelect.dispatchEvent(new Event('change'));
+
   </script>
 </body>
 

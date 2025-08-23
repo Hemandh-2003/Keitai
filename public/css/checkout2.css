@@ -48,10 +48,26 @@ button:hover {
 .order-confirmation-container {
   width: 100%;
   background-color: white;
-  padding: 20px;
+  padding-left: 0px;
+  padding-bottom: 10px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
+.navbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 15px 30px;
+  background-color: #000000;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+}
 
+.navbar .logo img {
+  height: 50px;
+  object-fit: contain;
+}
 /* Header */
 .order-confirmation-header {
   display: flex;

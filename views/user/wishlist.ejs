@@ -54,7 +54,7 @@
       <i class="fas fa-cog"></i>
       Settings
     </a>
-    <a href="/logout">
+    <a href="/logout" id="logout-btn">
       <i class="fas fa-sign-out-alt"></i>
       Logout
     </a>
@@ -121,6 +121,28 @@
   <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
 
   <script src="/js/wish.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+  document.getElementById("logout-btn").addEventListener("click", function (e) {
+    e.preventDefault(); // stop direct navigation
+
+    Swal.fire({
+      title: "Are you sure?",
+      text: "Do you really want to logout?",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#d33",
+      cancelButtonColor: "#3085d6",
+      confirmButtonText: "Yes, Logout",
+      cancelButtonText: "Cancel"
+    }).then((result) => {
+      if (result.isConfirmed) {
+        window.location.href = "/logout"; // redirect only if confirmed
+      }
+    });
+  });
+</script>
+
 </body>
 
 </html>
