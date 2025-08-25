@@ -1741,11 +1741,10 @@ exports.returnOrder = async (req, res) => {
   const orderId = req.params.id;
 
   try {
-    const { reason, items } = req.body;  
-    // items should come as [{ productId, quantity, reason }] if you're returning per-item
+    const { reason, items } = req.body;
+    console.log("reason and item", reason, orderId);
 
     const order = await Order.findById(orderId).populate('coupon').populate('user');
-
     if (!order) {
       req.flash('error', 'Order not found');
       return res.redirect('/user/orders');
@@ -1768,50 +1767,31 @@ exports.returnOrder = async (req, res) => {
       order.returnReason = reason || 'No reason provided';
       order.status = 'Return Requested';
 
-      // Refund full amount
-      const user = await User.findById(order.user);
-      if (user) {
-        user.wallet += order.totalAmount;
-        await user.save();
-      }
-
+      // ❌ No refund here, only mark request
       order.statusHistory.push({ status: 'Return Requested' });
       await order.save();
 
-      req.flash('success', 'Full order return requested. Amount refunded to wallet.');
+      console.log('Return requested (full order):', order);
+      req.flash('success', 'Full order return requested. Awaiting approval.');
       return res.redirect(`/user/orders/${orderId}`);
     }
 
     // 🟢 Case 2: Partial Return
-    let refundTotal = 0;
-
     items.forEach((item) => {
       const orderedProduct = order.products.find(
         (p) => p.product.toString() === item.productId
       );
 
       if (orderedProduct && item.quantity <= orderedProduct.quantity) {
-        const refundAmount = orderedProduct.unitPrice * item.quantity;
-
-        refundTotal += refundAmount;
-
         order.returnedItems.push({
           product: item.productId,
           quantity: item.quantity,
           reason: item.reason || reason,
-          refundAmount,
-          status: 'Pending',
+          refundAmount: orderedProduct.unitPrice * item.quantity,
+          status: 'Requested', // ❌ not refunded yet
         });
       }
     });
-
-    if (refundTotal > 0) {
-      const user = await User.findById(order.user);
-      if (user) {
-        user.wallet += refundTotal;
-        await user.save();
-      }
-    }
 
     order.returnRequested = true;
     order.returnStatus = 'Requested';
@@ -1819,11 +1799,9 @@ exports.returnOrder = async (req, res) => {
     order.statusHistory.push({ status: 'Return Requested' });
 
     await order.save();
+    console.log('Return requested (partial):', order);
 
-    req.flash(
-      'success',
-      `Return request submitted. Refund of ₹${refundTotal || order.totalAmount} added to wallet.`
-    );
+    req.flash('success', 'Return request submitted. Awaiting approval.');
     res.redirect(`/user/orders/${orderId}`);
 
   } catch (err) {
@@ -1832,6 +1810,8 @@ exports.returnOrder = async (req, res) => {
     res.redirect('/user/orders');
   }
 };
+
+
 
 
 exports.cancelSingleItem = async (req, res) => {

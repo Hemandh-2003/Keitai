@@ -145,9 +145,18 @@
                             </div>
                             <div class="product-details">
                               <span class="product-qty">Qty: <%= item.quantity %></span>
-                              <span class="product-status <%= item.status.toLowerCase() %>">
-                                <%= item.status %>
-                              </span>
+                              <span class="product-status 
+  <%= (item.returnStatus && item.returnStatus !== 'None') 
+        ? 'returned' 
+        : item.status.toLowerCase() %>">
+
+  <% if (item.returnStatus && item.returnStatus !== 'None') { %>
+    Returned (<%= item.returnStatus %>)
+  <% } else { %>
+    <%= item.status %>
+  <% } %>
+</span>
+
                             </div>
                           </div>
                           <% }) %>

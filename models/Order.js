@@ -25,13 +25,13 @@ const orderSchema = new mongoose.Schema({
       required: true,
       min: 1,
     },
-     unitPrice: {   // ✅ NEW FIELD
+     unitPrice: {   
       type: Number,
       required: true,
     },
     status: {
       type: String,
-      enum: ['Active', 'Cancelled'],
+      enum: ['Active', 'Cancelled','Returned', 'Reurn Rejected'],
       default: 'Active',
     },
     cancellationReason: {
@@ -77,28 +77,6 @@ const orderSchema = new mongoose.Schema({
     type: Number,
     default: 80,
   },
-  returnedItems: [
-  {
-    product: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'Product',
-    },
-    quantity: {
-      type: Number,
-      min: 1,
-    },
-    reason: { type: String },
-    status: {
-      type: String,
-      enum: ['Pending', 'Approved', 'Rejected'],
-      default: 'Pending',
-    },
-    refundAmount: {
-      type: Number,
-      default: 0,
-    },
-  }
-],
 discountAmount: {
     type: Number,
     default: 0

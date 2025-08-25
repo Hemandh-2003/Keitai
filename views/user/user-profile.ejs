@@ -79,6 +79,19 @@
             <%= user && user.email ? user.email : 'user@example.com' %>
           </span>
         </div>
+
+        <div class="referral-section">
+          <h2>Your Referral Code</h2>
+          <% if (user && user.referralCode) { %>
+            <span id="referralCode">
+              <%= user.referralCode %>
+            </span>
+            <button onclick="copyReferral()">Copy</button>
+            <% } else { %>
+              <p>Not available</p>
+              <% } %>
+        </div>
+
       </div>
 
       <!-- Edit Name Form -->
@@ -93,80 +106,104 @@
           <h2>Recently Added Address</h2>
           <% if (recentAddress) { %>
             <div class="address">
-              <p><strong>Name:</strong> <%= recentAddress.name %></p>
-              <p><strong>Address:</strong> <%= recentAddress.street %></p>
-              <p><strong>City:</strong> <%= recentAddress.city %>, <%= recentAddress.state %>, <%= recentAddress.zip %></p>
-              <p><strong>Country:</strong> <%= recentAddress.country %></p>
-              <p><strong>Phone:</strong> <%= recentAddress.phone %></p>
+              <p><strong>Name:</strong>
+                <%= recentAddress.name %>
+              </p>
+              <p><strong>Address:</strong>
+                <%= recentAddress.street %>
+              </p>
+              <p><strong>City:</strong>
+                <%= recentAddress.city %>, <%= recentAddress.state %>, <%= recentAddress.zip %>
+              </p>
+              <p><strong>Country:</strong>
+                <%= recentAddress.country %>
+              </p>
+              <p><strong>Phone:</strong>
+                <%= recentAddress.phone %>
+              </p>
             </div>
-          <% } else { %>
-            <p>No recent address found.</p>
-          <% } %>
-        </div>        
-      
+            <% } else { %>
+              <p>No recent address found.</p>
+              <% } %>
+        </div>
+
         <!-- Recent Order -->
         <div class="recent-section order-section">
           <h2>Recent Order</h2>
           <% if (recentOrder) { %>
             <div class="order">
-              <p><strong>Order ID:</strong> <%= recentOrder._id %></p>
-              <p><strong>Date:</strong> <%= new Date(recentOrder.createdAt).toLocaleDateString() %></p>
-              <p><strong>Status:</strong> <%= recentOrder.status %></p>
+              <p><strong>Order ID:</strong>
+                <%= recentOrder._id %>
+              </p>
+              <p><strong>Date:</strong>
+                <%= new Date(recentOrder.createdAt).toLocaleDateString() %>
+              </p>
+              <p><strong>Status:</strong>
+                <%= recentOrder.status %>
+              </p>
               <p><strong>Total:</strong>
                 <% if (recentOrder.totalAmount) { %>
                   $<%= recentOrder.totalAmount.toFixed(2) %>
-                <% } else { %>
-                  Not available
-                <% } %>
+                    <% } else { %>
+                      Not available
+                      <% } %>
               </p>
               <h3>Products:</h3>
               <ul>
-                <% recentOrder.products.forEach(product => { %>
+                <% recentOrder.products.forEach(product=> { %>
                   <li>
                     <%= product.product.name %> -
                   </li>
-                <% }) %>
+                  <% }) %>
               </ul>
             </div>
-          <% } else { %>
-            <p>No recent orders found.</p>
-          <% } %>
+            <% } else { %>
+              <p>No recent orders found.</p>
+              <% } %>
         </div>
-      </div>      
-  </div>
-  <script>
-    // Handle "Edit" button click
-    document.getElementById('edit-name-btn').addEventListener('click', function () {
-      document.getElementById('name-display').classList.add('hidden');
-      document.getElementById('edit-name-form').classList.remove('hidden');
-    });
+      </div>
+    </div>
+    <script>
+      // Handle "Edit" button click
+      document.getElementById('edit-name-btn').addEventListener('click', function () {
+        document.getElementById('name-display').classList.add('hidden');
+        document.getElementById('edit-name-form').classList.remove('hidden');
+      });
 
-    // Handle "Cancel" button click
-    document.getElementById('cancel-edit-btn').addEventListener('click', function () {
-      document.getElementById('edit-name-form').classList.add('hidden');
-      document.getElementById('name-display').classList.remove('hidden');
-    });
-  </script>
-  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-  <script>
-  document.getElementById("logout-btn").addEventListener("click", function (e) {
-    e.preventDefault(); // stop direct navigation
+      // Handle "Cancel" button click
+      document.getElementById('cancel-edit-btn').addEventListener('click', function () {
+        document.getElementById('edit-name-form').classList.add('hidden');
+        document.getElementById('name-display').classList.remove('hidden');
+      });
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+      document.getElementById("logout-btn").addEventListener("click", function (e) {
+        e.preventDefault(); // stop direct navigation
 
-    Swal.fire({
-      title: "Are you sure?",
-      text: "Do you really want to logout?",
-      icon: "warning",
-      showCancelButton: true,
-      confirmButtonColor: "#d33",
-      cancelButtonColor: "#3085d6",
-      confirmButtonText: "Yes, Logout",
-      cancelButtonText: "Cancel"
-    }).then((result) => {
-      if (result.isConfirmed) {
-        window.location.href = "/logout"; // redirect only if confirmed
-      }
-    });
-  });
+        Swal.fire({
+          title: "Are you sure?",
+          text: "Do you really want to logout?",
+          icon: "warning",
+          showCancelButton: true,
+          confirmButtonColor: "#d33",
+          cancelButtonColor: "#3085d6",
+          confirmButtonText: "Yes, Logout",
+          cancelButtonText: "Cancel"
+        }).then((result) => {
+          if (result.isConfirmed) {
+            window.location.href = "/logout"; // redirect only if confirmed
+          }
+        });
+      });
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+function copyReferral() {
+  const code = document.getElementById("referralCode").innerText;
+  navigator.clipboard.writeText(code);
+  Swal.fire("Copied!", "Referral code copied: " + code, "success");
+}
 </script>
 
 </body>

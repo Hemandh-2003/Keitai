@@ -15,7 +15,7 @@ const addressSchema = new mongoose.Schema({
 const walletTransactionSchema = new mongoose.Schema({
   type: {
     type: String,
-     enum: ['Credit', 'Debit', 'Refund'],
+    enum: ['Credit', 'Debit', 'Refund'],
     required: true,
   },
   amount: {
@@ -23,20 +23,19 @@ const walletTransactionSchema = new mongoose.Schema({
     required: true,
   },
   reason: {
-  type: String,
-  required: true,
-  default: 'N/A'
-},
-   orderId: {
+    type: String,
+    required: true,
+    default: 'N/A',
+  },
+  orderId: {
     type: String,
   },
   date: {
     type: Date,
     default: Date.now,
-  }
+  },
 });
 
-// User Schema
 // User Schema
 const userSchema = new mongoose.Schema({
   name: { type: String, required: true },
@@ -55,16 +54,29 @@ const userSchema = new mongoose.Schema({
   // Track used coupons
   usedCoupons: { type: [String], default: [] },
 
-  // ✅ 6-digit User ID
-  userCode: { type: String, unique: true },
+  // ✅ User referral system
+  referralCode: { type: String, unique: true }, // User’s own referral code
+  referredBy: { type: String, default: null },  // Who referred them (store referrer’s code)
+  referralRewards: { type: Number, default: 0 }, // Total earned from referrals
 });
 
-userSchema.pre('save', async function(next) {
-  if (!this.userCode) {
-    this.userCode = await generateUniqueUserCode();
+// Auto-generate referralCode if not exists
+userSchema.pre('save', async function (next) {
+  if (!this.referralCode) {
+    this.referralCode = await generateUniqueReferralCode();
   }
   next();
 });
 
+// Function to generate unique referral code
+async function generateUniqueReferralCode() {
+  let code;
+  let user;
+  do {
+    code = Math.random().toString(36).substring(2, 8).toUpperCase(); // e.g., "X7Y9AB"
+    user = await mongoose.model('User').findOne({ referralCode: code });
+  } while (user);
+  return code;
+}
 
 module.exports = mongoose.model('User', userSchema);

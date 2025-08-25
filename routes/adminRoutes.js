@@ -29,9 +29,7 @@ const path = require('path');
 const adminController = require('../controllers/adminController');
 const router = express.Router();
 // Admin Login Route (GET)
-router.get('/adminlog', (req, res) => {
-  res.render('admin/login', { error: null });
-});
+router.get('/adminlog', (req, res) => {res.render('admin/login', { error: null });});
 
 // Admin Login Route (POST)
 router.post('/adminlog', async (req, res) => {

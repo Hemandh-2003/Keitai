@@ -183,7 +183,37 @@ header {
     font-size: 1em;
     color: #555;
   }
-  
+  .referral-section {
+  margin-top: 20px;
+  padding: 15px;
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  background: #f9f9f9;
+  text-align: center;
+}
+
+.referral-code {
+  font-size: 20px;
+  font-weight: bold;
+  color: #333;
+  margin: 10px 0;
+  letter-spacing: 2px;
+}
+
+.copy-btn {
+  background: #3085d6;
+  color: #fff;
+  border: none;
+  padding: 8px 15px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.copy-btn:hover {
+  background: #2563eb;
+}
+
   @media (min-width: 768px) {
     .recent-section {
       width: 35%; /* Make each section take 48% of the container width on larger screens */
