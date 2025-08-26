@@ -1723,9 +1723,20 @@ exports.returnProduct = async (req, res) => {
       return res.redirect(`/user/orders/${orderId}`);
     }
 
-    if (!user.wallet) {
-      user.wallet = { balance: 0, transactions: [] };
-    }
+   if (!user.wallet) {
+  user.wallet = { balance: 0, transactions: [] };
+}
+
+user.wallet.balance += refundAmount;
+user.wallet.transactions.push({
+  type: 'Credit',
+  amount: refundAmount,
+  orderId: order._id.toString(),                // <- match EJS
+  reason: `Refund for returned product ${productEntry.product?.name || 'N/A'}`, // <- match EJS
+  date: new Date()
+});
+
+await user.save();
     req.flash('success', `Return request submitted. ₹${refundAmount.toFixed(2)} credited to wallet.`);
     res.redirect(`/user/orders/${orderId}`);
   } catch (err) {
@@ -1767,31 +1778,62 @@ exports.returnOrder = async (req, res) => {
       order.returnReason = reason || 'No reason provided';
       order.status = 'Return Requested';
 
-      // ❌ No refund here, only mark request
+      const user = await User.findById(order.user);
+      if (user) {
+        user.wallet.balance += order.totalAmount;
+        user.wallet.transactions.push({
+          type: 'Credit',
+          amount: order.totalAmount,
+          reason: `Refund for full return of order #${order.orderId}`,
+          orderId: order._id,
+          date: new Date()
+        });
+        await user.save();
+      }
+
       order.statusHistory.push({ status: 'Return Requested' });
       await order.save();
 
-      console.log('Return requested (full order):', order);
-      req.flash('success', 'Full order return requested. Awaiting approval.');
+      console.log('Return requested order:', order);
+      req.flash('success', 'Full order return requested. Amount refunded to wallet.');
       return res.redirect(`/user/orders/${orderId}`);
     }
 
     // 🟢 Case 2: Partial Return
+    let refundTotal = 0;
     items.forEach((item) => {
       const orderedProduct = order.products.find(
         (p) => p.product.toString() === item.productId
       );
 
       if (orderedProduct && item.quantity <= orderedProduct.quantity) {
+        const refundAmount = orderedProduct.unitPrice * item.quantity;
+        refundTotal += refundAmount;
+
         order.returnedItems.push({
           product: item.productId,
           quantity: item.quantity,
           reason: item.reason || reason,
-          refundAmount: orderedProduct.unitPrice * item.quantity,
-          status: 'Requested', // ❌ not refunded yet
+          refundAmount,
+          status: 'Pending',
         });
       }
     });
+
+    if (refundTotal > 0) {
+      const user = await User.findById(order.user);
+      if (user) {
+        user.wallet.balance += refundTotal;
+        user.wallet.transactions.push({
+          type: 'Credit',
+          amount: refundTotal,
+          reason: `Refund for partial return from order #${order.orderId}`,
+          orderId: order._id,
+          date: new Date()
+        });
+        await user.save();
+      }
+    }
 
     order.returnRequested = true;
     order.returnStatus = 'Requested';
@@ -1799,9 +1841,12 @@ exports.returnOrder = async (req, res) => {
     order.statusHistory.push({ status: 'Return Requested' });
 
     await order.save();
-    console.log('Return requested (partial):', order);
+    console.log('Return requested order:', order);
 
-    req.flash('success', 'Return request submitted. Awaiting approval.');
+    req.flash(
+      'success',
+      `Return request submitted. Refund of ₹${refundTotal || order.totalAmount} added to wallet.`
+    );
     res.redirect(`/user/orders/${orderId}`);
 
   } catch (err) {
@@ -1921,6 +1966,7 @@ exports.renderWalletPage = async (req, res) => {
       user.wallet = { balance: 0, transactions: [] };
     }
 
+
     const allTransactions = user.wallet.transactions.slice().reverse(); // Newest first
     const page = parseInt(req.query.page) || 1;
     const perPage = 5;
@@ -1936,6 +1982,7 @@ exports.renderWalletPage = async (req, res) => {
           transactions: paginatedTransactions,
         },
       },
+      
       currentPage: page,
       totalPages
     });

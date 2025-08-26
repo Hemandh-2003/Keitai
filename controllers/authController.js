@@ -1,6 +1,7 @@
 const bcrypt = require('bcrypt');
 const User = require('../models/User');
 const otpController = require('./otpController');
+const generateUniqueUserCode = require('../utils/userCode');
 
 // Load landing page
 exports.loadLandingPage = (req, res) => {
@@ -46,10 +47,14 @@ exports.register = async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, 10);
     console.log('Password hashed successfully');
 
+    const userCode = await generateUniqueUserCode();
+    console.log('Unique user code generated:', userCode);
+
     const user = new User({
       name,
       email,
       password: hashedPassword,
+      userCode: userCode.toString(),
       wallet: { balance: 0, transactions: [] },
     });
     console.log('New user object created');

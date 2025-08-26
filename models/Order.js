@@ -101,7 +101,7 @@ discountAmount: {
   },
   paymentMethod: {
     type: String,
-    enum: ['COD', 'Card', 'Online', 'Wallet'], // ✅ Wallet added
+    enum: ['COD', 'Card', 'Online', 'Wallet'], 
     required: true,
   },
   estimatedDelivery: {

@@ -58,6 +58,7 @@ const userSchema = new mongoose.Schema({
   referralCode: { type: String, unique: true }, // User’s own referral code
   referredBy: { type: String, default: null },  // Who referred them (store referrer’s code)
   referralRewards: { type: Number, default: 0 }, // Total earned from referrals
+  userCode: { type: String, unique: true, sparse: true  },
 });
 
 // Auto-generate referralCode if not exists
