@@ -342,7 +342,7 @@ exports.listProducts = async (req, res) => {
       totalPages: totalPages,
     });
   } catch (error) {
-    console.log(error);
+    //console.log(error);
     res.status(500).send('Error loading products.');
   }
 };
@@ -772,7 +772,7 @@ exports.updateReturnStatus = async (req, res) => {
     }
 
     const order = await Order.findById(orderId).populate('user');
-console.log('Order:', order);  // After fetching order
+//console.log('Order:', order);  // After fetching order
 
 if (!order || order.returnStatus !== 'Requested') {
   return res.status(400).send('Invalid return request');
@@ -1217,7 +1217,7 @@ exports.editOfferForm = async (req, res) => {
     const products = await Product.find({ isBlocked: false });
     const categories = await Category.find({ isDeleted: false });
 
-    console.log('Offer fetched for editing:', offer); // Optional log
+   // console.log('Offer fetched for editing:', offer); // Optional log
 
    res.render('admin/edit-offer', { 
   offer,

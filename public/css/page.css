@@ -576,3 +576,69 @@ input[type="checkbox"]:checked, input[type="radio"]:checked {
   font-size: 0.9rem;
   margin-top: 5px;
 }
+@media (max-width: 768px) {
+  .navbar {
+    flex-wrap: nowrap;
+  }
+
+  .nav-links {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: #000;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem;
+    z-index: 100;
+  }
+
+  .nav-links.show {
+    display: flex;
+  }
+
+  .nav-icons {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+  }
+
+  /* shrink search bar */
+  .search-container input {
+    width: 120px;
+  }
+}
+.menu-toggle {
+  background: none;
+  border: none;
+  font-size: 1.8rem;
+  color: #fff;
+  cursor: pointer;
+  display: none; /* hidden on desktop */
+}
+@media (max-width: 768px) {
+  .menu-toggle {
+    display: block; /* show hamburger only on mobile */
+  }
+
+  .nav-links {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: #000;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem;
+    z-index: 100;
+  }
+
+  .nav-links.show {
+    display: flex;
+  }
+}

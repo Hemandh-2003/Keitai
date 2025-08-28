@@ -16,8 +16,8 @@ exports.getBanners = async (req, res) => {
     // Fetch all categories for the "Add Banner" form (ignore isDeleted)
     const categories = await Category.find({});
 
-    console.log('Categories:', categories); // debug to see populated categories
-    console.log('Banners:', banners); // debug to see banners
+   // console.log('Categories:', categories); // debug to see populated categories
+    //console.log('Banners:', banners); // debug to see banners
 
     res.render('admin/banners', { banners, categories });
   } catch (err) {

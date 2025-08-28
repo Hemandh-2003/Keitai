@@ -5,144 +5,277 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Your Wishlist</title>
-  <link rel="stylesheet" href="/css/wish.css">
   <link rel="icon" href="/images/favicon.jpg">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
+  <style>
+    /* Reset */
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Arial', sans-serif;
+      background-color: #f9f9f9;
+      color: #333;
+      line-height: 1.6;
+    }
+
+    /* Header */
+    header {
+      background-color: #000;
+      padding: 10px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      color: #fff;
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%;
+      z-index: 1100;
+    }
+
+    .logo img { height: 42px; }
+
+    .hamburger {
+      display: none;
+      font-size: 22px;
+      cursor: pointer;
+      color: #fff;
+    }
+
+    /* Sidebar */
+    .sidebar {
+      width: 220px;
+      background-color: #f2f2f2;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+      position: fixed;
+      top: 60px;
+      left: 0;
+      height: calc(100vh - 60px);
+      overflow-y: auto;
+      box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+      transition: transform 0.3s ease-in-out;
+      z-index: 1050;
+    }
+
+    .sidebar a {
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px;
+      text-decoration: none;
+      color: #333;
+      border-radius: 5px;
+      transition: background .3s, color .3s;
+    }
+
+    .sidebar a:hover,
+    .sidebar a.active {
+      background-color: #000; color: #fff;
+    }
+
+    /* Overlay */
+    .overlay {
+      display: none;
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(0,0,0,0.4);
+      z-index: 1040;
+    }
+
+    /* Wishlist */
+    .wishlist-container {
+      margin-left: 240px;
+      padding: 80px 20px 20px;
+    }
+
+    .wishlist-container h1 {
+      font-size: 22px;
+      margin-bottom: 20px;
+    }
+
+    .wishlist-items {
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+    }
+
+    .wishlist-item {
+      display: flex;
+      gap: 15px;
+      background: #fff;
+      border: 1px solid #e0e0e0;
+      padding: 15px;
+      border-radius: 8px;
+      transition: box-shadow .3s;
+    }
+
+    .wishlist-item:hover {
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+
+    .wishlist-item img {
+      width: 110px; height: 110px;
+      object-fit: contain;
+      border-radius: 8px;
+    }
+
+    .item-details { flex: 1; }
+
+    .item-title { font-weight: bold; margin-bottom: 6px; }
+
+    .item-price { color: #555; }
+
+    .item-discount { color: #d9534f; font-weight: bold; }
+
+    .item-actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 10px;
+    }
+
+    .delete-btn, .add-to-cart-btn {
+      border: none;
+      padding: 6px 12px;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+
+    .delete-btn { background: #e74c3c; color: #fff; }
+    .delete-btn:hover { background: #c0392b; }
+
+    .add-to-cart-btn { background: #28a745; color: #fff; }
+    .add-to-cart-btn:hover { background: #218838; }
+
+    .empty-wishlist {
+      text-align: center;
+      color: #777;
+      margin-top: 30px;
+    }
+
+    /* Pagination */
+    .pagination {
+      display: flex; justify-content: center;
+      margin-top: 20px; gap: 10px;
+    }
+    .pagination a {
+      padding: 8px 12px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      text-decoration: none;
+      color: #333;
+    }
+    .pagination a.active {
+      background: #007bff; color: #fff; border-color: #007bff;
+    }
+    .pagination a:hover:not(.active) {
+      background: #f1f1f1;
+    }
+
+    /* Responsive */
+    @media(max-width: 768px) {
+      .hamburger { display: block; }
+      .sidebar { transform: translateX(-100%); }
+      .sidebar.active { transform: translateX(0); }
+      .overlay.active { display: block; }
+      .wishlist-container { margin-left: 0; }
+      .wishlist-item { flex-direction: column; }
+      .wishlist-item img { width: 100%; height: auto; }
+    }
+  </style>
 </head>
 
 <body>
   <!-- Header -->
   <header>
-    <nav class="navbar">
-      <div class="logo">
-        <a href="/">
-          <img src="/images/logo1.png" alt="Keitai Logo">
-        </a>
-      </div>
-    </nav>
+    <div class="logo"><a href="/"><img src="/images/logo1.png" alt="Keitai Logo"></a></div>
+    <i class="fas fa-bars hamburger" onclick="toggleSidebar()"></i>
   </header>
-  <aside class="sidebar">
-    <a href="/user/profile">
-      <i class="fas fa-user"></i>
-      Profile
-    </a>
-    <a href="/user/address">
-      <i class="fas fa-map-marker-alt"></i>
-      Your Address
-    </a>
-    <a href="/cart">
-      <i class="fas fa-shopping-cart"></i>
-      Your Cart
-    </a>
-    <a href="/user/orders">
-      <i class="fas fa-box"></i>
-      Your Orders
-    </a>
-    <a href="/wishlist" class="active">
-      <i class="fas fa-heart"></i>
-      Wishlist
-    </a>
-    <a href="/user/wallet">
-      <i class="fas fa-wallet"></i>
-      Wallet
-    </a>
-    <!--a href="/reviews">
-      <i class="fas fa-star"></i>
-      Your Reviews
-    </a-->
-    <a href="/user/settings">
-      <i class="fas fa-cog"></i>
-      Settings
-    </a>
-    <a href="/logout" id="logout-btn">
-      <i class="fas fa-sign-out-alt"></i>
-      Logout
-    </a>
-  </aside>
 
-  <!-- Wishlist Section -->
+  <!-- Sidebar -->
+  <aside class="sidebar" id="sidebar">
+    <a href="/user/profile"><i class="fas fa-user"></i> Profile</a>
+    <a href="/user/address"><i class="fas fa-map-marker-alt"></i> Your Address</a>
+    <a href="/cart"><i class="fas fa-shopping-cart"></i> Your Cart</a>
+    <a href="/user/orders"><i class="fas fa-box"></i> Your Orders</a>
+    <a href="/wishlist" class="active"><i class="fas fa-heart"></i> Wishlist</a>
+    <a href="/user/wallet"><i class="fas fa-wallet"></i> Wallet</a>
+    <a href="/user/settings"><i class="fas fa-cog"></i> Settings</a>
+    <a href="/logout" id="logout-btn"><i class="fas fa-sign-out-alt"></i> Logout</a>
+  </aside>
+  <div class="overlay" id="overlay" onclick="toggleSidebar()"></div>
+
+  <!-- Wishlist -->
   <div class="wishlist-container">
     <h1>Your Wishlist</h1>
 
-    <% if (wishlist && wishlist.length> 0) { %>
-      <!-- Wishlist Items -->
-      <div class="wishlist-items">
-        <% wishlist.forEach(product=> { %>
-          <div class="wishlist-item">
-            <img src="/uploads/<%= product.images[0] %>" alt="<%= product.name %>">
-            <div class="item-details">
-              <p class="item-title">
-                <%= product.name %>
-              </p>
-              <% if (product.salesPrice) { %>
-                <p class="item-discount"><strong>₹<%= product.salesPrice %></strong></p>
-                <% } else { %>
-                  <p class="item-price">₹<%= product.regularPrice %>
-                  </p>
-                  <% } %>
-                    <form action="/wishlist/remove/<%= product._id %>" method="POST" class="item-actions">
-                      <input type="hidden" name="_method" value="DELETE">
-                      <button type="submit" class="delete-btn">Remove</button>
-                      <!-- Add to Cart button -->
-                      <button type="button" class="add-to-cart-btn" data-product-id="<%= product._id %>">
-                        Add to Cart
-                      </button>
-                    </form>
-            </div>
-          </div>
-          <% }); %>
-      </div>
-
-      <!-- Pagination -->
-      <div class="pagination">
-        <% if (currentPage> 1) { %>
-          <a href="/wishlist?page=<%= currentPage - 1 %>" class="prev">Previous</a>
+    <% if (wishlist && wishlist.length > 0) { %>
+    <div class="wishlist-items">
+      <% wishlist.forEach(product => { %>
+      <div class="wishlist-item">
+        <img src="/uploads/<%= product.images[0] %>" alt="<%= product.name %>">
+        <div class="item-details">
+          <p class="item-title"><%= product.name %></p>
+          <% if (product.salesPrice) { %>
+          <p class="item-discount">₹<%= product.salesPrice %></p>
+          <% } else { %>
+          <p class="item-price">₹<%= product.regularPrice %></p>
           <% } %>
-
-            <% for (let i=1; i <=totalPages; i++) { %>
-              <a href="/wishlist?page=<%= i %>" class="<%= i === currentPage ? 'active' : '' %>">
-                <%= i %>
-              </a>
-              <% } %>
-
-                <% if (currentPage < totalPages) { %>
-                  <a href="/wishlist?page=<%= currentPage + 1 %>" class="next">Next</a>
-                  <% } %>
+          <form action="/wishlist/remove/<%= product._id %>" method="POST" class="item-actions">
+            <input type="hidden" name="_method" value="DELETE">
+            <button type="submit" class="delete-btn">Remove</button>
+            <button type="button" class="add-to-cart-btn" data-product-id="<%= product._id %>">Add to Cart</button>
+          </form>
+        </div>
       </div>
+      <% }) %>
+    </div>
 
-      <% } else { %>
-        <p class="empty-wishlist">Your wishlist is empty</p>
-        <% } %>
+    <div class="pagination">
+      <% if (currentPage > 1) { %>
+      <a href="/wishlist?page=<%= currentPage - 1 %>" class="prev">Previous</a>
+      <% } %>
+      <% for (let i=1; i <= totalPages; i++) { %>
+      <a href="/wishlist?page=<%= i %>" class="<%= i === currentPage ? 'active' : '' %>"><%= i %></a>
+      <% } %>
+      <% if (currentPage < totalPages) { %>
+      <a href="/wishlist?page=<%= currentPage + 1 %>" class="next">Next</a>
+      <% } %>
+    </div>
+
+    <% } else { %>
+    <p class="empty-wishlist">Your wishlist is empty</p>
+    <% } %>
   </div>
 
-  <!-- SweetAlert2 for notifications -->
+  <!-- JS -->
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-  <!-- Axios for AJAX requests -->
-  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+  <script>
+    function toggleSidebar() {
+      document.getElementById("sidebar").classList.toggle("active");
+      document.getElementById("overlay").classList.toggle("active");
+    }
 
-  <script src="/js/wish.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-<script>
-  document.getElementById("logout-btn").addEventListener("click", function (e) {
-    e.preventDefault(); // stop direct navigation
-
-    Swal.fire({
-      title: "Are you sure?",
-      text: "Do you really want to logout?",
-      icon: "warning",
-      showCancelButton: true,
-      confirmButtonColor: "#d33",
-      cancelButtonColor: "#3085d6",
-      confirmButtonText: "Yes, Logout",
-      cancelButtonText: "Cancel"
-    }).then((result) => {
-      if (result.isConfirmed) {
-        window.location.href = "/logout"; // redirect only if confirmed
-      }
+    document.getElementById("logout-btn").addEventListener("click", function (e) {
+      e.preventDefault();
+      Swal.fire({
+        title: "Are you sure?",
+        text: "Do you really want to logout?",
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonColor: "#d33",
+        cancelButtonColor: "#3085d6",
+        confirmButtonText: "Yes, Logout",
+        cancelButtonText: "Cancel"
+      }).then((result) => {
+        if (result.isConfirmed) {
+          window.location.href = "/logout";
+        }
+      });
     });
-  });
-</script>
-
+  </script>
 </body>
 
 </html>

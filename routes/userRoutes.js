@@ -52,7 +52,7 @@ router.post('/forgot-password', userController.handleForgotPassword);
 router.get('/resend-otp', userController.resendOtp);
 router.get('/reset-password/:email', userController.getResetPasswordPage);
 router.post('/reset-password', userController.handleResetPassword);
-console.log(userController.verifyOtp);
+//console.log(userController.verifyOtp);
 router.post('/verify-otp-reset', userController.verifyOtp);
 router.get('/product/:id/related', userController.getProductDetailsWithRelated);
 

@@ -11,56 +11,48 @@
 
 <body>
   <!-- Header -->
-  <header>
-    <div class="header-left">
-      <a href="/home" class="back-arrow">
-        <i class="fas fa-arrow-left"></i>
-      </a>
-      <img src="/images/logo1.png" alt="Logo" class="logo">
-    </div>
-  </header>
+<header>
+  <div class="header-left">
+    <a href="/home" class="back-arrow">
+      <i class="fas fa-arrow-left"></i>
+    </a>
+    <img src="/images/logo1.png" alt="Logo" class="logo">
+  </div>
+  <button id="toggle-sidebar">
+    <i class="fas fa-bars"></i>
+  </button>
+</header>
+
 
   <!-- Main Content -->
   <div class="main-container">
     <!-- Sidebar -->
-    <aside class="sidebar">
-      <a href="/user/profile" class="active">
-        <i class="fas fa-user"></i>
-        Profile
-      </a>
-      <a href="/user/address">
-        <i class="fas fa-map-marker-alt"></i>
-        Your Address
-      </a>
-      <a href="/cart">
-        <i class="fas fa-shopping-cart"></i>
-        Your Cart
-      </a>
-      <a href="/user/orders">
-        <i class="fas fa-box"></i>
-        Your Orders
-      </a>
-      <a href="/wishlist">
-        <i class="fas fa-heart"></i>
-        Wishlist
-      </a>
-      <a href="/user/wallet">
-        <i class="fas fa-wallet"></i>
-        Wallet
-      </a>
-      <!--a href="/reviews">
-        <i class="fas fa-star"></i>
-        Your Reviews
-      </a-->
-      <a href="/user/settings">
-        <i class="fas fa-cog"></i>
-        Settings
-      </a>
-      <a href="/logout" id="logout-btn">
-        <i class="fas fa-sign-out-alt"></i>
-        Logout
-      </a>
-    </aside>
+   <aside class="sidebar">
+  <a href="/user/profile" class="active">
+    <i class="fas fa-user"></i> <span>Profile</span>
+  </a>
+  <a href="/user/address">
+    <i class="fas fa-map-marker-alt"></i> <span>Your Address</span>
+  </a>
+  <a href="/cart">
+    <i class="fas fa-shopping-cart"></i> <span>Your Cart</span>
+  </a>
+  <a href="/user/orders">
+    <i class="fas fa-box"></i> <span>Your Orders</span>
+  </a>
+  <a href="/wishlist">
+    <i class="fas fa-heart"></i> <span>Wishlist</span>
+  </a>
+  <a href="/user/wallet">
+    <i class="fas fa-wallet"></i> <span>Wallet</span>
+  </a>
+  <a href="/user/settings">
+    <i class="fas fa-cog"></i> <span>Settings</span>
+  </a>
+  <a href="/logout" id="logout-btn">
+    <i class="fas fa-sign-out-alt"></i> <span>Logout</span>
+  </a>
+</aside>
 
     <!-- Profile Section -->
     <div class="content">
@@ -204,6 +196,11 @@ function copyReferral() {
   navigator.clipboard.writeText(code);
   Swal.fire("Copied!", "Referral code copied: " + code, "success");
 }
+</script>
+<script>
+  document.getElementById("toggle-sidebar").addEventListener("click", function () {
+    document.querySelector(".sidebar").classList.toggle("collapsed");
+  });
 </script>
 
 </body>

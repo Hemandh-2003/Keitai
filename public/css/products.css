@@ -798,3 +798,169 @@ footer {
   font-weight: bold;
   display: none;
 }
+/* ===========================
+   Responsive Adjustments
+   =========================== */
+
+/* Tablets and below (≤1024px) */
+@media (max-width: 1024px) {
+  .navbar {
+    padding: 0.5rem 1rem;
+  }
+
+  .nav-links {
+    gap: 1rem;
+  }
+
+  .product-main {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .main-image-container {
+    width: 100%;
+    height: auto;
+  }
+
+  .zoom-result {
+    display: none !important; /* Hide zoom on tablets/mobiles */
+  }
+
+  .variant-row {
+    justify-content: center;
+  }
+
+  .highlight img,
+  .feature-item img {
+    width: 90%;
+  }
+}
+
+/* Mobiles (≤768px) */
+@media (max-width: 768px) {
+  /* Navbar */
+  .nav-links {
+    display: none;
+    flex-direction: column;
+    background: #111;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    padding: 1rem;
+    text-align: center;
+  }
+
+  .nav-links.show {
+    display: flex;
+  }
+
+  .nav-icons {
+    gap: 0.5rem;
+  }
+
+  .navbar input[type="text"] {
+    width: 120px;
+  }
+
+  /* Product page */
+  .product-gallery img {
+    width: 80%;
+  }
+
+  .thumbnails img {
+    width: 50px;
+    height: 50px;
+  }
+
+  .product-info h1 {
+    font-size: 18px;
+  }
+
+  .btn-buy,
+  .btn-cart,
+  .btn-wishlist {
+    width: 100%;
+    font-size: 14px;
+    padding: 10px;
+  }
+
+  .highlight-row {
+    flex-direction: column;
+  }
+
+  .variant-item {
+    width: 45%;
+  }
+
+  .related-products .product-row {
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  }
+}
+
+/* Small Mobiles (≤480px) */
+@media (max-width: 480px) {
+  .logo img {
+    height: 45px;
+  }
+
+  .product-gallery img {
+    width: 100%;
+  }
+
+  .variant-item {
+    width: 100%;
+  }
+
+  .product-item img {
+    height: 150px;
+  }
+
+  .current-price {
+    font-size: 1.3rem;
+  }
+
+  .original-price {
+    font-size: 1rem;
+  }
+
+  .discount-percentage {
+    font-size: 0.8rem;
+  }
+
+  .offer-timer {
+    font-size: 0.8rem;
+    padding: 6px 8px;
+  }
+}
+ .menu-toggle {
+    display: none;
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    color: white;
+    cursor: pointer;
+  }
+
+  @media (max-width: 992px) {
+    .menu-toggle {
+      display: block;
+    }
+
+    .nav-links {
+      position: absolute;
+      top: 60px;
+      left: 0;
+      flex-direction: column;
+      background: #111;
+      width: 100%;
+      display: none;
+      padding: 20px 0;
+        z-index: 9999;
+    }
+
+    .nav-links.show {
+      display: flex;
+      animation: fadeInDown 0.3s ease;
+    }
+  }

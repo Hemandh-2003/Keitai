@@ -49,7 +49,7 @@ exports.applyCoupon = async (req, res) => {
       discountAmount
     };
 
-    console.log(`✅ Coupon applied: ${coupon.code} | Discount: ₹${discountAmount}`);
+    //console.log(`✅ Coupon applied: ${coupon.code} | Discount: ₹${discountAmount}`);
 
     return res.status(200).json({
       success: true,

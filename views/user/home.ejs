@@ -15,14 +15,12 @@
 </head>
 
 <body>
-  <div class="mobile-menu-toggle" id="mobileMenuToggle">
-    <div class="bar"></div>
-    <div class="bar"></div>
-    <div class="bar"></div>
-  </div>
   <!-- Header Section -->
   <header>
     <nav class="navbar">
+       <button class="menu-toggle" id="menu-toggle">
+  <i class="fas fa-bars"></i>
+</button>
       <div class="logo">
         <a href="/">
           <img src="/images/logo1.png" alt="Keitai Logo">
@@ -68,40 +66,34 @@
   <main>
     <!-- Hero Section -->
     <section class="hero">
-      <h1 data-translate="welcome"><span class="blue-text">Keitai.</span>The best place to start your shopping</h1>
-      <div class="category-list">
-        <div class="category-item">
-          <a href="/laptop"><img src="/images/laptop logo.png" alt="Laptop"></a>
-          <p data-translate="laptop">Laptop</p>
-        </div>
-        <div class="category-item">
-          <a href="/tablet"><img src="/images/tablet.png" alt="Tablet"></a>
-          <p data-translate="tablet">Tablet</p>
-        </div>
-        <div class="category-item">
-          <a href="/phone"><img src="/images/phone.png" alt="Phone"></a>
-          <p data-translate="phone">Phone</p>
-        </div>
-        <div class="category-item">
-          <a href="/watch"><img src="/images/watch.png" alt="Watch"></a>
-          <p data-translate="watch">Watch</p>
-        </div>
-        <div class="category-item">
-          <a href="/earpods"><img src="/images/earpods.png" alt="EarPods"></a>
-          <p data-translate="earpods">EarPods</p>
-        </div>
-        <div class="category-item">
-          <a href="/accessories"><img src="/images/accessories.png" alt="Accessories"></a>
-          <p data-translate="accessories">Accessories</p>
-        </div>
-        <!--div class="brand-item">
-          <img src="/images/samsung.png" alt="Samsung">
-        </div>
-        <div class="brand-item">
-          <img src="/images/apple.png" alt="Apple">
-        </div-->
-      </div>
-    </section>
+  <h1 data-translate="welcome"><span class="blue-text">Keitai.</span>The best place to start your shopping</h1>
+  <div class="category-list d-flex flex-wrap justify-content-center gap-4 mt-4">
+    <div class="category-item text-center">
+      <a href="/laptop"><img src="/images/laptop logo.png" alt="Laptop"></a>
+      <p data-translate="laptop">Laptop</p>
+    </div>
+    <div class="category-item text-center">
+      <a href="/tablet"><img src="/images/tablet.png" alt="Tablet"></a>
+      <p data-translate="tablet">Tablet</p>
+    </div>
+    <div class="category-item text-center">
+      <a href="/phone"><img src="/images/phone.png" alt="Phone"></a>
+      <p data-translate="phone">Phone</p>
+    </div>
+    <div class="category-item text-center">
+      <a href="/watch"><img src="/images/watch.png" alt="Watch"></a>
+      <p data-translate="watch">Watch</p>
+    </div>
+    <div class="category-item text-center">
+      <a href="/earpods"><img src="/images/earpods.png" alt="EarPods"></a>
+      <p data-translate="earpods">EarPods</p>
+    </div>
+    <div class="category-item text-center">
+      <a href="/accessories"><img src="/images/accessories.png" alt="Accessories"></a>
+      <p data-translate="accessories">Accessories</p>
+    </div>
+  </div>
+</section>
     <section class="filter-section">
       <!-- Filter Toggle Button -->
       <button class="filter-toggle-btn" id="filter-toggle-btn">
@@ -235,7 +227,6 @@
       </div>
     </section>
   </main>
-
   <!-- Footer Section -->
   <footer>
     <div class="footer-links d-flex flex-wrap justify-content-center gap-4 mb-3">
@@ -420,6 +411,15 @@ function toggleWishlist(productId, btn, event) {
     Swal.fire({ icon: 'error', title: 'Please Check Your Loggin' });
   });
 }
+</script>
+<script>
+  const menuToggle = document.getElementById('menu-toggle');
+  const navLinks = document.querySelector('.nav-links');
+
+  menuToggle.addEventListener('click', () => {
+    navLinks.classList.toggle('show');
+  });
+  
 </script>
 
 </body>

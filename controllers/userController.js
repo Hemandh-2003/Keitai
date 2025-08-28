@@ -292,8 +292,8 @@ exports.viewOrders = async (req, res) => {
 
     const totalOrders = await Order.countDocuments({ user: userId });
     const totalPages = Math.ceil(totalOrders / ordersPerPage); 
-
-    res.render('user/userOrder', { 
+console.log("console order2",orders);
+    res.render('user/UserOrder', { 
       orders, 
       sortBy, 
       currentPage: page, 
@@ -555,22 +555,22 @@ exports.cancelOrder = async (req, res) => {
 
   try {
     const order = await Order.findById(orderId)
-      .populate('products.product')
-      .populate('coupon');
+      .populate("products.product")
+      .populate("coupon");
 
     if (!order) {
-      req.flash('error', 'Order not found');
-      return res.redirect('/user/orders');
+      req.flash("error", "Order not found");
+      return res.redirect("/user/orders");
     }
 
     if (order.coupon) {
-      req.flash('error', 'Cannot cancel orders with applied coupons');
-      return res.redirect('/user/orders');
+      req.flash("error", "Cannot cancel orders with applied coupons");
+      return res.redirect("/user/orders");
     }
 
-    if (!['Pending', 'Placed'].includes(order.status)) {
-      req.flash('error', 'Order cannot be cancelled at this stage');
-      return res.redirect('/user/orders');
+    if (!["Pending", "Placed"].includes(order.status)) {
+      req.flash("error", "Order cannot be cancelled at this stage");
+      return res.redirect("/user/orders");
     }
 
     // Restock and mark items as cancelled
@@ -578,42 +578,49 @@ exports.cancelOrder = async (req, res) => {
       if (item.product) {
         item.product.quantity += item.quantity;
         await item.product.save();
-        item.status = 'Cancelled';
+        item.status = "Cancelled";
       }
     }
 
     // Update order status
-    order.status = 'User Cancelled';
-    order.statusHistory.push({ status: 'User Cancelled', updatedAt: new Date() });
+    order.status = "User Cancelled";
+    order.statusHistory.push({
+      status: "User Cancelled",
+      updatedAt: new Date(),
+    });
     await order.save();
 
-    // Refund to wallet
-    const userDoc = await User.findById(order.user); // fresh doc, not populated
-    if (!userDoc.wallet) {
-      userDoc.wallet = { balance: 0, transactions: [] };
+    // ✅ Refund only if online payment
+    if (order.paymentMethod !== "COD" && order.paymentStatus === "Paid") {
+      const userDoc = await User.findById(order.user); // fresh doc, not populated
+      if (!userDoc.wallet) {
+        userDoc.wallet = { balance: 0, transactions: [] };
+      }
+
+      const refundAmount = order.totalAmount;
+      userDoc.wallet.balance += refundAmount;
+      userDoc.wallet.transactions.push({
+        date: new Date(),
+        type: "Credit",
+        amount: refundAmount,
+        reason: "Cancelled entire order",
+        orderId: order._id.toString(),
+      });
+
+      await userDoc.save({ validateBeforeSave: false });
+      req.flash("success", `Order cancelled. ₹${refundAmount} refunded to your wallet.`);
+    } else {
+      req.flash("success", "Order cancelled successfully.");
     }
 
-    const refundAmount = order.totalAmount;
-    userDoc.wallet.balance += refundAmount;
-    userDoc.wallet.transactions.push({
-      date: new Date(),
-      type: 'Credit',
-      amount: refundAmount,
-      reason: 'Cancelled entire order',
-      orderId: order._id.toString()
-    });
-
-    await userDoc.save({ validateBeforeSave: false });
-
-    req.flash('success', `Order cancelled. ₹${refundAmount} refunded to your wallet.`);
-    return res.redirect('/user/orders');
-
+    return res.redirect("/user/orders");
   } catch (err) {
-    console.error('Error canceling order:', err);
-    req.flash('error', 'Failed to cancel order');
-    return res.redirect('/user/orders');
+    console.error("Error canceling order:", err);
+    req.flash("error", "Failed to cancel order");
+    return res.redirect("/user/orders");
   }
 };
+
 
 // Get Products
 exports.getProducts = async (req, res) => {
@@ -762,7 +769,7 @@ exports.checkout = async (req, res) => {
       isFromCart: false
     };
 
-    // Cart Checkout
+    // 🛒 Cart Checkout
     if (productIds && quantities && Array.isArray(productIds) && Array.isArray(quantities)) {
       let total = 0;
       let offers = [];
@@ -791,6 +798,7 @@ exports.checkout = async (req, res) => {
       sessionCheckout.isFromCart = true;
 
     } else if (productId && quantity) {
+      // 🛒 Single Product Checkout
       const product = await Product.findById(productId);
       if (!product || product.isBlocked || product.isDeleted) {
         return res.status(404).send('Product not available');
@@ -815,7 +823,26 @@ exports.checkout = async (req, res) => {
       return res.redirect('/cart');
     }
 
-    req.session.checkout = sessionCheckout;
+    // ✅ Create a PENDING order immediately (before payment)
+    const order = new Order({
+      user: req.session.user._id,
+      products: sessionCheckout.productIds.map((pid, index) => ({
+        product: pid,
+        quantity: sessionCheckout.quantities[index],
+        unitPrice: sessionCheckout.offerPrices[index]
+      })),
+      totalAmount: sessionCheckout.totalAmount,
+      selectedAddress: user.addresses[0]?._id, // adjust if user selects address
+      paymentMethod: "Online", // default Razorpay
+      estimatedDelivery: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // example: +7 days
+      status: "Pending"
+    });
+
+    await order.save();
+
+    // ✅ Store orderId for later update (success/failure)
+    req.session.checkout = { ...sessionCheckout, orderId: order._id };
+
     return res.redirect('/user/checkout');
 
   } catch (err) {
@@ -904,7 +931,11 @@ exports.retryPayment = async (req, res) => {
     const order = await Order.findById(orderId).populate('products.product');
 
     if (!order) return res.status(404).send('Order not found');
-    if (order.status !== 'Pending') return res.redirect(`/user/order/${orderId}`);
+
+    // ✅ Allow retry for both Pending and Failed
+    if (!['Pending', 'Failed'].includes(order.status)) {
+      return res.redirect(`/user/order/${orderId}`);
+    }
 
     req.session.retryOrder = order; // Temporarily store order for reuse
     res.redirect('/checkout');
@@ -913,6 +944,7 @@ exports.retryPayment = async (req, res) => {
     res.status(500).send('Server error');
   }
 };
+
 exports.retryCheckout = async (req, res) => {
   try {
     if (!req.session.user) return res.redirect('/login');
@@ -1209,7 +1241,25 @@ exports.placeOrder = async (req, res) => {
   }
 };
 
+exports.paymentFailed = async (req, res) => {
+  try {
+    const { orderId } = req.body; // Razorpay or client should send this back
 
+    const order = await Order.findById(orderId);
+    if (!order) {
+      return res.status(404).send("Order not found");
+    }
+
+    order.status = "Failed";
+    await order.save();
+
+    req.flash("error", "Payment failed. You can retry from your orders page.");
+    res.redirect("/user/orders");
+  } catch (err) {
+    console.error("❌ Error marking order failed:", err.message);
+    res.status(500).send("Internal Server Error");
+  }
+};
 // Confirm Payment
 exports.confirmPayment = async (req, res) => {
   try {
@@ -1360,7 +1410,7 @@ exports.renderConfirmPayment = async (req, res) => {
 
 //settings
 exports.getSettingsPage = (req, res) => {
-  console.log("Navigating to settings page.");
+  //console.log("Navigating to settings page.");
   res.render('user/settings', { user: req.session.user });
 };
 
@@ -1436,7 +1486,7 @@ exports.getForgotPasswordPage = (req, res) => {
 
 
 exports.handleForgotPassword = async (req, res) => {
-  console.log('POST /forgot-password route hit');
+  //console.log('POST /forgot-password route hit');
   const { email } = req.body;
 
   try {
@@ -1753,7 +1803,7 @@ exports.returnOrder = async (req, res) => {
 
   try {
     const { reason, items } = req.body;
-    console.log("reason and item", reason, orderId);
+    //console.log("reason and item", reason, orderId);
 
     const order = await Order.findById(orderId).populate('coupon').populate('user');
     if (!order) {
@@ -1777,7 +1827,6 @@ exports.returnOrder = async (req, res) => {
       order.returnStatus = 'Requested';
       order.returnReason = reason || 'No reason provided';
       order.status = 'Return Requested';
-
       const user = await User.findById(order.user);
       if (user) {
         user.wallet.balance += order.totalAmount;
@@ -1794,7 +1843,7 @@ exports.returnOrder = async (req, res) => {
       order.statusHistory.push({ status: 'Return Requested' });
       await order.save();
 
-      console.log('Return requested order:', order);
+      //console.log('Return requested order:', order);
       req.flash('success', 'Full order return requested. Amount refunded to wallet.');
       return res.redirect(`/user/orders/${orderId}`);
     }
@@ -1841,7 +1890,7 @@ exports.returnOrder = async (req, res) => {
     order.statusHistory.push({ status: 'Return Requested' });
 
     await order.save();
-    console.log('Return requested order:', order);
+    //console.log('Return requested order:', order);
 
     req.flash(
       'success',

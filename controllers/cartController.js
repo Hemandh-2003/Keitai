@@ -260,7 +260,7 @@ exports.getProductDetails = async (req, res) => {
   }
 };
 exports.clearCart = async (req, res) => {
-  console.log('Clear cart initiated - Session:', req.session);
+  //console.log('Clear cart initiated - Session:', req.session);
   
   try {
     // Verify session exists
@@ -277,7 +277,7 @@ exports.clearCart = async (req, res) => {
       { $set: { items: [], totalPrice: 0 } }
     );
 
-    console.log('Database result:', result);
+    //console.log('Database result:', result);
 
     if (result.matchedCount === 0) {
       return res.status(404).json({

@@ -26,29 +26,29 @@ exports.register = async (req, res) => {
   try {
     const { name, email, password, confirm, referralCode } = req.body;
 
-    console.log('Register called with:', { name, email, referralCode });
+    //console.log('Register called with:', { name, email, referralCode });
 
     if (!name || !email || !password || !confirm) {
-      console.log('Validation failed: missing fields');
+     // console.log('Validation failed: missing fields');
       return res.render('user/signup', { error: 'All fields are required.' });
     }
 
     if (password !== confirm) {
-      console.log('Validation failed: passwords do not match');
+     // console.log('Validation failed: passwords do not match');
       return res.render('user/signup', { error: 'Passwords do not match.' });
     }
 
     const existingUser = await User.findOne({ email });
     if (existingUser) {
-      console.log('Validation failed: email already in use');
+      //('Validation failed: email already in use');
       return res.render('user/signup', { error: 'Email already in use.' });
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
-    console.log('Password hashed successfully');
+    //console.log('Password hashed successfully');
 
     const userCode = await generateUniqueUserCode();
-    console.log('Unique user code generated:', userCode);
+    //console.log('Unique user code generated:', userCode);
 
     const user = new User({
       name,
@@ -57,12 +57,12 @@ exports.register = async (req, res) => {
       userCode: userCode.toString(),
       wallet: { balance: 0, transactions: [] },
     });
-    console.log('New user object created');
+    //console.log('New user object created');
     const code = referralCode ? referralCode.trim() : null;
 if (code) {
   const referrer = await User.findOne({ referralCode: code }); // ✅ use trimmed code
   if (referrer) {
-    console.log('Referrer found:', referrer.email);
+   // console.log('Referrer found:', referrer.email);
     user.referredBy = code;
 
     // Reward new user
@@ -73,7 +73,7 @@ if (code) {
       reason: 'Referral Bonus for joining with a code',
       date: new Date(),
     });
-    console.log('New user rewarded with 500');
+   // console.log('New user rewarded with 500');
 
     // Reward referrer
     referrer.wallet.balance += 1000;
@@ -84,35 +84,35 @@ if (code) {
       date: new Date(),
     });
     referrer.referralRewards = (referrer.referralRewards || 0) + 1000;
-    console.log('Referrer rewarded with 1000');
+    //console.log('Referrer rewarded with 1000');
 
     // Save both users
     await referrer.save();
-    console.log('Referrer saved successfully');
+   // console.log('Referrer saved successfully');
 
     await user.save();
-    console.log('New user saved successfully');
+   // console.log('New user saved successfully');
   } else {
     console.warn('Invalid referral code, skipping rewards.');
     await user.save();
-    console.log('New user saved without referral rewards');
+   // console.log('New user saved without referral rewards');
   }
 } else {
   await user.save();
-  console.log('New user saved without referral code');
+  //console.log('New user saved without referral code');
 }
 
     // OTP flow
     const otp = otpController.generateOtp(email);
     const otpSent = await otpController.sendOtpEmail(email, otp);
-    console.log('OTP sent status:', otpSent);
+   // console.log('OTP sent status:', otpSent);
 
     if (!otpSent) {
-      console.log('Error sending OTP');
+     // console.log('Error sending OTP');
       return res.render('user/signup', { error: 'Error sending OTP. Try again.' });
     }
 
-    console.log('Redirecting to OTP page');
+    //console.log('Redirecting to OTP page');
     res.redirect(`/otp?email=${email}`);
   } catch (error) {
     console.error('Registration Error:', error);

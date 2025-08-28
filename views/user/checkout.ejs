@@ -242,6 +242,7 @@
           receipt: 'order_' + Date.now()
         })
       });
+      console.log('🔥 Razorpay order creation response:', response);
 
       const paymentData = await response.json();
 

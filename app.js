@@ -93,12 +93,12 @@ if (!fs.existsSync(uploadDir)) {
 // Multer setup for file uploads
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    console.log('Uploading File:', file.originalname);
+    //console.log('Uploading File:', file.originalname);
     cb(null, path.join(__dirname, 'public/uploads'));
   },
   filename: (req, file, cb) => {
     const uniqueName = `${Date.now()}-${file.originalname}`;
-    console.log('Generated Filename:', uniqueName);
+    //console.log('Generated Filename:', uniqueName);
     cb(null, uniqueName);
   },
 });
@@ -110,7 +110,7 @@ const upload = multer({
   fileFilter: (req, file, cb) => {
     const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/jpg'];
     if (!allowedTypes.includes(file.mimetype)) {
-      console.log('Rejected File Type:', file.mimetype);
+      //console.log('Rejected File Type:', file.mimetype);
       return cb(new Error('Only JPG, PNG, or WEBP images are allowed'), false);
     }
     cb(null, true);
@@ -246,7 +246,7 @@ app.get('/:slug', async (req, res) => {
 // Search endpoint
 app.get('/api/search', async (req, res) => {
   const { query } = req.query;
-  console.log('Search query:', query);
+  //console.log('Search query:', query);
 
   try {
     const products = await Product.find({
@@ -261,7 +261,7 @@ app.get('/api/search', async (req, res) => {
       .limit(10)
       .populate('category');
 
-    console.log('Products found:', products.map(p => ({ id: p._id, name: p.name })));
+    //console.log('Products found:', products.map(p => ({ id: p._id, name: p.name })));
     res.json(products);
   } catch (error) {
     console.error('Search error:', error);

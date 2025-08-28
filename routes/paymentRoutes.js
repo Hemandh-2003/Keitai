@@ -8,6 +8,7 @@ const { isLoggedIn } = require('../middleware/authMiddleware');
 router.post('/create-order', isLoggedIn, paymentController.initiatePayment); // or .createOrder if renamed
 router.post('/success', isLoggedIn, paymentController.paymentSuccess);
 router.post('/failed', isLoggedIn, paymentController.paymentFailed);
+router.post('/retry-payment-page', isLoggedIn, paymentController.renderRetryPaymentPage);
 router.post('/payment/verify', paymentController.verifyPayment);
 router.get('/payment/success/:orderId', paymentController.paymentSuccess);
 router.get('/payment/failed', paymentController.paymentFailed);

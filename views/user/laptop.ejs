@@ -18,6 +18,9 @@
     <!-- Header -->
     <header>
         <nav class="navbar">
+          <button class="menu-toggle" id="menu-toggle">
+  <i class="fas fa-bars"></i>
+</button>
             <div class="logo">
                 <a href="/">
                     <img src="/images/logo1.png" alt="Keitai Logo"></a>
@@ -34,7 +37,6 @@
             <div class="nav-icons">
                 <div class="search-container">
                     <input type="text" id="search-input" placeholder="Search for products...">
-                    <i class="fas fa-search"></i>
                     <div id="search-results"></div> <!-- Dropdown inside the search container -->
                 </div>
                <a href="/cart" class="cart-icon-wrapper position-relative">
@@ -296,6 +298,10 @@ function toggleWishlist(productId, btn, event) {
     Swal.fire({ icon: 'error', title: 'Please Check Your Loggin' });
   });
 }
+document.getElementById('menu-toggle').addEventListener('click', () => {
+  document.querySelector('.nav-links').classList.toggle('show');
+});
+
 </script>
 </body>
 

@@ -19,7 +19,7 @@ transporter.verify((error, success) => {
   if (error) {
     console.error('SMTP Transporter Error:', error);
   } else {
-    console.log('SMTP Transporter is ready to send emails');
+    //console.log('SMTP Transporter is ready to send emails');
   }
 });
 
@@ -31,7 +31,7 @@ exports.generateOtp = (email) => {
       otp: otp,
       expiry: Date.now() + 5 * 60 * 1000, // OTP expires in 5 minutes
     };
-    console.log(`Generated OTP for ${email}: ${otp}`);//consoling the otp
+    //console.log(`Generated OTP for ${email}: ${otp}`);//consoling the otp
   
     return otp;
 };  
@@ -39,8 +39,8 @@ exports.generateOtp = (email) => {
 // Validate OTP
 exports.validateOtp = (email, otp) => {
     const otpData = otpStorage[email];
-    console.log(`Stored OTP for ${email}: ${otpData ? otpData.otp : 'N/A'}`); // Debugging
-    console.log(`Received OTP for validation: ${otp}`);
+    //console.log(`Stored OTP for ${email}: ${otpData ? otpData.otp : 'N/A'}`); // Debugging
+    //console.log(`Received OTP for validation: ${otp}`);
   
     if (otpData && otpData.otp == otp) {
       // Check if OTP expired
@@ -51,10 +51,10 @@ exports.validateOtp = (email, otp) => {
       }
       
       delete otpStorage[email]; // Clear OTP after validation
-      console.log(`OTP validated successfully for ${email}`);
+      //console.log(`OTP validated successfully for ${email}`);
       return true;
     }
-    console.warn(`Invalid OTP attempt for ${email}`);
+    //console.warn(`Invalid OTP attempt for ${email}`);
     return false;
 };  
 
@@ -69,7 +69,7 @@ exports.sendOtpEmail = async (email, otp) => {
 
   try {
     const info = await transporter.sendMail(mailOptions);
-    console.log(`OTP sent successfully to ${email}:`, info.response); // Debugging
+    //console.log(`OTP sent successfully to ${email}:`, info.response); // Debugging
     return true;
   } catch (err) {
     console.error('Error sending OTP email:', err); // Debugging

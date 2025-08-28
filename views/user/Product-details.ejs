@@ -20,6 +20,9 @@
     <!-- Header -->
     <header>
         <nav class="navbar">
+          <button class="menu-toggle" id="menu-toggle">
+  <i class="fas fa-bars"></i>
+</button>
             <div class="logo">
                 <a href="/"><img src="/images/logo1.png" alt="Keitai Logo"></a>
             </div>
@@ -49,7 +52,7 @@
             <div class="nav-icons">
                 <div class="search-container">
                     <input type="text" id="search-input" placeholder="Search for products...">
-                    <i class="fas fa-search"></i>
+                    
                     <div id="search-results"></div>
                 </div>
                 <a href="/cart" class="cart-icon-wrapper position-relative">
@@ -632,12 +635,19 @@ document.getElementById("add-to-cart-btn").addEventListener("click", async funct
         });
 
         if (res.ok) {
-            Swal.fire({
-                icon: "success",
-                title: "Added to cart",
-                showConfirmButton: false,
-                timer: 1500
-            });
+    const data = await res.json(); // assuming backend sends updated cart count
+    const badge = document.getElementById("cart-count");
+    if (badge) {
+        badge.style.display = "inline-block";
+        badge.textContent = data.cartCount || parseInt(badge.textContent) + parseInt(quantity);
+    }
+
+    Swal.fire({
+        icon: "success",
+        title: "Added to cart",
+        showConfirmButton: false,
+        timer: 1500
+    });
         } else {
             const data = await res.json();
             Swal.fire({
@@ -799,6 +809,17 @@ document.getElementById("quantity").addEventListener("keypress", function (e) {
       reader.readAsDataURL(file);
     });
   });
+  
+</script>
+<script>
+  const menuToggle = document.getElementById("menu-toggle");
+  const navLinks = document.querySelector(".nav-links");
+
+  if (menuToggle && navLinks) {
+    menuToggle.addEventListener("click", () => {
+      navLinks.classList.toggle("show");
+    });
+  }
 </script>
 
 </body>

@@ -9,7 +9,7 @@ exports.initiatePayment = async (req, res) => {
     if (!amount) return res.status(400).json({ error: 'Missing amount' });
 
     const amountInPaise = Math.round(parseFloat(amount) * 100);
-    console.log("Amount received (₹):", amount, "➡️ in paise:", amountInPaise);
+    //console.log("Amount received (₹):", amount, "➡️ in paise:", amountInPaise);
 
     const options = {
       amount: amountInPaise,
@@ -84,7 +84,8 @@ exports.verifyPayment = async (req, res) => {
 
 exports.paymentFailed = async (req, res) => {
   try {
-    const { orderId, error } = req.query;
+    const { error } = req.query;
+    const orderId = req.session.checkout.orderId;
 
     if (!req.session.user) {
       return res.redirect('/login');
@@ -97,17 +98,27 @@ exports.paymentFailed = async (req, res) => {
       });
     }
 
-    res.render('user/payment-failed', {
-      orderId,
-      error,
-      user: req.session.user
-    });
+    // res.render('user/payment-failed', {
+    //   orderId,
+    //   error,
+    //   user: req.session.user
+    // });
+    res.redirect(`/user/order/${orderId}`);
 
   } catch (err) {
     console.error('Payment failure handling error:', err.message);
     res.status(500).send('Internal Server Error during payment failure handling');
   }
 };
+
+exports.renderRetryPaymentPage = (req, res) => {
+  const { orderId } = req.body;
+  res.render('user/payment-failed', {
+    orderId,
+    error: 'Please retry your payment.',
+    user: req.session.user
+  })
+}
 
 
 exports.paymentSuccess = (req, res) => {

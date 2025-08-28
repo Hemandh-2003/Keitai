@@ -118,6 +118,7 @@ discountAmount: {
       'Cancelled',
       'User Cancelled',
       'Return Requested',
+      'Payment Failed',
       'Paid' // ✅ Paid added
     ],
     default: 'Pending',
@@ -136,7 +137,7 @@ discountAmount: {
         'Return Requested',
         'Return Approved',  
         'Return Rejected',   
-        'Paid'
+        'Paid',
       ],
     },
     updatedAt: {

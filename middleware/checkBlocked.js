@@ -3,7 +3,7 @@ const User = require('../models/User'); // Import the User model
 module.exports = async (req, res, next) => {
   if (req.session && req.session.user) {
     // Debugging: Check if user session exists
-    console.log('Session User:', req.session.user);
+    //console.log('Session User:', req.session.user);
 
     try {
       // Fetch the latest user data from the database
@@ -24,7 +24,7 @@ module.exports = async (req, res, next) => {
 
       // Check if the user is blocked
       if (user.isBlocked) {
-        console.log('User is blocked. Destroying session and redirecting to login...');
+        //console.log('User is blocked. Destroying session and redirecting to login...');
         // Destroy the session if the user is blocked
         req.session.destroy((err) => {
           if (err) {
