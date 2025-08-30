@@ -1,8 +1,9 @@
+const dotenv = require('dotenv');
+dotenv.config();
 const express = require('express');
 const mongoose = require('mongoose');
 const session = require('express-session');
 const flash = require('connect-flash');
-const dotenv = require('dotenv');
 const bodyParser = require('body-parser');
 const path = require('path');
 const passport = require('passport');
@@ -21,7 +22,7 @@ const reviewRoutes = require('./routes/reviewRoutes');
 const bannerRoutes = require('./routes/bannerRoutes');
 const Banner = require('./models/Banner');
 // Load environment variables
-dotenv.config();
+
 
 // Import Routes
 const authRoutes = require('./routes/authRoutes');
