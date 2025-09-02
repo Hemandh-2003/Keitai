@@ -833,7 +833,7 @@ if (!user.addresses || user.addresses.length === 0) {
 // // Otherwise create the pending order immediately
 
 //  console.log("Order created with ID:(chekout)", order._id);
- req.session.checkout = { ...sessionCheckout, orderId: order._id };
+ req.session.checkout = { ...sessionCheckout };
 return res.redirect('/user/checkout');
 
   } catch (err) {
