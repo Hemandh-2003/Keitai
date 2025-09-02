@@ -573,55 +573,69 @@ exports.cancelOrder = async (req, res) => {
       return res.redirect("/user/orders");
     }
 
-    // Restock and mark items as cancelled
+    // 1️⃣ Restock and cancel items
     for (let item of order.products) {
-  if (item.product && item.status !== "Cancelled") {
-    // Restock product
-    item.product.quantity += item.quantity;
-    await item.product.save();
+      if (item.product && item.status !== "Cancelled") {
+        item.product.quantity += item.quantity;
+        await item.product.save();
+        item.status = "Cancelled";
+        item.cancelledAt = new Date();
+      }
+    }
 
-    // Refund for this product only (online payments)
+    let refundAmount = 0;
+
+    // 2️⃣ Decide refund strategy
     if (order.paymentMethod !== "COD" && order.paymentStatus === "Paid") {
       const userDoc = await User.findById(order.user);
       if (!userDoc.wallet) {
         userDoc.wallet = { balance: 0, transactions: [] };
       }
 
-      const refundAmount = item.quantity * item.unitPrice; // refund only this product's amount
-      userDoc.wallet.balance += refundAmount;
-      userDoc.wallet.transactions.push({
-        date: new Date(),
-        type: "Credit",
-        amount: refundAmount,
-        reason: `Cancelled product: ${item.product.name}`,
-        orderId: order._id.toString(),
-      });
+      // 👉 If whole order is cancelled → refund full totalAmount
+      if (order.products.every(p => p.status === "Cancelled")) {
+        refundAmount = order.totalAmount;
+        order.status = "User Cancelled";
+        order.statusHistory.push({
+          status: "User Cancelled",
+          updatedAt: new Date(),
+        });
+        order.paymentStatus = "Refunded";
+      } else {
+        // 👉 Partial cancellation → refund only cancelled products
+        refundAmount = order.products
+          .filter(p => p.status === "Cancelled")
+          .reduce((sum, p) => sum + (p.quantity * p.unitPrice), 0);
+      }
 
-      await userDoc.save({ validateBeforeSave: false });
+      if (refundAmount > 0) {
+        userDoc.wallet.balance += refundAmount;
+        userDoc.wallet.transactions.push({
+          date: new Date(),
+          type: "Credit",
+          amount: refundAmount,
+          reason: order.status === "User Cancelled" 
+            ? "Cancelled entire order" 
+            : "Cancelled some products",
+          orderId: order._id.toString(),
+        });
+
+        await userDoc.save({ validateBeforeSave: false });
+        req.flash("success", `₹${refundAmount} refunded to your wallet.`);
+      }
     }
 
-    item.status = "Cancelled";
-  }
-}
+    // 3️⃣ Save order after updates
+    await order.save();
 
-// Update order status only if **all products are cancelled**
-if (order.products.every(p => p.status === "Cancelled")) {
-  order.status = "User Cancelled";
-  order.statusHistory.push({
-    status: "User Cancelled",
-    updatedAt: new Date(),
-  });
-}
-await order.save();
-
-req.flash("success", "Selected products cancelled and amount refunded to wallet.");
-return res.redirect("/user/orders");
+    return res.redirect("/user/orders");
   } catch (err) {
-    console.error("Error canceling order:", err);
+    console.error("❌ Error canceling order:", err);
     req.flash("error", "Failed to cancel order");
     return res.redirect("/user/orders");
   }
 };
+
 
 
 // Get Products
