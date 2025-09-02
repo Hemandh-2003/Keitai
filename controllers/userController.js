@@ -575,45 +575,47 @@ exports.cancelOrder = async (req, res) => {
 
     // Restock and mark items as cancelled
     for (let item of order.products) {
-      if (item.product) {
-        item.product.quantity += item.quantity;
-        await item.product.save();
-        item.status = "Cancelled";
-      }
-    }
+  if (item.product && item.status !== "Cancelled") {
+    // Restock product
+    item.product.quantity += item.quantity;
+    await item.product.save();
 
-    // Update order status
-    order.status = "User Cancelled";
-    order.statusHistory.push({
-      status: "User Cancelled",
-      updatedAt: new Date(),
-    });
-    await order.save();
-
-    // ✅ Refund only if online payment
+    // Refund for this product only (online payments)
     if (order.paymentMethod !== "COD" && order.paymentStatus === "Paid") {
-      const userDoc = await User.findById(order.user); // fresh doc, not populated
+      const userDoc = await User.findById(order.user);
       if (!userDoc.wallet) {
         userDoc.wallet = { balance: 0, transactions: [] };
       }
 
-      const refundAmount = order.totalAmount;
+      const refundAmount = item.quantity * item.price; // refund only this product's amount
       userDoc.wallet.balance += refundAmount;
       userDoc.wallet.transactions.push({
         date: new Date(),
         type: "Credit",
         amount: refundAmount,
-        reason: "Cancelled entire order",
+        reason: `Cancelled product: ${item.product.name}`,
         orderId: order._id.toString(),
       });
 
       await userDoc.save({ validateBeforeSave: false });
-      req.flash("success", `Order cancelled. ₹${refundAmount} refunded to your wallet.`);
-    } else {
-      req.flash("success", "Order cancelled successfully.");
     }
 
-    return res.redirect("/user/orders");
+    item.status = "Cancelled";
+  }
+}
+
+// Update order status only if **all products are cancelled**
+if (order.products.every(p => p.status === "Cancelled")) {
+  order.status = "User Cancelled";
+  order.statusHistory.push({
+    status: "User Cancelled",
+    updatedAt: new Date(),
+  });
+}
+await order.save();
+
+req.flash("success", "Selected products cancelled and amount refunded to wallet.");
+return res.redirect("/user/orders");
   } catch (err) {
     console.error("Error canceling order:", err);
     req.flash("error", "Failed to cancel order");
