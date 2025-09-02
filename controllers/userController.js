@@ -587,7 +587,7 @@ exports.cancelOrder = async (req, res) => {
         userDoc.wallet = { balance: 0, transactions: [] };
       }
 
-      const refundAmount = item.quantity * item.price; // refund only this product's amount
+      const refundAmount = item.quantity * item.unitprice; // refund only this product's amount
       userDoc.wallet.balance += refundAmount;
       userDoc.wallet.transactions.push({
         date: new Date(),
