@@ -136,7 +136,7 @@
             <div class="form-group">
               <label>Select Categories</label>
               <% if (categories && categories.length > 0) { %>
-                <select name="categories" multiple class="select-multiple">
+                <select name="categories[]" multiple class="select-multiple">
                   <% categories.forEach(category => { %>
                     <option value="<%= category._id %>"><%= category.name %></option>
                   <% }) %>
