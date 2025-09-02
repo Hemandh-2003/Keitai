@@ -1190,11 +1190,18 @@ exports.createOffer = async (req, res) => {
 
     await newOffer.save();
 
-    if (offerType === 'product' && selectedProducts.length) {
-      await Product.updateMany({ _id: { $in: selectedProducts } }, { $push: { offers: newOffer._id } });
-    } else if (offerType === 'category' && selectedCategories.length) {
-      await Category.updateMany({ _id: { $in: selectedCategories } }, { $push: { offers: newOffer._id } });
-    }
+   if (offerType === 'product' && selectedProducts.length > 0) {
+  await Product.updateMany(
+    { _id: { $in: selectedProducts } },
+    { $addToSet: { offers: newOffer._id } } // addToSet avoids duplicates
+  );
+} else if (offerType === 'category' && selectedCategories.length > 0) {
+  await Category.updateMany(
+    { _id: { $in: selectedCategories } },
+    { $addToSet: { offers: newOffer._id } }
+  );
+}
+
 
     req.flash('success_msg', 'Offer created successfully');
     return res.redirect('/admin/offers');
