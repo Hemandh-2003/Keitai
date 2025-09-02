@@ -822,28 +822,30 @@ exports.checkout = async (req, res) => {
     } else {
       return res.redirect('/cart');
     }
+// If no address, just store checkout session & redirect
+if (!user.addresses || user.addresses.length === 0) {
+  req.session.checkout = sessionCheckout;
+  return res.redirect('/user/checkout'); 
+}
 
-    // ✅ Create a PENDING order immediately (before payment)
-    const order = new Order({
-      user: req.session.user._id,
-      products: sessionCheckout.productIds.map((pid, index) => ({
-        product: pid,
-        quantity: sessionCheckout.quantities[index],
-        unitPrice: sessionCheckout.offerPrices[index]
-      })),
-      totalAmount: sessionCheckout.totalAmount,
-      selectedAddress: user.addresses[0]?._id, // adjust if user selects address
-      paymentMethod: "Online", // default Razorpay
-      estimatedDelivery: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // example: +7 days
-      status: "Pending"
-    });
+// Otherwise create the pending order immediately
+const order = new Order({
+  user: req.session.user._id,
+  products: sessionCheckout.productIds.map((pid, index) => ({
+    product: pid,
+    quantity: sessionCheckout.quantities[index],
+    unitPrice: sessionCheckout.offerPrices[index]
+  })),
+  totalAmount: sessionCheckout.totalAmount,
+  selectedAddress: user.addresses[0]._id,
+  paymentMethod: "Online",
+  estimatedDelivery: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+  status: "Pending"
+});
 
-    await order.save();
-
-    // ✅ Store orderId for later update (success/failure)
-    req.session.checkout = { ...sessionCheckout, orderId: order._id };
-
-    return res.redirect('/user/checkout');
+await order.save();
+req.session.checkout = { ...sessionCheckout, orderId: order._id };
+return res.redirect('/user/checkout');
 
   } catch (err) {
     console.error('Checkout POST error:', err);
