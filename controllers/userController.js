@@ -1681,31 +1681,77 @@ exports.cancelEntireOrder = async (req, res) => {
     const { id } = req.params;
     const { reason } = req.body;
 
-    const order = await Order.findById(id).populate('products.product');
+    const order = await Order.findById(id).populate("products.product");
 
-    if (!order) return res.status(404).send('Order not found');
-
-    if (!['Pending', 'Placed'].includes(order.status)) {
-      return res.status(400).send('Cannot cancel this order.');
+    if (!order) {
+      req.flash("error", "Order not found");
+      return res.redirect("/user/orders");
     }
 
-    // Restock products
+    if (!["Pending", "Placed"].includes(order.status)) {
+      req.flash("error", "Order cannot be cancelled at this stage.");
+      return res.redirect("/user/orders");
+    }
+
+    // 1️⃣ Restock all products
     for (let item of order.products) {
-      const product = item.product;
-      product.quantity += item.quantity;
-      await product.save();
+      if (item.product && item.status !== "Cancelled") {
+        item.product.quantity += item.quantity;
+        await item.product.save();
+        item.status = "Cancelled";
+        item.cancelledAt = new Date();
+      }
     }
 
-    order.status = 'User Cancelled';
-    order.cancellationReason = reason || '';
+    // 2️⃣ Mark order cancelled
+    order.status = "User Cancelled";
+    order.cancellationReason = reason || "";
+    order.statusHistory.push({
+      status: "User Cancelled",
+      updatedAt: new Date(),
+    });
+
+    let refundAmount = 0;
+
+    // 3️⃣ Refund if online payment (not COD)
+    if (order.paymentMethod !== "COD" && order.paymentStatus === "Paid") {
+      const userDoc = await User.findById(order.user);
+
+      if (!userDoc.wallet) {
+        userDoc.wallet = { balance: 0, transactions: [] };
+      }
+
+      refundAmount = order.totalAmount;
+
+      userDoc.wallet.balance += refundAmount;
+      userDoc.wallet.transactions.push({
+        date: new Date(),
+        type: "Credit",
+        amount: refundAmount,
+        reason: "Cancelled entire order",
+        orderId: order._id.toString(),
+      });
+
+      await userDoc.save({ validateBeforeSave: false });
+      order.paymentStatus = "Refunded";
+    }
+
     await order.save();
 
-    res.redirect('/user/orders');
+    if (refundAmount > 0) {
+      req.flash("success", `Order cancelled. ₹${refundAmount} refunded to your wallet.`);
+    } else {
+      req.flash("success", "Order cancelled successfully.");
+    }
+
+    return res.redirect("/user/orders");
   } catch (err) {
-    console.error('Cancel entire order error:', err);
-    res.status(500).send('Server error');
+    console.error("❌ Cancel entire order error:", err);
+    req.flash("error", "Failed to cancel order");
+    return res.redirect("/user/orders");
   }
 };
+
 exports.returnProduct = async (req, res) => {
   try {
     const { orderId, productId } = req.params;
