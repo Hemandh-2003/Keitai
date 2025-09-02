@@ -831,22 +831,8 @@ if (!user.addresses || user.addresses.length === 0) {
 }
 
 // // Otherwise create the pending order immediately
- const order = new Order({
-   user: req.session.user._id,
-   products: sessionCheckout.productIds.map((pid, index) => ({
-     product: pid,
-     quantity: sessionCheckout.quantities[index],
-     unitPrice: sessionCheckout.offerPrices[index]
-  })),
-  totalAmount: sessionCheckout.totalAmount,
-  selectedAddress: user.addresses[0]._id,
-  paymentMethod: "Online",
-  estimatedDelivery: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-   status: "Pending"
- });
 
- await order.save();
- console.log("Order created with ID:(chekout)", order._id);
+//  console.log("Order created with ID:(chekout)", order._id);
  req.session.checkout = { ...sessionCheckout, orderId: order._id };
 return res.redirect('/user/checkout');
 
@@ -862,7 +848,7 @@ exports.getCheckout = async (req, res) => {
 
     let checkout = req.session.checkout;
     const user = await User.findById(req.session.user._id);
-    console.log("Order created with ID:(getcheckout)", req.session.checkout.orderId);
+    // console.log("Order created with ID:(getcheckout)", req.session.checkout.orderId);
 
     // ✅ Handle retry case
     if ((!checkout || !checkout.productIds || checkout.productIds.length === 0) && req.session.retryOrderId) {
