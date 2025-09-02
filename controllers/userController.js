@@ -830,23 +830,24 @@ if (!user.addresses || user.addresses.length === 0) {
   return res.redirect('/user/checkout'); 
 }
 
-// Otherwise create the pending order immediately
-const order = new Order({
-  user: req.session.user._id,
-  products: sessionCheckout.productIds.map((pid, index) => ({
-    product: pid,
-    quantity: sessionCheckout.quantities[index],
-    unitPrice: sessionCheckout.offerPrices[index]
-  })),
-  totalAmount: sessionCheckout.totalAmount,
-  selectedAddress: user.addresses[0]._id,
-  paymentMethod: "Online",
-  estimatedDelivery: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-  status: "Pending"
-});
+// // Otherwise create the pending order immediately
+// const order = new Order({
+//   user: req.session.user._id,
+//   products: sessionCheckout.productIds.map((pid, index) => ({
+//     product: pid,
+//     quantity: sessionCheckout.quantities[index],
+//     unitPrice: sessionCheckout.offerPrices[index]
+//   })),
+//   totalAmount: sessionCheckout.totalAmount,
+//   selectedAddress: user.addresses[0]._id,
+//   paymentMethod: "Online",
+//   estimatedDelivery: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+//   status: "Pending"
+// });
 
-await order.save();
-req.session.checkout = { ...sessionCheckout, orderId: order._id };
+// await order.save();
+// console.log("Order created with ID:(chekout)", order._id);
+// req.session.checkout = { ...sessionCheckout, orderId: order._id };
 return res.redirect('/user/checkout');
 
   } catch (err) {
@@ -861,10 +862,12 @@ exports.getCheckout = async (req, res) => {
 
     let checkout = req.session.checkout;
     const user = await User.findById(req.session.user._id);
+    console.log("Order created with ID:(getcheckout)", req.session.checkout.orderId);
 
     // ✅ Handle retry case
     if ((!checkout || !checkout.productIds || checkout.productIds.length === 0) && req.session.retryOrderId) {
       const retryOrder = await Order.findById(req.session.retryOrderId).populate('products.product');
+      console.log('retry is working')
 
       if (!retryOrder) {
         return res.status(404).render('user/error', { message: 'Retry order not found' });
@@ -875,7 +878,7 @@ exports.getCheckout = async (req, res) => {
         quantities: retryOrder.products.map(p => p.quantity),
         offerPrices: retryOrder.products.map(p => p.product.price), // Or a better offer logic
         totalAmount: retryOrder.totalAmount,
-        isRetry: true,
+        // isRetry: true,
         orderId: retryOrder._id
       };
     }
