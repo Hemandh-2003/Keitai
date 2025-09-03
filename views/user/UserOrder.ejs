@@ -215,7 +215,8 @@
         <% orders.forEach(order=> { %>
           <article class="order-card">
             <div class="order-header">
-              <div class="order-id">Order #<%= order.orderId %></div>
+              <div class="order-id">Order #<%= order.orderId %>
+              </div>
               <span class="order-status">
                 <% if (order.returnStatus && ['Requested','Approved','Rejected'].includes(order.returnStatus)) { %>
                   Return <%= order.returnStatus %>
@@ -230,19 +231,25 @@
             <div class="order-products">
               <% order.products.forEach(item=> { %>
                 <div class="order-product">
-                  <p><strong>Product:</strong> <%= item.product.name %> (<%= item.quantity %>)</p>
+                  <p><strong>Product:</strong>
+                    <%= item.product.name %> (<%= item.quantity %>)
+                  </p>
                 </div>
                 <% }) %>
             </div>
             <div class="order-info">
-              <p><strong>Total Amount:</strong> ₹<%= new Intl.NumberFormat('en-IN').format(order.totalAmount.toFixed(2)) %></p>
+              <p><strong>Total Amount:</strong> ₹<%= new Intl.NumberFormat('en-IN').format(order.totalAmount.toFixed(2))
+                  %>
+              </p>
             </div>
             <footer>
               <% if (order.status==='Payment Failed' ) { %>
-                <form action="/payment/retry-payment-page" method="POST" style="display:inline;">
-                  <input type="hidden" name="orderId" value="<%= order._id %>">
-                  <button class="btn btn-warning">Retry Payment</button>
+                <form action="/user/retry-checkout/<%= order._id %>" method="GET" style="display:inline;">
+                  <button type="submit" class="btn btn-warning">
+                    <i class="fas fa-sync-alt"></i> Retry Payment
+                  </button>
                 </form>
+
                 <% } else { %>
                   <button class="view-details-btn">
                     <a href="/user/order/<%= order._id %>">View Details</a>
@@ -300,4 +307,5 @@
   </script>
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </body>
+
 </html>

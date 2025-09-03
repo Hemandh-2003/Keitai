@@ -934,13 +934,11 @@ exports.retryPayment = async (req, res) => {
     const order = await Order.findById(orderId).populate('products.product');
     if (!order) return res.status(404).send('Order not found');
 
-    // Allow retry only for Pending or Failed
-    if (!['Pending', 'Failed'].includes(order.status)) {
+    if (!['failed', 'pending'].includes(order.paymentStatus)) {
       return res.redirect(`/user/order/${orderId}`);
     }
 
-    // ✅ Store orderId only
-    req.session.retryOrderId = order._id.toString();  
+    req.session.retryOrderId = order._id.toString();
     res.redirect('/checkout');
   } catch (err) {
     console.error('Retry Payment Error:', err);
@@ -948,7 +946,7 @@ exports.retryPayment = async (req, res) => {
   }
 };
 
-/*exports.retryCheckout = async (req, res) => {
+exports.retryCheckout = async (req, res) => {
   try {
     if (!req.session.user) return res.redirect('/login');
 
@@ -988,9 +986,9 @@ exports.retryPayment = async (req, res) => {
     console.error('Retry checkout error:', err);
     res.status(500).redirect('/cart');
   }
-};*/
+};
 
-/*exports.retryCheckoutWithOrderId = async (req, res) => {
+exports.retryCheckoutWithOrderId = async (req, res) => {
   try {
     const { orderId } = req.params;
     const userId = req.session.user?._id;
@@ -1004,36 +1002,24 @@ exports.retryPayment = async (req, res) => {
       return res.redirect('/user/orders');
     }
 
+    // rebuild checkout session
     const sessionCheckout = {
-      productIds: [],
-      quantities: [],
-      offerPrices: [],
-      totalAmount: 0,
+      productIds: order.products.map(p => p.product._id.toString()),
+      quantities: order.products.map(p => p.quantity),
+      offerPrices: order.products.map(p => p.price),
+      totalAmount: order.totalAmount,
       isFromCart: false,
-      addressId: order.address._id, // optional
-      couponId: order.coupon?._id || null // optional
+      addressId: order.address?._id || null,
+      couponId: order.coupon?._id || null
     };
-
-    for (const item of order.products) {
-      const product = item.product;
-      if (!product || product.isBlocked || product.isDeleted || product.stock < item.quantity) {
-        continue;
-      }
-
-      sessionCheckout.productIds.push(product._id.toString());
-      sessionCheckout.quantities.push(item.quantity);
-      sessionCheckout.offerPrices.push(item.price);
-      sessionCheckout.totalAmount += item.quantity * item.price;
-    }
 
     req.session.checkout = sessionCheckout;
     return res.redirect('/user/checkout');
-
   } catch (err) {
     console.error('Error retrying checkout with orderId:', err);
     return res.redirect('/user/orders');
   }
-};*/
+};
 
 exports.createInlineAddress = async (req, res) => {
   try {
@@ -1246,14 +1232,15 @@ exports.placeOrder = async (req, res) => {
 
 exports.paymentFailed = async (req, res) => {
   try {
-    const { orderId } = req.body; // Razorpay or client should send this back
+    const { orderId } = req.body;
 
     const order = await Order.findById(orderId);
-    if (!order) {
-      return res.status(404).send("Order not found");
-    }
+    if (!order) return res.status(404).send("Order not found");
 
-    order.status = "Failed";
+    // keep order lifecycle, but mark payment as failed
+    order.status = "Placed";  
+    order.paymentStatus = "failed";  
+
     await order.save();
 
     req.flash("error", "Payment failed. You can retry from your orders page.");
