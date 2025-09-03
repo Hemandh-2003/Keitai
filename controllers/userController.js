@@ -573,7 +573,7 @@ exports.cancelOrder = async (req, res) => {
       return res.redirect("/user/orders");
     }
 
-    // 1️⃣ Restock and cancel items
+    // 1️⃣ Restock items
     for (let item of order.products) {
       if (item.product && item.status !== "Cancelled") {
         item.product.quantity += item.quantity;
@@ -583,49 +583,39 @@ exports.cancelOrder = async (req, res) => {
       }
     }
 
+    order.status = "User Cancelled";
+    order.statusHistory.push({
+      status: "User Cancelled",
+      updatedAt: new Date(),
+    });
+    order.paymentStatus = "Refunded";
+
     let refundAmount = 0;
 
-    // 2️⃣ Decide refund strategy
-    if (order.paymentMethod !== "COD" && order.paymentStatus === "Paid") {
-      const userDoc = await User.findById(order.user);
-      if (!userDoc.wallet) {
-        userDoc.wallet = { balance: 0, transactions: [] };
-      }
+    if (order.paymentMethod !== "COD" && order.paymentStatus === "Refunded") {
+      // Refund full total amount for whole order
+      refundAmount = order.products.reduce(
+        (sum, p) => sum + (p.quantity * (p.unitPrice || p.product.salesPrice || 0)),
+        0
+      );
 
-      // 👉 If whole order is cancelled → refund full totalAmount
-      if (order.products.every(p => p.status === "Cancelled")) {
-        refundAmount = order.totalAmount;
-        order.status = "User Cancelled";
-        order.statusHistory.push({
-          status: "User Cancelled",
-          updatedAt: new Date(),
-        });
-        order.paymentStatus = "Refunded";
-      } else {
-        // 👉 Partial cancellation → refund only cancelled products
-        refundAmount = order.products
-          .filter(p => p.status === "Cancelled")
-          .reduce((sum, p) => sum + (p.quantity * p.unitPrice), 0);
-      }
+      // Atomic wallet update like single item cancellation
+      await User.findByIdAndUpdate(order.user, {
+        $inc: { "wallet.balance": refundAmount },
+        $push: {
+          "wallet.transactions": {
+            type: "Credit",
+            amount: refundAmount,
+            reason: "Cancelled entire order",
+            orderId: order._id.toString(),
+            date: new Date(),
+          },
+        },
+      });
 
-      if (refundAmount > 0) {
-        userDoc.wallet.balance += refundAmount;
-        userDoc.wallet.transactions.push({
-          date: new Date(),
-          type: "Credit",
-          amount: refundAmount,
-          reason: order.status === "User Cancelled" 
-            ? "Cancelled entire order" 
-            : "Cancelled some products",
-          orderId: order._id.toString(),
-        });
-
-        await userDoc.save({ validateBeforeSave: false });
-        req.flash("success", `₹${refundAmount} refunded to your wallet.`);
-      }
+      req.flash("success", `₹${refundAmount} refunded to your wallet.`);
     }
 
-    // 3️⃣ Save order after updates
     await order.save();
 
     return res.redirect("/user/orders");
@@ -635,6 +625,7 @@ exports.cancelOrder = async (req, res) => {
     return res.redirect("/user/orders");
   }
 };
+
 
 
 
