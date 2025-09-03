@@ -928,23 +928,31 @@ exports.getCheckout = async (req, res) => {
 
 
 exports.retryPayment = async (req, res) => {
-  const { orderId } = req.params;
-
   try {
-    const order = await Order.findById(orderId).populate('products.product');
-    if (!order) return res.status(404).send('Order not found');
+    const { orderId } = req.body;
 
-    if (!['failed', 'pending'].includes(order.paymentStatus)) {
-      return res.redirect(`/user/order/${orderId}`);
+    const order = await Order.findById(orderId).populate("user");
+    if (!order) return res.status(404).send("Order not found");
+
+    if (order.paymentStatus !== "failed") {
+      return res.status(400).send("This order is not eligible for retry.");
     }
 
-    req.session.retryOrderId = order._id.toString();
-    res.redirect('/checkout');
+    // Re-generate Razorpay order (or redirect to checkout)
+    return res.render("user/checkout", {
+      orderId: order._id,
+      totalAmount: order.totalAmount,
+      address: order.user.addresses.id(order.selectedAddress),
+      paymentMethod: "Online",
+      retry: true
+    });
+
   } catch (err) {
-    console.error('Retry Payment Error:', err);
-    res.status(500).send('Server error');
+    console.error("❌ Error retrying payment:", err.message);
+    res.status(500).send("Internal Server Error");
   }
 };
+
 
 exports.retryCheckout = async (req, res) => {
   try {
@@ -1237,10 +1245,9 @@ exports.paymentFailed = async (req, res) => {
     const order = await Order.findById(orderId);
     if (!order) return res.status(404).send("Order not found");
 
-    // keep order lifecycle, but mark payment as failed
-    order.status = "Placed";  
-    order.paymentStatus = "failed";  
-
+    // Keep order alive but mark payment failed
+    order.status = "Pending";
+    order.paymentStatus = "failed";
     await order.save();
 
     req.flash("error", "Payment failed. You can retry from your orders page.");
@@ -1250,6 +1257,7 @@ exports.paymentFailed = async (req, res) => {
     res.status(500).send("Internal Server Error");
   }
 };
+
 // Confirm Payment
 exports.confirmPayment = async (req, res) => {
   try {
