@@ -871,17 +871,16 @@ exports.getCheckout = async (req, res) => {
         return res.status(404).render('user/error', { message: 'Retry order not found' });
       }
 
-      checkout = {
-        productIds: retryOrder.products.map(p => p.product._id.toString()),
-        quantities: retryOrder.products.map(p => p.quantity),
-        offerPrices: retryOrder.products.map(p => p.price),
-        totalAmount: retryOrder.totalAmount,
-        orderId: retryOrder._id.toString(),   // ✅ Always set
-        isRetry: true
-      };
+     checkout = {
+  productIds: retryOrder.products.map(p => p.product._id.toString()),
+  quantities: retryOrder.products.map(p => p.quantity),
+  offerPrices: retryOrder.products.map(p => p.unitPrice),  // ✅ use unitPrice from schema
+  totalAmount: retryOrder.totalAmount,
+  orderId: retryOrder._id.toString(),   // ✅ Always use Mongo _id
+  isRetry: true
+};
+req.session.checkout = checkout;
 
-      // Store in session so placeOrder uses it
-      req.session.checkout = checkout;
     }
 
     if (!checkout || !checkout.productIds?.length) {
@@ -929,31 +928,26 @@ exports.getCheckout = async (req, res) => {
 
 exports.retryPayment = async (req, res) => {
   try {
-    const { orderId } = req.body;
-
+    const { orderId } = req.body;  // this should be Mongo _id
     const order = await Order.findById(orderId).populate("user");
-    if (!order) {
-      req.flash("error", "Order not found");
-      return res.redirect("/user/orders");
+    if (!order) return res.status(404).send("Order not found");
+
+    if (order.status !== "Payment Failed") {   // ✅ match schema
+      return res.status(400).send("This order is not eligible for retry.");
     }
 
-    if (order.paymentStatus !== "failed") {
-      req.flash("error", "This order is not eligible for retry.");
-      return res.redirect("/user/orders");
-    }
-
-    // ✅ Save orderId in session for getCheckout
+    // Save retryOrderId in session
     req.session.retryOrderId = order._id.toString();
 
-    // Redirect into your normal checkout flow
+    // Redirect to checkout so getCheckout handles it
     return res.redirect("/user/checkout");
 
   } catch (err) {
     console.error("❌ Error retrying payment:", err.message);
-    req.flash("error", "Something went wrong while retrying payment.");
-    res.redirect("/user/orders");
+    res.status(500).send("Internal Server Error");
   }
 };
+
 
 
 exports.retryCheckout = async (req, res) => {
