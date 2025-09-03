@@ -932,24 +932,26 @@ exports.retryPayment = async (req, res) => {
     const { orderId } = req.body;
 
     const order = await Order.findById(orderId).populate("user");
-    if (!order) return res.status(404).send("Order not found");
-
-    if (order.paymentStatus !== "failed") {
-      return res.status(400).send("This order is not eligible for retry.");
+    if (!order) {
+      req.flash("error", "Order not found");
+      return res.redirect("/user/orders");
     }
 
-    // Re-generate Razorpay order (or redirect to checkout)
-    return res.render("user/checkout", {
-      orderId: order._id,
-      totalAmount: order.totalAmount,
-      address: order.user.addresses.id(order.selectedAddress),
-      paymentMethod: "Online",
-      retry: true
-    });
+    if (order.paymentStatus !== "failed") {
+      req.flash("error", "This order is not eligible for retry.");
+      return res.redirect("/user/orders");
+    }
+
+    // ✅ Save orderId in session for getCheckout
+    req.session.retryOrderId = order._id.toString();
+
+    // Redirect into your normal checkout flow
+    return res.redirect("/user/checkout");
 
   } catch (err) {
     console.error("❌ Error retrying payment:", err.message);
-    res.status(500).send("Internal Server Error");
+    req.flash("error", "Something went wrong while retrying payment.");
+    res.redirect("/user/orders");
   }
 };
 
