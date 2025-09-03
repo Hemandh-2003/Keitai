@@ -948,7 +948,7 @@ exports.retryPayment = async (req, res) => {
   }
 };
 
-exports.retryCheckout = async (req, res) => {
+/*exports.retryCheckout = async (req, res) => {
   try {
     if (!req.session.user) return res.redirect('/login');
 
@@ -988,9 +988,9 @@ exports.retryCheckout = async (req, res) => {
     console.error('Retry checkout error:', err);
     res.status(500).redirect('/cart');
   }
-};
+};*/
 
-exports.retryCheckoutWithOrderId = async (req, res) => {
+/*exports.retryCheckoutWithOrderId = async (req, res) => {
   try {
     const { orderId } = req.params;
     const userId = req.session.user?._id;
@@ -1033,7 +1033,7 @@ exports.retryCheckoutWithOrderId = async (req, res) => {
     console.error('Error retrying checkout with orderId:', err);
     return res.redirect('/user/orders');
   }
-};
+};*/
 
 exports.createInlineAddress = async (req, res) => {
   try {
