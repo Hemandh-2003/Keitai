@@ -929,6 +929,7 @@ req.session.checkout = checkout;
 exports.retryPayment = async (req, res) => {
   try {
     const { orderId } = req.body; // this is _id coming from form
+    console.log(orderId)
     const order = await Order.findById(orderId);
 
     if (!order) {
