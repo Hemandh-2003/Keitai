@@ -862,12 +862,10 @@ exports.getCheckout = async (req, res) => {
 
     let checkout = req.session.checkout;
     const user = await User.findById(req.session.user._id);
-    // console.log("Order created with ID:(getcheckout)", req.session.checkout.orderId);
 
-    // ✅ Handle retry case
-    if ((!checkout || !checkout.productIds || checkout.productIds.length === 0) && req.session.retryOrderId) {
+    // ✅ Retry branch
+    if ((!checkout || !checkout.productIds?.length) && req.session.retryOrderId) {
       const retryOrder = await Order.findById(req.session.retryOrderId).populate('products.product');
-      console.log('retry is working')
 
       if (!retryOrder) {
         return res.status(404).render('user/error', { message: 'Retry order not found' });
@@ -876,14 +874,17 @@ exports.getCheckout = async (req, res) => {
       checkout = {
         productIds: retryOrder.products.map(p => p.product._id.toString()),
         quantities: retryOrder.products.map(p => p.quantity),
-        offerPrices: retryOrder.products.map(p => p.product.price), // Or a better offer logic
+        offerPrices: retryOrder.products.map(p => p.price),
         totalAmount: retryOrder.totalAmount,
-        // isRetry: true,
-        orderId: retryOrder._id
+        orderId: retryOrder._id.toString(),   // ✅ Always set
+        isRetry: true
       };
+
+      // Store in session so placeOrder uses it
+      req.session.checkout = checkout;
     }
 
-    if (!checkout || !checkout.productIds || checkout.productIds.length === 0) {
+    if (!checkout || !checkout.productIds?.length) {
       return res.redirect('/cart');
     }
 
@@ -897,33 +898,27 @@ exports.getCheckout = async (req, res) => {
     }
 
     const now = new Date();
-
-    // ✅ Fetch coupons
     const coupons = await Coupon.find({
       isActive: true,
       startDate: { $lte: now },
       endDate: { $gte: now }
     }).sort({ createdAt: -1 });
 
-    // ✅ Filter coupons by minPurchase and maxDiscount
-    const validCoupons = coupons.filter(coupon => {
-      return (
-        totalAmount >= coupon.minPurchase &&
-        (coupon.maxDiscount === 0 || totalAmount <= coupon.maxDiscount)
-      );
-    });
+    const validCoupons = coupons.filter(c => 
+      totalAmount >= c.minPurchase &&
+      (c.maxDiscount === 0 || totalAmount <= c.maxDiscount)
+    );
 
     res.render('user/checkout', {
       user,
       cart,
       addresses: user.addresses || [],
       totalAmount,
-      coupons: validCoupons, 
+      coupons: validCoupons,
       session: req.session,
       razorpayKeyId: process.env.RAZORPAY_KEY_ID,
-      walletBalance: (user.wallet && user.wallet.balance) || 0
+      walletBalance: user.wallet?.balance || 0
     });
-
   } catch (error) {
     console.error('Checkout GET error:', error);
     res.status(500).render('user/error', { message: 'Failed to load checkout' });
@@ -931,20 +926,21 @@ exports.getCheckout = async (req, res) => {
 };
 
 
+
 exports.retryPayment = async (req, res) => {
   const { orderId } = req.params;
 
   try {
     const order = await Order.findById(orderId).populate('products.product');
-
     if (!order) return res.status(404).send('Order not found');
 
-    // ✅ Allow retry for both Pending and Failed
+    // Allow retry only for Pending or Failed
     if (!['Pending', 'Failed'].includes(order.status)) {
       return res.redirect(`/user/order/${orderId}`);
     }
 
-    req.session.retryOrder = order; // Temporarily store order for reuse
+    // ✅ Store orderId only
+    req.session.retryOrderId = order._id.toString();  
     res.redirect('/checkout');
   } catch (err) {
     console.error('Retry Payment Error:', err);
