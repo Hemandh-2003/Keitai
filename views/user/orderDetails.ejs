@@ -235,11 +235,10 @@
               <% } %>
 
                 <% if (order.status==='Payment Failed' ) { %>
-                  <form action="/user/retry-checkout/<%= order._id %>" method="GET" style="display:inline;">
-                    <button type="submit" class="btn btn-warning">
-                      <i class="fas fa-sync-alt"></i> Retry Payment
-                    </button>
-                  </form>
+                  <a href="/user/retry-checkout/<%= order._id %>" class="btn btn-warning">
+                    <i class="fas fa-sync-alt"></i> Retry Payment
+                  </a>
+
 
                   <% } %>
         </div>
