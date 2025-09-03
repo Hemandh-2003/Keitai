@@ -242,6 +242,7 @@
                   %>
               </p>
             </div>
+            <pre><%= JSON.stringify(order, null, 2) %></pre>
             <footer>
               <% if (order.status==='Payment Failed' ) { %>
                 <form action="/user/retry-payment" method="POST" style="display:inline;">
