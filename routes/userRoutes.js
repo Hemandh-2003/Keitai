@@ -39,8 +39,8 @@ router.post('/place-order', ...protect, userController.placeOrder);
 router.post('/confirm-payment', ...protect, userController.confirmPayment);
 router.get('/confirm-payment', ...protect, userController.renderConfirmPayment);
 router.post('/address/create-inline', userController.createInlineAddress);
-router.get('/retry-checkout', userController.retryCheckout);
-router.get('/retry-checkout/:orderId', userController.retryCheckoutWithOrderId);
+//router.get('/retry-checkout', userController.retryCheckout);
+//router.get('/retry-checkout/:orderId', userController.retryCheckoutWithOrderId);
 // Settings and Password Routes
 router.get('/settings', ...protect, userController.getSettingsPage);
 router.post('/change-password', ...protect, upload.none(), userController.changePassword);
