@@ -1175,38 +1175,40 @@ exports.createOffer = async (req, res) => {
 
     discountValue = parseInt(discountValue);
 
-    const newOffer = new Offer({
-      name,
-      description,
-      offerType,
-      discountType,
-      discountValue,
-      startDate,
-      endDate,
-      isActive: true,
-      products: selectedProducts,
-      categories: selectedCategories,
-      referralCode: offerType === 'referral' ? referralCode : undefined,
-      referrerBonus: offerType === 'referral' ? referrerBonus : undefined,
-      refereeBonus: offerType === 'referral' ? refereeBonus : undefined,
-      minPurchaseAmount: offerType === 'referral' ? minPurchaseAmount : undefined
-    });
+  const newOffer = new Offer({
+  name,
+  description,
+  offerType,
+  discountType,
+  discountValue,
+  startDate,
+  endDate,
+  isActive: true,
+  products: selectedProducts,      // always assign array
+  categories: selectedCategories,  // always assign array
+  referralCode: offerType === 'referral' ? referralCode : undefined,
+  referrerBonus: offerType === 'referral' ? referrerBonus : undefined,
+  refereeBonus: offerType === 'referral' ? refereeBonus : undefined,
+  minPurchaseAmount: offerType === 'referral' ? minPurchaseAmount : undefined
+});
+
 
     await newOffer.save();
 
     // Add offer to products/categories
-    if (selectedProducts.length > 0) {
-      await Product.updateMany(
-        { _id: { $in: selectedProducts } },
-        { $addToSet: { offers: newOffer._id } }
-      );
-    }
-    if (selectedCategories.length > 0) {
-      await Category.updateMany(
-        { _id: { $in: selectedCategories } },
-        { $addToSet: { offers: newOffer._id } }
-      );
-    }
+   if (selectedProducts.length > 0) {
+  await Product.updateMany(
+    { _id: { $in: selectedProducts } },
+    { $addToSet: { offers: newOffer._id } }
+  );
+}
+if (selectedCategories.length > 0) {
+  await Category.updateMany(
+    { _id: { $in: selectedCategories } },
+    { $addToSet: { offers: newOffer._id } }
+  );
+}
+
 
     req.flash('success_msg', 'Offer created successfully');
     return res.redirect('/admin/offers');
