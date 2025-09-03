@@ -1159,67 +1159,59 @@ exports.createOffer = async (req, res) => {
       referralCode, referrerBonus, refereeBonus, minPurchaseAmount
     } = req.body;
 
-    name = name.trim();
-    const existingOffer = await Offer.findOne({ name });
-    if (existingOffer) {
-      req.flash('error_msg', 'Offer with this name already exists');
-      return res.redirect('/admin/offers/add');
-    }
+    // Normalize products/categories
+    const selectedProducts = Array.isArray(products)
+      ? products.filter(p => p).map(p => p.toString())
+      : products ? [products.toString()] : [];
 
-   const selectedProducts = Array.isArray(products)
-  ? products.filter(p => p).map(p => p.toString())
-  : products ? [products.toString()] : [];
+    const selectedCategories = Array.isArray(categories)
+      ? categories.filter(c => c).map(c => c.toString())
+      : categories ? [categories.toString()] : [];
 
-const selectedCategories = Array.isArray(categories)
-  ? categories.filter(c => c).map(c => c.toString())
-  : categories ? [categories.toString()] : [];
-
-
-    discountValue = parseInt(discountValue);
-
-  const newOffer = new Offer({
-  name,
-  description,
-  offerType,
-  discountType,
-  discountValue,
-  startDate,
-  endDate,
-  isActive: true,
-  products: selectedProducts,      // always assign array
-  categories: selectedCategories,  // always assign array
-  referralCode: offerType === 'referral' ? referralCode : undefined,
-  referrerBonus: offerType === 'referral' ? referrerBonus : undefined,
-  refereeBonus: offerType === 'referral' ? refereeBonus : undefined,
-  minPurchaseAmount: offerType === 'referral' ? minPurchaseAmount : undefined
-});
-
+    // Save offer document
+    const newOffer = new Offer({
+      name: name.trim(),
+      description,
+      offerType,
+      discountType,
+      discountValue: parseInt(discountValue),
+      startDate,
+      endDate,
+      isActive: true,
+      products: offerType === 'product' ? selectedProducts : [],
+      categories: offerType === 'category' ? selectedCategories : [],
+      referralCode: offerType === 'referral' ? referralCode : undefined,
+      referrerBonus: offerType === 'referral' ? referrerBonus : undefined,
+      refereeBonus: offerType === 'referral' ? refereeBonus : undefined,
+      minPurchaseAmount: offerType === 'referral' ? minPurchaseAmount : undefined
+    });
 
     await newOffer.save();
 
-    // Add offer to products/categories
-   if (selectedProducts.length > 0) {
-  await Product.updateMany(
-    { _id: { $in: selectedProducts } },
-    { $addToSet: { offers: newOffer._id } }
-  );
-}
-if (selectedCategories.length > 0) {
-  await Category.updateMany(
-    { _id: { $in: selectedCategories } },
-    { $addToSet: { offers: newOffer._id } }
-  );
-}
-
+    // Update associated products/categories
+    if (offerType === 'product' && selectedProducts.length > 0) {
+      await Product.updateMany(
+        { _id: { $in: selectedProducts } },
+        { $addToSet: { offers: newOffer._id } }
+      );
+    }
+    if (offerType === 'category' && selectedCategories.length > 0) {
+      await Category.updateMany(
+        { _id: { $in: selectedCategories } },
+        { $addToSet: { offers: newOffer._id } }
+      );
+    }
 
     req.flash('success_msg', 'Offer created successfully');
     return res.redirect('/admin/offers');
+
   } catch (err) {
     console.error('❌ Offer creation error:', err);
     req.flash('error_msg', 'Error creating offer');
     return res.redirect('/admin/offers/add');
   }
 };
+
 
 
 // Edit offer form
