@@ -1149,38 +1149,22 @@ exports.addOfferForm = async (req, res) => {
     res.redirect('/admin/offers');
   }
 };
-
+const normalizeToArray = (field) => {
+  if (!field) return [];
+  return Array.isArray(field) ? field.map(f => f.toString()) : [field.toString()];
+};
 // Create new offer
 exports.createOffer = async (req, res) => {
   try {
-    let {
+    const {
       name, description, offerType, discountType, discountValue,
       startDate, endDate, products, categories,
       referralCode, referrerBonus, refereeBonus, minPurchaseAmount
     } = req.body;
 
- // Ensure products is always an array of strings
-const selectedProducts = [];
-if (products) {
-  if (Array.isArray(products)) {
-    selectedProducts.push(...products.map(p => p.toString()));
-  } else {
-    selectedProducts.push(products.toString());
-  }
-}
+    const selectedProducts = offerType === 'product' ? normalizeToArray(products) : [];
+    const selectedCategories = offerType === 'category' ? normalizeToArray(categories) : [];
 
-// Ensure categories is always an array of strings
-const selectedCategories = [];
-if (categories) {
-  if (Array.isArray(categories)) {
-    selectedCategories.push(...categories.map(c => c.toString()));
-  } else {
-    selectedCategories.push(categories.toString());
-  }
-}
-
-
-    // Save offer document
     const newOffer = new Offer({
       name: name.trim(),
       description,
@@ -1190,8 +1174,8 @@ if (categories) {
       startDate,
       endDate,
       isActive: true,
-      products: offerType === 'product' ? selectedProducts : [],
-      categories: offerType === 'category' ? selectedCategories : [],
+      products: selectedProducts,
+      categories: selectedCategories,
       referralCode: offerType === 'referral' ? referralCode : undefined,
       referrerBonus: offerType === 'referral' ? referrerBonus : undefined,
       refereeBonus: offerType === 'referral' ? refereeBonus : undefined,
@@ -1201,13 +1185,14 @@ if (categories) {
     await newOffer.save();
 
     // Update associated products/categories
-    if (offerType === 'product' && selectedProducts.length > 0) {
+    if (selectedProducts.length) {
       await Product.updateMany(
         { _id: { $in: selectedProducts } },
         { $addToSet: { offers: newOffer._id } }
       );
     }
-    if (offerType === 'category' && selectedCategories.length > 0) {
+
+    if (selectedCategories.length) {
       await Category.updateMany(
         { _id: { $in: selectedCategories } },
         { $addToSet: { offers: newOffer._id } }
@@ -1215,16 +1200,14 @@ if (categories) {
     }
 
     req.flash('success_msg', 'Offer created successfully');
-    return res.redirect('/admin/offers');
+    res.redirect('/admin/offers');
 
   } catch (err) {
     console.error('❌ Offer creation error:', err);
     req.flash('error_msg', 'Error creating offer');
-    return res.redirect('/admin/offers/add');
+    res.redirect('/admin/offers/add');
   }
 };
-
-
 
 // Edit offer form
 exports.editOfferForm = async (req, res) => {
@@ -1259,32 +1242,27 @@ exports.editOfferForm = async (req, res) => {
 // Update offer
 exports.updateOffer = async (req, res) => {
   try {
-    const { 
-      name, 
-      description, 
-      offerType, 
-      discountType, 
-      discountValue,
-      startDate,
-      endDate,
-      isActive,
-      products,
-      categories,
-      referralCode,
-      referrerBonus,
-      refereeBonus,
-      minPurchaseAmount
+    const {
+      name, description, offerType, discountType, discountValue,
+      startDate, endDate, products, categories,
+      referralCode, referrerBonus, refereeBonus, minPurchaseAmount
     } = req.body;
 
     const offer = await Offer.findById(req.params.id);
-    
-    // Remove offer from previously associated products/categories
-    if (offer.offerType === 'product' && offer.products.length > 0) {
+    if (!offer) throw new Error('Offer not found');
+
+    const selectedProducts = offerType === 'product' ? normalizeToArray(products) : [];
+    const selectedCategories = offerType === 'category' ? normalizeToArray(categories) : [];
+
+    // Remove offer from old products/categories
+    if (offer.offerType === 'product' && offer.products.length) {
       await Product.updateMany(
         { _id: { $in: offer.products } },
         { $pull: { offers: offer._id } }
       );
-    } else if (offer.offerType === 'category' && offer.categories.length > 0) {
+    }
+
+    if (offer.offerType === 'category' && offer.categories.length) {
       await Category.updateMany(
         { _id: { $in: offer.categories } },
         { $pull: { offers: offer._id } }
@@ -1292,63 +1270,59 @@ exports.updateOffer = async (req, res) => {
     }
 
     // Update offer fields
-    offer.name = name;
+    offer.name = name.trim();
     offer.description = description;
     offer.offerType = offerType;
     offer.discountType = discountType;
     offer.discountValue = discountValue;
     offer.startDate = startDate;
     offer.endDate = endDate;
-   offer.isActive = req.body.hasOwnProperty('isActive');
+    offer.isActive = req.body.hasOwnProperty('isActive');
 
-    // Handle different offer types
-    if (offerType === 'product') {
-      offer.products = products || [];
-      offer.categories = [];
-      offer.referralCode = undefined;
-      offer.referrerBonus = undefined;
-      offer.refereeBonus = undefined;
-      offer.minPurchaseAmount = undefined;
-    } else if (offerType === 'category') {
-      offer.categories = categories || [];
-      offer.products = [];
-      offer.referralCode = undefined;
-      offer.referrerBonus = undefined;
-      offer.refereeBonus = undefined;
-      offer.minPurchaseAmount = undefined;
-    } else if (offerType === 'referral') {
+    // Assign products/categories/referral correctly
+    offer.products = selectedProducts;
+    offer.categories = selectedCategories;
+
+    if (offerType === 'referral') {
       offer.referralCode = referralCode;
       offer.referrerBonus = referrerBonus;
       offer.refereeBonus = refereeBonus;
       offer.minPurchaseAmount = minPurchaseAmount;
       offer.products = [];
       offer.categories = [];
+    } else {
+      offer.referralCode = undefined;
+      offer.referrerBonus = undefined;
+      offer.refereeBonus = undefined;
+      offer.minPurchaseAmount = undefined;
     }
 
     await offer.save();
 
-    // Add offer to newly associated products/categories
-    if (offer.offerType === 'product' && offer.products.length > 0) {
+    // Add offer to new products/categories
+    if (selectedProducts.length) {
       await Product.updateMany(
-        { _id: { $in: offer.products } },
-        { $push: { offers: offer._id } }
+        { _id: { $in: selectedProducts } },
+        { $addToSet: { offers: offer._id } }
       );
-    } else if (offer.offerType === 'category' && offer.categories.length > 0) {
+    }
+
+    if (selectedCategories.length) {
       await Category.updateMany(
-        { _id: { $in: offer.categories } },
-        { $push: { offers: offer._id } }
+        { _id: { $in: selectedCategories } },
+        { $addToSet: { offers: offer._id } }
       );
     }
 
     req.flash('success', 'Offer updated successfully');
     res.redirect('/admin/offers');
-  } catch (error) {
-    console.error('Error updating offer:', error);
+
+  } catch (err) {
+    console.error('❌ Offer update error:', err);
     req.flash('error', 'Error updating offer');
     res.redirect(`/admin/offers/edit/${req.params.id}`);
   }
 };
-
 // Toggle offer status
 exports.toggleOfferStatus = async (req, res) => {
   try {
