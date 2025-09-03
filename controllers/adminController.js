@@ -1159,14 +1159,26 @@ exports.createOffer = async (req, res) => {
       referralCode, referrerBonus, refereeBonus, minPurchaseAmount
     } = req.body;
 
-    // Normalize products/categories
-    const selectedProducts = Array.isArray(products)
-      ? products.filter(p => p).map(p => p.toString())
-      : products ? [products.toString()] : [];
+ // Ensure products is always an array of strings
+const selectedProducts = [];
+if (products) {
+  if (Array.isArray(products)) {
+    selectedProducts.push(...products.map(p => p.toString()));
+  } else {
+    selectedProducts.push(products.toString());
+  }
+}
 
-    const selectedCategories = Array.isArray(categories)
-      ? categories.filter(c => c).map(c => c.toString())
-      : categories ? [categories.toString()] : [];
+// Ensure categories is always an array of strings
+const selectedCategories = [];
+if (categories) {
+  if (Array.isArray(categories)) {
+    selectedCategories.push(...categories.map(c => c.toString()));
+  } else {
+    selectedCategories.push(categories.toString());
+  }
+}
+
 
     // Save offer document
     const newOffer = new Offer({
