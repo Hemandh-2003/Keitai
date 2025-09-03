@@ -1213,27 +1213,31 @@ exports.createOffer = async (req, res) => {
 exports.editOfferForm = async (req, res) => {
   try {
     const offer = await Offer.findById(req.params.id);
-    const products = await Product.find({}); // all products
-    const categories = await Category.find({}); // all categories
+    if (!offer) {
+      req.flash('error', 'Offer not found.');
+      return res.redirect('/admin/offers');
+    }
 
-    const selectedProducts = offer.products.map(p => p.toString());
-    const selectedCategories = offer.categories.map(c => c.toString());
+    const products = await Product.find({ isBlocked: false });
+    const categories = await Category.find({ isDeleted: false });
 
-    res.render('edit-offer', {
-      offer,
-      products,
-      categories,
-      selectedProducts,
-      selectedCategories,
-      offerTypes: ['product','category','referral'],
-      discountTypes: ['percentage','fixed']
-    });
-  } catch (err) {
-    console.error(err);
-    res.redirect('/admin/offers');
+   // console.log('Offer fetched for editing:', offer); // Optional log
+
+   res.render('admin/edit-offer', { 
+  offer,
+  products,
+  categories,
+  offerTypes: ['product', 'category', 'referral'],
+  discountTypes: ['percentage', 'fixed'],
+  selectedProducts: (offer.products || []).map(p => p.toString()),
+  selectedCategories: (offer.categories || []).map(c => c.toString())
+});
+
+  } catch (error) {
+    console.error('Error loading edit offer form:', error);
+    res.status(500).send('Error loading form');
   }
 };
-
 
 // Update offer
 exports.updateOffer = async (req, res) => {
