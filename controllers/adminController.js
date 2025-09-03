@@ -1166,12 +1166,14 @@ exports.createOffer = async (req, res) => {
       return res.redirect('/admin/offers/add');
     }
 
-    const selectedProducts = products
-      ? Array.isArray(products) ? products.map(p => p.trim()) : [products.trim()]
-      : [];
-    const selectedCategories = categories
-      ? Array.isArray(categories) ? categories.map(c => c.trim()) : [categories.trim()]
-      : [];
+   const selectedProducts = Array.isArray(products)
+  ? products.filter(p => p).map(p => p.toString())
+  : products ? [products.toString()] : [];
+
+const selectedCategories = Array.isArray(categories)
+  ? categories.filter(c => c).map(c => c.toString())
+  : categories ? [categories.toString()] : [];
+
 
     discountValue = parseInt(discountValue);
 
