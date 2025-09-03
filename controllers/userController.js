@@ -927,16 +927,23 @@ req.session.checkout = checkout;
 
 
 exports.retryPayment = async (req, res) => {
-  const { orderId } = req.body;  // This is the Mongo _id
-  const order = await Order.findById(orderId);
-  if (!order || order.status !== 'Payment Failed') {
-    return res.redirect('/user/orders');
+  try {
+    const { orderId } = req.body; // this is _id coming from form
+    const order = await Order.findById(orderId);
+
+    if (!order) {
+      return res.status(404).send("Order not found");
+    }
+
+    // Save order._id to session for retry
+    req.session.retryOrderId = order._id.toString();
+
+    return res.redirect("/checkout");
+  } catch (err) {
+    console.error("Retry Payment Error:", err);
+    res.status(500).send("Server error");
   }
-
-  req.session.retryOrderId = order._id.toString();
-  return res.redirect('/user/checkout');
 };
-
 exports.retryCheckout = async (req, res) => {
   try {
     if (!req.session.user) return res.redirect('/login');
