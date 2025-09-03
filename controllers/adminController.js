@@ -1166,12 +1166,11 @@ exports.createOffer = async (req, res) => {
       return res.redirect('/admin/offers/add');
     }
 
-    // Ensure arrays
     const selectedProducts = products
-      ? Array.isArray(products) ? products : [products]
+      ? Array.isArray(products) ? products.map(p => p.trim()) : [products.trim()]
       : [];
     const selectedCategories = categories
-      ? Array.isArray(categories) ? categories : [categories]
+      ? Array.isArray(categories) ? categories.map(c => c.trim()) : [categories.trim()]
       : [];
 
     discountValue = parseInt(discountValue);
@@ -1185,8 +1184,8 @@ exports.createOffer = async (req, res) => {
       startDate,
       endDate,
       isActive: true,
-      products: offerType === 'product' ? selectedProducts : [],
-      categories: offerType === 'category' ? selectedCategories : [],
+      products: selectedProducts,
+      categories: selectedCategories,
       referralCode: offerType === 'referral' ? referralCode : undefined,
       referrerBonus: offerType === 'referral' ? referrerBonus : undefined,
       refereeBonus: offerType === 'referral' ? refereeBonus : undefined,
@@ -1195,13 +1194,14 @@ exports.createOffer = async (req, res) => {
 
     await newOffer.save();
 
-    // Update products or categories
-    if (offerType === 'product' && selectedProducts.length > 0) {
+    // Add offer to products/categories
+    if (selectedProducts.length > 0) {
       await Product.updateMany(
         { _id: { $in: selectedProducts } },
         { $addToSet: { offers: newOffer._id } }
       );
-    } else if (offerType === 'category' && selectedCategories.length > 0) {
+    }
+    if (selectedCategories.length > 0) {
       await Category.updateMany(
         { _id: { $in: selectedCategories } },
         { $addToSet: { offers: newOffer._id } }
