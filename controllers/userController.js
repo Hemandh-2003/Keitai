@@ -927,28 +927,15 @@ req.session.checkout = checkout;
 
 
 exports.retryPayment = async (req, res) => {
-  try {
-    const { orderId } = req.body;  // this should be Mongo _id
-    const order = await Order.findById(orderId).populate("user");
-    if (!order) return res.status(404).send("Order not found");
-
-    if (order.status !== "Payment Failed") {   // ✅ match schema
-      return res.status(400).send("This order is not eligible for retry.");
-    }
-
-    // Save retryOrderId in session
-    req.session.retryOrderId = order._id.toString();
-
-    // Redirect to checkout so getCheckout handles it
-    return res.redirect("/user/checkout");
-
-  } catch (err) {
-    console.error("❌ Error retrying payment:", err.message);
-    res.status(500).send("Internal Server Error");
+  const { orderId } = req.body;  // This is the Mongo _id
+  const order = await Order.findById(orderId);
+  if (!order || order.status !== 'Payment Failed') {
+    return res.redirect('/user/orders');
   }
+
+  req.session.retryOrderId = order._id.toString();
+  return res.redirect('/user/checkout');
 };
-
-
 
 exports.retryCheckout = async (req, res) => {
   try {
