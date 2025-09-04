@@ -70,7 +70,7 @@ router.get('/support', userController.getSupportPage);
 router.get('/contact', userController.getContactPage);
 
 //payment
-router.get('/order/retry', ...protect, userController.retryPayment);
+router.get('/retry-payment', ...protect, userController.retryPayment);
 
 //whishlist
 router.post('/add-to-cart-from-wishlist/:productId', ...protect, userController.addToCartFromWishlist);

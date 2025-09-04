@@ -244,7 +244,7 @@
             </div>
             <footer>
               <% if (order.status==='Payment Failed' ) { %>
-                <form action="/user/order/retry-payment" method="POST" style="display:inline;">
+                <form action="/user/retry-payment" method="POST" style="display:inline;">
                   <input type="hidden" name="orderId" value="<%= order._id %>">
                   <button type="submit" class="btn btn-warning">
                     <i class="fas fa-sync-alt"></i> Retry Payment
