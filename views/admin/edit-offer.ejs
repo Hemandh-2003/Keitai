@@ -41,29 +41,29 @@
   <label>Status:</label>
   <input type="checkbox" name="isActive" <%= offer.isActive ? 'checked' : '' %>> Active<br>
 
-  <!-- Product Selector (for product offers) -->
-  <div id="product-section" style="<%= offer.offerType === 'product' ? '' : 'display:none;' %>">
-    <label>Select Products:</label><br>
-    <% products.forEach(product => { %>
-      <label>
-        <input type="checkbox" name="products" value="<%= product._id %>" 
-          <%= selectedProducts.includes(product._id) ? 'checked' : '' %> >
-        <%= product.name %>
-      </label><br>
-    <% }) %>
-  </div>
+ <!-- Product Selector (for product offers) -->
+<div id="product-section" style=`<%= offer.offerType === 'product' ? '' : 'display:none;' %>`>
+  <label>Select Products:</label><br>
+  <% products.forEach(product => { %>
+    <label>
+      <input type="checkbox" name="products" value="<%= product._id %>" 
+        <%= selectedProducts.includes(product._id.toString()) ? 'checked' : '' %>>
+      <%= product.name %>
+    </label><br>
+  <% }) %>
+</div>
 
-  <!-- Category Selector (for category offers) -->
-<div id="category-section" style="<%= offer.offerType === 'category' ? '' : 'display:none;' %>">
-    <label>Select Categories:</label><br>
-    <% categories.forEach(category => { %>
-      <label>
-        <input type="checkbox" name="categories" value="<%= category._id %>" 
-  <%= selectedCategories.includes(category._id.toString()) ? 'checked' : '' %>>
-        <%= category.name %>
-      </label><br>
-    <% }) %>
-  </div>
+<!-- Category Selector (for category offers) -->
+<div id="category-section" style=`<%= offer.offerType === 'category' ? '' : 'display:none;' %>`>
+  <label>Select Categories:</label><br>
+  <% categories.forEach(category => { %>
+    <label>
+      <input type="checkbox" name="categories" value="<%= category._id %>" 
+        <%= selectedCategories.includes(category._id.toString()) ? 'checked' : '' %>>
+      <%= category.name %>
+    </label><br>
+  <% }) %>
+</div>
 
   <!-- Referral Fields (for referral offers) -->
   <div id="referral-section" style=`<%= offer.offerType === 'referral' ? '' : 'display:none;' %>`>
