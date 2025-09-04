@@ -1149,10 +1149,12 @@ exports.addOfferForm = async (req, res) => {
     res.redirect('/admin/offers');
   }
 };
-const normalizeToArray = (field) => {
-  if (!field) return [];
-  return Array.isArray(field) ? field.map(f => f.toString()) : [field.toString()];
-};
+function normalizeToArray(value) {
+  if (!value) return [];
+  if (Array.isArray(value)) return value;
+  return [value]; // wrap single string in array
+}
+
 // Create new offer
 exports.createOffer = async (req, res) => {
   try {
@@ -1209,6 +1211,7 @@ exports.createOffer = async (req, res) => {
   }
 };
 
+
 // Edit offer form
 exports.editOfferForm = async (req, res) => {
   try {
@@ -1251,8 +1254,8 @@ exports.updateOffer = async (req, res) => {
     const offer = await Offer.findById(req.params.id);
     if (!offer) throw new Error('Offer not found');
 
-    const selectedProducts = offerType === 'product' ? normalizeToArray(products) : [];
-    const selectedCategories = offerType === 'category' ? normalizeToArray(categories) : [];
+   const selectedProducts = offerType === 'product' ? normalizeToArray(req.body.products) : [];
+const selectedCategories = offerType === 'category' ? normalizeToArray(req.body.categories) : [];
 
     // Remove offer from old products/categories
     if (offer.offerType === 'product' && offer.products.length) {
