@@ -276,6 +276,36 @@
         return;
       }
     });
+    document.querySelector('.offer-form').addEventListener('submit', function (e) {
+  const offerType = document.getElementById('offerType').value;
+
+  if (offerType === 'product') {
+    const selected = document.querySelector('[name="products[]"]').selectedOptions.length;
+    if (selected === 0) {
+      e.preventDefault();
+      Swal.fire({
+        icon: 'error',
+        title: 'Select Products',
+        text: 'You must select at least one product for this offer.'
+      });
+      return;
+    }
+  }
+
+  if (offerType === 'category') {
+    const selected = document.querySelector('[name="categories[]"]').selectedOptions.length;
+    if (selected === 0) {
+      e.preventDefault();
+      Swal.fire({
+        icon: 'error',
+        title: 'Select Categories',
+        text: 'You must select at least one category for this offer.'
+      });
+      return;
+    }
+  }
+});
+
   </script>
 </body>
 </html>
