@@ -1100,23 +1100,28 @@ exports.placeOrder = async (req, res) => {
     const { selectedAddress, paymentMethod } = req.body;
     const checkoutData = req.session.checkout;
 
+    // 1. Validate checkout session
     if (!checkoutData || !Array.isArray(checkoutData.productIds)) {
       return res.status(400).send('Checkout session missing or invalid.');
     }
 
-    const { productIds, quantities, offerPrices, orderId, isRetry } = checkoutData;
+    const { productIds, quantities, offerPrices } = checkoutData;
 
+    // 2. Get user
     const user = await User.findById(req.session.user._id);
     if (!user) return res.status(404).send('User not found');
 
+    // 3. Get selected address
     const address = user.addresses.id(selectedAddress);
     if (!address) return res.status(404).send('Address not found');
 
+    // 4. Get products
     const products = await Product.find({ _id: { $in: productIds } });
     if (products.length !== productIds.length) {
       return res.status(404).send('One or more products not found');
     }
 
+    // 5. Calculate totals
     let totalAmount = 0;
     const orderItems = [];
 
@@ -1131,6 +1136,7 @@ exports.placeOrder = async (req, res) => {
     let deliveryCharge = totalAmount < 50000 ? 80 : 0;
     totalAmount += deliveryCharge;
 
+    // 6. Apply coupon if any
     let couponDiscount = 0;
     if (req.session.coupon?.discountAmount) {
       const discount = parseFloat(req.session.coupon.discountAmount);
@@ -1140,73 +1146,95 @@ exports.placeOrder = async (req, res) => {
       }
     }
 
-    // 🚨 FIX: Reuse existing order if retrying
-    let order;
-    if (isRetry && orderId) {
-      order = await Order.findById(orderId);
-      if (!order) return res.status(404).send('Retry order not found');
+    // 7. Payment method restrictions
+    if (paymentMethod === 'COD' && totalAmount > 20000) {
+      return res.status(400).send('COD is only available for orders up to ₹20,000.');
+    }
+    if (paymentMethod === 'Online' && totalAmount > 450000) {
+      return res.status(400).send('Online payments above ₹4.5 Lakhs not supported.');
+    }
+    if (paymentMethod === 'Wallet' && (!user.wallet || user.wallet.balance < totalAmount)) {
+      return res.status(400).send('Insufficient wallet balance.');
+    }
 
-      order.products = orderItems.map(item => ({
+    // 8. Create estimated delivery date
+    const estimatedDate = new Date();
+    estimatedDate.setDate(estimatedDate.getDate() + 6);
+
+    // 9. Create order first
+    const createdOrder = await Order.create({
+      user: user._id,
+      selectedAddress: address._id,
+      products: orderItems.map(item => ({
         product: item.product._id,
         quantity: item.quantity,
-        unitPrice: item.offerPrice,
-      }));
-      order.totalAmount = totalAmount;
-      order.paymentMethod = paymentMethod;
-      order.deliveryCharge = deliveryCharge;
-      order.discountAmount = discountAmount;
-      order.couponDiscount = couponDiscount;
-      order.selectedAddress = address._id;
-      order.status =
+        unitPrice: item.offerPrice
+      })),
+      totalAmount,
+      paymentMethod,
+      deliveryCharge,
+      estimatedDelivery: estimatedDate,
+      status:
         paymentMethod === 'COD'
           ? 'Placed'
           : paymentMethod === 'Wallet'
           ? 'Paid'
-          : 'Pending';
-      order.updatedAt = new Date();
+          : 'Pending',
+      discountAmount,
+      couponDiscount
+    });
 
-      await order.save();
-    } else {
-      order = await Order.create({
-        user: user._id,
-        selectedAddress: address._id,
-        products: orderItems.map(item => ({
-          product: item.product._id,
-          quantity: item.quantity,
-          unitPrice: item.offerPrice,
-        })),
-        totalAmount,
-        paymentMethod,
-        deliveryCharge,
-        estimatedDelivery: new Date(Date.now() + 6 * 24 * 60 * 60 * 1000),
-        status:
-          paymentMethod === 'COD'
-            ? 'Placed'
-            : paymentMethod === 'Wallet'
-            ? 'Paid'
-            : 'Pending',
-        discountAmount,
-        couponDiscount,
+    // 10. Wallet payment handling AFTER order is created
+    if (paymentMethod === 'Wallet') {
+      user.wallet.balance -= totalAmount;
+      user.wallet.transactions.push({
+        type: 'Debit',
+        amount: totalAmount,
+        reason: 'Order payment',
+        orderId: createdOrder._id.toString(),
+        date: new Date()
+      });
+      await user.save();
+    }
+
+    // 11. Update stock
+    for (let i = 0; i < products.length; i++) {
+      const quantityOrder = parseInt(quantities[i]);
+      await Product.findByIdAndUpdate(products[i]._id, {
+        $inc: { quantity: -quantityOrder }
       });
     }
 
-    // ✅ Wallet handling + stock updates stay the same
-    // ✅ Save to session + render confirmation
+    // 12. Remove items from cart
+    await Cart.updateOne(
+      { user: req.session.user._id },
+      { $pull: { items: { product: { $in: productIds } } } }
+    );
 
-    req.session.orderId = order._id;
+    // 13. Save to session
+    req.session.orderItems = orderItems;
+    req.session.address = address;
+    req.session.paymentMethod = paymentMethod;
+    req.session.totalAmount = totalAmount;
+    req.session.deliveryCharge = deliveryCharge;
+    req.session.arrivalDate = estimatedDate;
+    req.session.couponDiscount = couponDiscount;
+    req.session.orderId = createdOrder._id;
+    req.session.paymentVerified = paymentMethod === 'Wallet';
 
+    // 14. Render confirmation
     res.render('user/order-confirmation', {
       orderItems,
       address,
       paymentMethod,
       totalAmount,
       deliveryCharge,
-      estimatedDate: order.estimatedDelivery,
-      orderId: order._id,
-      paymentVerified: paymentMethod === 'Wallet',
+      estimatedDate,
+      orderId: createdOrder._id,
+      paymentVerified: req.session.paymentVerified,
       paymentDetails: null,
       checkoutUrl: '/user/checkout',
-      couponDiscount,
+      couponDiscount
     });
 
   } catch (err) {
@@ -1214,7 +1242,6 @@ exports.placeOrder = async (req, res) => {
     res.status(500).send(err.message || 'Internal Server Error');
   }
 };
-
 
 exports.paymentFailed = async (req, res) => {
   try {
