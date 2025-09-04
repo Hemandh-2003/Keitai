@@ -1167,6 +1167,17 @@ exports.createOffer = async (req, res) => {
     const selectedProducts = offerType === 'product' ? normalizeToArray(products) : [];
     const selectedCategories = offerType === 'category' ? normalizeToArray(categories) : [];
 
+    // 🔒 Validation
+    if (offerType === 'product' && selectedProducts.length === 0) {
+      req.flash('error_msg', 'Please select at least one product.');
+      return res.redirect('/admin/offers/add');
+    }
+
+    if (offerType === 'category' && selectedCategories.length === 0) {
+      req.flash('error_msg', 'Please select at least one category.');
+      return res.redirect('/admin/offers/add');
+    }
+
     const newOffer = new Offer({
       name: name.trim(),
       description,
@@ -1186,7 +1197,7 @@ exports.createOffer = async (req, res) => {
 
     await newOffer.save();
 
-    // Update associated products/categories
+    // update associations
     if (selectedProducts.length) {
       await Product.updateMany(
         { _id: { $in: selectedProducts } },
@@ -1210,6 +1221,7 @@ exports.createOffer = async (req, res) => {
     res.redirect('/admin/offers/add');
   }
 };
+
 
 
 // Edit offer form
