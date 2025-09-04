@@ -1229,7 +1229,7 @@ exports.paymentFailed = async (req, res) => {
     await order.save();
 
     req.flash("error", "Payment failed. Please retry payment.");
-    return res.redirect(`/user/order/${order._id}`);  // ✅ send to order details
+    return res.redirect(`/order/${order._id}`);  // ✅ send to order details
   } catch (err) {
     console.error("❌ Error marking order failed:", err.message);
     res.status(500).send("Internal Server Error");
