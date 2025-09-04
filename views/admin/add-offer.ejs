@@ -56,127 +56,135 @@
               text: '<%- error_msg %>',
             });
           </script>
-        <% } %>
+          <% } %>
 
-        <% if (success_msg) { %>
-          <script>
-            Swal.fire({
-              icon: 'success',
-              title: 'Success',
-              text: '<%- success_msg %>',
-              timer: 2000,
-              showConfirmButton: false
-            });
-          </script>
-        <% } %>
-
-        <form action="/admin/offers/create" method="POST" class="offer-form">
-          <div class="form-group">
-            <label for="name">Offer Name</label>
-            <input type="text" id="name" name="name" required>
-          </div>
-
-          <div class="form-group">
-            <label for="description">Description</label>
-            <textarea id="description" name="description" rows="3"></textarea>
-          </div>
-
-          <div class="form-row">
-            <div class="form-group">
-              <label for="offerType">Offer Type</label>
-              <select id="offerType" name="offerType" required>
-                <option value="">Select Offer Type</option>
-                <option value="product">Product Offer</option>
-                <option value="category">Category Offer</option>
-                <option value="referral">Referral Offer</option>
-              </select>
-            </div>
-
-            <div class="form-group">
-              <label for="discountType">Discount Type</label>
-              <select id="discountType" name="discountType" required>
-                <option value="">Select Discount Type</option>
-                <option value="percentage">Percentage</option>
-                <option value="fixed">Fixed Amount</option>
-              </select>
-            </div>
-          </div>
-
-          <div class="form-group">
-            <label for="discountValue">Discount Value</label>
-            <input type="number" id="discountValue" name="discountValue" min="0" required>
-          </div>
-
-          <div class="form-row">
-            <div class="form-group">
-              <label for="startDate">Start Date</label>
-              <input type="datetime-local" id="startDate" name="startDate" required>
-            </div>
-
-            <div class="form-group">
-              <label for="endDate">End Date</label>
-              <input type="datetime-local" id="endDate" name="endDate" required>
-            </div>
-          </div>
-
-          <!-- Product Offer Fields -->
-          <div id="productFields" class="offer-type-fields" style="display: none;">
-            <div class="form-group">
-              <label>Select Products</label>
-              <select name="products[]" multiple class="select-multiple">
-                <% products.forEach(product => { %>
-                  <option value="<%= product._id %>"><%= product.name %></option>
-                <% }) %>
-              </select>
-            </div>
-          </div>
-
-          <!-- Category Offer Fields -->
-          <div id="categoryFields" class="offer-type-fields" style="display: none;">
-            <div class="form-group">
-              <label>Select Categories</label>
-              <% if (categories && categories.length > 0) { %>
-                <select name="categories[]" multiple class="select-multiple">
-                  <% categories.forEach(category => { %>
-                    <option value="<%= category._id %>"><%= category.name %></option>
-                  <% }) %>
-                </select>
-              <% } else { %>
-                <p class="text-warning">No categories available</p>
+            <% if (success_msg) { %>
+              <script>
+                Swal.fire({
+                  icon: 'success',
+                  title: 'Success',
+                  text: '<%- success_msg %>',
+                  timer: 2000,
+                  showConfirmButton: false
+                });
+              </script>
               <% } %>
-            </div>
-          </div>
 
-          <!-- Referral Offer Fields -->
-          <div id="referralFields" class="offer-type-fields" style="display: none;">
-            <div class="form-group">
-              <label for="referralCode">Referral Code</label>
-              <input type="text" id="referralCode" name="referralCode">
-            </div>
+                <form action="/admin/offers/create" method="POST" class="offer-form">
+                  <div class="form-group">
+                    <label for="name">Offer Name</label>
+                    <input type="text" id="name" name="name" required>
+                  </div>
 
-            <div class="form-row">
-              <div class="form-group">
-                <label for="referrerBonus">Referrer Bonus</label>
-                <input type="number" id="referrerBonus" name="referrerBonus" min="0">
-              </div>
-              <div class="form-group">
-                <label for="refereeBonus">Referee Bonus</label>
-                <input type="number" id="refereeBonus" name="refereeBonus" min="0">
-              </div>
-            </div>
+                  <div class="form-group">
+                    <label for="description">Description</label>
+                    <textarea id="description" name="description" rows="3"></textarea>
+                  </div>
 
-            <div class="form-group">
-              <label for="minPurchaseAmount">Minimum Purchase Amount</label>
-              <input type="number" id="minPurchaseAmount" name="minPurchaseAmount" min="0">
-            </div>
-          </div>
+                  <div class="form-row">
+                    <div class="form-group">
+                      <label for="offerType">Offer Type</label>
+                      <select id="offerType" name="offerType" required>
+                        <option value="">Select Offer Type</option>
+                        <option value="product">Product Offer</option>
+                        <option value="category">Category Offer</option>
+                        <option value="referral">Referral Offer</option>
+                      </select>
+                    </div>
 
-          <div class="form-group">
-            <button type="submit" class="btn btn-primary">
-              <i class="fas fa-save"></i> Create Offer
-            </button>
-          </div>
-        </form>
+                    <div class="form-group">
+                      <label for="discountType">Discount Type</label>
+                      <select id="discountType" name="discountType" required>
+                        <option value="">Select Discount Type</option>
+                        <option value="percentage">Percentage</option>
+                        <option value="fixed">Fixed Amount</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div class="form-group">
+                    <label for="discountValue">Discount Value</label>
+                    <input type="number" id="discountValue" name="discountValue" min="0" required>
+                  </div>
+
+                  <div class="form-row">
+                    <div class="form-group">
+                      <label for="startDate">Start Date</label>
+                      <input type="datetime-local" id="startDate" name="startDate" required>
+                    </div>
+
+                    <div class="form-group">
+                      <label for="endDate">End Date</label>
+                      <input type="datetime-local" id="endDate" name="endDate" required>
+                    </div>
+                  </div>
+
+                  <!-- Product Offer Fields -->
+                  <div id="productFields" class="offer-type-fields" style="display: none;">
+                    <div class="form-group">
+                      <label>Select Products</label>
+                      <select name="products[]" multiple class="select-multiple">
+                        <% products.forEach(product=> { %>
+                          <option value="<%= product._id %>" <%=offer.products && offer.products.some(p=> p.toString()
+                            === product._id.toString()) ? "selected" : "" %>>
+                            <%= product.name %>
+                          </option>
+                          <% }) %>
+                      </select>
+
+                    </div>
+                  </div>
+
+                  <!-- Category Offer Fields -->
+                  <div id="categoryFields" class="offer-type-fields" style="display: none;">
+                    <div class="form-group">
+                      <label>Select Categories</label>
+                      <% if (categories && categories.length> 0) { %>
+                        <select name="categories[]" multiple class="select-multiple">
+                          <% categories.forEach(category=> { %>
+                            <option value="<%= category._id %>" <%=offer.categories && offer.categories.some(c=>
+                              c.toString() === category._id.toString()) ? "selected" : "" %>>
+                              <%= category.name %>
+                            </option>
+                            <% }) %>
+                        </select>
+
+                        <% } else { %>
+                          <p class="text-warning">No categories available</p>
+                          <% } %>
+                    </div>
+                  </div>
+
+                  <!-- Referral Offer Fields -->
+                  <div id="referralFields" class="offer-type-fields" style="display: none;">
+                    <div class="form-group">
+                      <label for="referralCode">Referral Code</label>
+                      <input type="text" id="referralCode" name="referralCode">
+                    </div>
+
+                    <div class="form-row">
+                      <div class="form-group">
+                        <label for="referrerBonus">Referrer Bonus</label>
+                        <input type="number" id="referrerBonus" name="referrerBonus" min="0">
+                      </div>
+                      <div class="form-group">
+                        <label for="refereeBonus">Referee Bonus</label>
+                        <input type="number" id="refereeBonus" name="refereeBonus" min="0">
+                      </div>
+                    </div>
+
+                    <div class="form-group">
+                      <label for="minPurchaseAmount">Minimum Purchase Amount</label>
+                      <input type="number" id="minPurchaseAmount" name="minPurchaseAmount" min="0">
+                    </div>
+                  </div>
+
+                  <div class="form-group">
+                    <button type="submit" class="btn btn-primary">
+                      <i class="fas fa-save"></i> Create Offer
+                    </button>
+                  </div>
+                </form>
       </section>
     </div>
   </div>
@@ -203,23 +211,23 @@
       const now = new Date();
       const startDateInput = document.getElementById('startDate');
       const endDateInput = document.getElementById('endDate');
-      
+
       // Set initial values
       startDateInput.value = formatDateForInput(now);
       endDateInput.value = formatDateForInput(new Date(now.getTime() + 86400000)); // +1 day
-      
+
       // Set minimum end date to start date
       endDateInput.min = startDateInput.value;
     });
 
     // Date validation logic
-    document.getElementById('startDate').addEventListener('change', function() {
+    document.getElementById('startDate').addEventListener('change', function () {
       const startDate = this.value;
       const endDateInput = document.getElementById('endDate');
-      
+
       // Set the minimum end date to be the same as start date
       endDateInput.min = startDate;
-      
+
       // If current end date is before start date, reset it
       if (endDateInput.value && endDateInput.value < startDate) {
         endDateInput.value = startDate;
@@ -277,35 +285,36 @@
       }
     });
     document.querySelector('.offer-form').addEventListener('submit', function (e) {
-  const offerType = document.getElementById('offerType').value;
+      const offerType = document.getElementById('offerType').value;
 
-  if (offerType === 'product') {
-    const selected = document.querySelector('[name="products[]"]').selectedOptions.length;
-    if (selected === 0) {
-      e.preventDefault();
-      Swal.fire({
-        icon: 'error',
-        title: 'Select Products',
-        text: 'You must select at least one product for this offer.'
-      });
-      return;
-    }
-  }
+      if (offerType === 'product') {
+        const selected = document.querySelector('[name="products[]"]').selectedOptions.length;
+        if (selected === 0) {
+          e.preventDefault();
+          Swal.fire({
+            icon: 'error',
+            title: 'Select Products',
+            text: 'You must select at least one product for this offer.'
+          });
+          return;
+        }
+      }
 
-  if (offerType === 'category') {
-    const selected = document.querySelector('[name="categories[]"]').selectedOptions.length;
-    if (selected === 0) {
-      e.preventDefault();
-      Swal.fire({
-        icon: 'error',
-        title: 'Select Categories',
-        text: 'You must select at least one category for this offer.'
-      });
-      return;
-    }
-  }
-});
+      if (offerType === 'category') {
+        const selected = document.querySelector('[name="categories[]"]').selectedOptions.length;
+        if (selected === 0) {
+          e.preventDefault();
+          Swal.fire({
+            icon: 'error',
+            title: 'Select Categories',
+            text: 'You must select at least one category for this offer.'
+          });
+          return;
+        }
+      }
+    });
 
   </script>
 </body>
+
 </html>
