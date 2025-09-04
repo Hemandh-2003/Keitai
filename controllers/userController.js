@@ -919,23 +919,20 @@ req.session.checkout = checkout;
 
 exports.retryPayment = async (req, res) => {
   try {
-    const { orderId } = req.body; // this is _id coming from form
-    console.log(orderId)
+    const { orderId } = req.body; 
     const order = await Order.findById(orderId);
 
     if (!order) {
       return res.status(404).send("Order not found");
     }
 
-    // Save order._id to session for retry
-    req.session.retryOrderId = order._id.toString();
-
-    return res.redirect("/checkout");
+    return res.redirect(`/user/retry-checkout/${order._id}`);
   } catch (err) {
     console.error("Retry Payment Error:", err);
     res.status(500).send("Server error");
   }
 };
+
 exports.retryCheckout = async (req, res) => {
   try {
     if (!req.session.user) return res.redirect('/login');
