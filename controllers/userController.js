@@ -838,7 +838,31 @@ if (!user.addresses || user.addresses.length === 0) {
 // // Otherwise create the pending order immediately
 
 //  console.log("Order created with ID:(chekout)", order._id);
- req.session.checkout = { ...sessionCheckout };
+// ✅ Create a pending order if not retry
+if (!req.session.retryOrderId) {
+  const order = new Order({
+    user: req.session.user._id,
+    products: sessionCheckout.productIds.map((pid, index) => ({
+      product: pid,
+      quantity: sessionCheckout.quantities[index],
+      unitPrice: sessionCheckout.offerPrices[index]
+    })),
+    totalAmount: sessionCheckout.totalAmount,
+    selectedAddress: user.addresses[0]?._id,
+    paymentMethod: "Online",
+    estimatedDelivery: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+    status: "Pending"
+  });
+  await order.save();
+
+  req.session.checkout = { ...sessionCheckout, orderId: order._id.toString() };
+} else {
+  // ✅ Use retry order directly
+  req.session.checkout = { ...sessionCheckout, orderId: req.session.retryOrderId.toString(), isRetry: true };
+}
+
+return res.redirect('/user/checkout');
+
 return res.redirect('/user/checkout');
 
   } catch (err) {
