@@ -44,7 +44,7 @@ exports.getDashboardStats = async (req, res) => {
     const sales = orders.reduce((sum, order) => sum + order.totalAmount, 0);
     const orderCount = orders.length;
 
-    // Top products by quantity sold
+   
     const topProducts = await Order.aggregate([
       { $match: match },
       { $unwind: '$products' },
@@ -73,7 +73,7 @@ exports.getDashboardStats = async (req, res) => {
       { $limit: 10 }
     ]);
 
-    // Top categories by number of products
+  
     const topCategories = await Product.aggregate([
       {
         $group: {
@@ -120,7 +120,7 @@ exports.listUsers = async (req, res) => {
     const limit = 10; 
     const skip = (page - 1) * limit;
 
-    // sort option
+   
     let filter = {};
     let sort = { createdAt: -1 }; 
 
@@ -135,19 +135,19 @@ exports.listUsers = async (req, res) => {
         break;
     }
 
-    // Get the total count of users matching the filter
+    
     const totalUsers = await User.countDocuments(filter);
 
-    // Get the users for the current page
+    
     const users = await User.find(filter)
       .sort(sort)
       .skip(skip)
       .limit(limit);
 
-    // Calculate the total number of pages
+    
     const totalPages = Math.ceil(totalUsers / limit);
 
-    // Render the users page with the users data and pagination details
+    
     res.render('admin/users', {
       users,
       sortBy,
@@ -162,12 +162,12 @@ exports.listUsers = async (req, res) => {
 
 exports.blockUser = async (req, res) => {
   try {
-    // Block the user in the database
+    
     const user = await User.findByIdAndUpdate(req.params.id, { isBlocked: true });
 
-    // Update the session if the blocked user is the logged-in user
+    
     if (req.session.userId === user._id.toString()) {
-      req.session.isBlocked = true; // Set session variable indicating the user is blocked
+      req.session.isBlocked = true; 
     }
 
     res.redirect('/admin/users');
@@ -180,12 +180,12 @@ exports.blockUser = async (req, res) => {
 
 exports.unblockUser = async (req, res) => {
   try {
-    // Unblock the user in the database
+    
     const user = await User.findByIdAndUpdate(req.params.id, { isBlocked: false });
 
-    // Update the session if the unblocked user is the logged-in user
+    
     if (req.session.userId === user._id.toString()) {
-      req.session.isBlocked = false; // Set session variable to false for unblocked user
+      req.session.isBlocked = false; 
     }
 
     res.redirect('/admin/users');
@@ -212,19 +212,19 @@ exports.loadCategories = async (req, res) => {
 exports.addCategory = async (req, res) => {
   try {
     const { name } = req.body;
-    const slug = name.toLowerCase().replace(/\s+/g, '-'); // Generate slug from name
+    const slug = name.toLowerCase().replace(/\s+/g, '-'); 
 
-    // Check if the category already exists
+    
     const existingCategory = await Category.findOne({ name: name.toLowerCase() });
     if (existingCategory) {
-      const categories = await Category.find(); // Fetch categories to display
+      const categories = await Category.find(); 
       return res.render('admin/categories', {
         categories,
-        error: 'This category already exists in the list.', // Pass error message
+        error: 'This category already exists in the list.', 
       });
     }
 
-    // Save the new category
+    
     const newCategory = new Category({ name, slug });
     await newCategory.save();
 
@@ -232,11 +232,11 @@ exports.addCategory = async (req, res) => {
   } catch (error) {
     console.error('Error adding category:', error);
     
-    // Render categories page with a generic error message
-    const categories = await Category.find(); // Fetch categories to display
+    
+    const categories = await Category.find(); 
     return res.render('admin/categories', {
       categories,
-      error: 'Yo Look the List below Please, That category is persent ', // Custom error message
+      error: 'Yo Look the List below Please, That category is persent ', 
     });
   }
 };
@@ -250,12 +250,12 @@ exports.deleteCategory = async (req, res) => {
     await Category.findByIdAndDelete(id);
     res.redirect('/admin/categories');
   } catch (error) {
-    console.error('Error deleting category:', error);//consoling error
+    console.error('Error deleting category:', error);
     res.status(500).send('Server Error');
   }
 };
 
-// Edit a category (GET and POST)
+// Edit a category
 exports.loadEditCategory = async (req, res) => {
   try {
     const { id } = req.params;
@@ -275,16 +275,16 @@ exports.editCategory = async (req, res) => {
 
     const slug = name.toLowerCase().replace(/\s+/g, '-');
 
-    // Check if the new category name already exists
+    
     const existingCategory = await Category.findOne({ slug });
     if (existingCategory && existingCategory._id.toString() !== id) {
       return res.status(400).render('admin/edit-category', {
         errorMessage: 'Category name already exists.',
-        category: { name }  // Retain the old category name in case of error
+        category: { name }  
       });
     }
 
-    // Update the category if no error
+    
     await Category.findByIdAndUpdate(id, { name, slug });
 
     res.redirect('/admin/categories');
@@ -347,13 +347,13 @@ exports.listProducts = async (req, res) => {
   }
 };
 
-// Render add product form
+//add product form
 exports.addProduct = async (req, res) => {
   const categories = await Category.find({ isDeleted: false });
-  res.render('admin/products', { categories }); // Ensure addProduct.ejs matches this route
+  res.render('admin/products', { categories }); 
 };
 
-// Allowed image MIME types
+
 const allowedMimeTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/jpg'];
 
 exports.createProduct = async (req, res) => {
@@ -361,7 +361,7 @@ exports.createProduct = async (req, res) => {
     const images = req.files.images ? req.files.images.map(file => file.filename) : [];
     const highlights = req.files.highlights ? req.files.highlights.map(file => file.filename) : [];
 
-    //Validate file MIME types
+    
     const allFiles = [
       ...(req.files.images || []),
       ...(req.files.highlights || []),
@@ -369,17 +369,17 @@ exports.createProduct = async (req, res) => {
 
     for (const file of allFiles) {
       if (!allowedMimeTypes.includes(file.mimetype)) {
-        // Delete the uploaded invalid file
+        
         fs.unlinkSync(path.join(__dirname, '..', 'public', 'uploads', file.filename));
         throw new Error(`Invalid file type: ${file.originalname}`);
       }
     }
 
-    // Validate file count
+    
     if (images.length > 4) throw new Error('Only 4 product images allowed.');
     if (highlights.length > 4) throw new Error('Only 4 product highlights allowed.');
 
-    // ✅ Save product
+    
     await new Product({
       name: req.body.name,
       category: req.body.category,
@@ -402,7 +402,7 @@ exports.createProduct = async (req, res) => {
 };
 
 
-// Render edit product form
+
 const fs = require('fs');
 const path = require('path');
 
@@ -420,7 +420,7 @@ exports.editProduct = async (req, res) => {
   }
 };
 
-// Update an existing product
+
 exports.updateProduct = async (req, res) => {
   try {
     const product = await Product.findById(req.params.id);
@@ -429,22 +429,22 @@ exports.updateProduct = async (req, res) => {
     const categoryExists = await Category.findById(req.body.category);
     if (!categoryExists) return res.status(400).send('Invalid category');
 
-    // Process uploaded images
+    
     const newImages = req.files['images']?.map(file => file.filename) || [];
     const newHighlights = req.files['highlights']?.map(file => file.filename) || [];
 
-    // Merge new uploads with existing ones
-    product.images = [...product.images, ...newImages].slice(0, 4);      // Limit to 4
-    product.highlights = [...product.highlights, ...newHighlights].slice(0, 4); // Limit to 4
+   
+    product.images = [...product.images, ...newImages].slice(0, 4);     
+    product.highlights = [...product.highlights, ...newHighlights].slice(0, 4); 
 
-    // Update basic fields
+    
     product.name = req.body.name;
     product.category = req.body.category;
     product.brand = req.body.brand;
     product.regularPrice = req.body.regularPrice;
     product.salesPrice = req.body.salesPrice || null;
 
-    // Validate salesPrice
+    
     if (product.salesPrice && product.salesPrice > product.regularPrice) {
       return res.status(400).send('Sales Price cannot be greater than Regular Price');
     }
@@ -472,8 +472,7 @@ exports.deleteImage = async (req, res) => {
 
     product.images = product.images.filter(img => img !== filename);
     await product.save();
-
-    // Optionally delete the file from uploads/
+    
     const filePath = path.join(__dirname, '../public/uploads', filename);
     fs.unlink(filePath, err => {
       if (err) console.log("File not deleted:", err);
@@ -541,7 +540,6 @@ exports.getProductDetailsWithRelated = async (req, res) => {
     const limit = 4;
     const skip = (page - 1) * limit;
 
-    // Fetch main product
     const product = await Product.findById(productId)
       .populate('category')
       .populate('offers');
@@ -549,7 +547,7 @@ exports.getProductDetailsWithRelated = async (req, res) => {
     if (!product || product.isBlocked) {
       return res.render("user/Product-details", {
         user: req.session.user,
-        product: null,          // <-- pass null
+        product: null,          
         variants: [],
         relatedProducts: [],
         offerDetails: null,
@@ -561,11 +559,9 @@ exports.getProductDetailsWithRelated = async (req, res) => {
       });
     }
 
-    // Compute main product offer
-    const offerDetails = await product.getBestOfferPrice();
+    const offerDetails=await product.getBestOfferPrice();
     product.offerDetails = offerDetails;
 
-    // --- VARIANTS ---
     let variants = [];
     try {
       const nameParts = product.name.split(" ");
@@ -591,7 +587,6 @@ exports.getProductDetailsWithRelated = async (req, res) => {
       console.error("Error fetching variants:", err);
     }
 
-    // --- RELATED PRODUCTS ---
     const relatedProducts = await Product.find({
       category: product.category._id,
       _id: { $nin: [productId, ...variants.map(v => v._id)] },
@@ -604,7 +599,6 @@ exports.getProductDetailsWithRelated = async (req, res) => {
       related.offerDetails = await related.getBestOfferPrice();
     }
 
-    // --- REVIEWS ---
     const reviews = await Review.find({ product: productId })
       .populate("user")
       .skip(skip)
@@ -627,7 +621,6 @@ exports.getProductDetailsWithRelated = async (req, res) => {
       : 0;
     product.ratingDistribution = ratingDistribution;
 
-    // --- RENDER ---
     res.render("user/Product-details", {
       user: req.session.user,
       product,
@@ -638,7 +631,7 @@ exports.getProductDetailsWithRelated = async (req, res) => {
       reviews,
       currentPage: page,
       totalPages,
-      errorMessage: null       // no error
+      errorMessage: null       
     });
   } catch (error) {
     console.error(error);
@@ -765,14 +758,14 @@ exports.changeOrderStatus = async (req, res) => {
 exports.updateReturnStatus = async (req, res) => {
   try {
     const orderId = req.params.id;
-    const { action } = req.body; // 'Approved' or 'Rejected'
+    const { action } = req.body;
 
     if (!['Approved', 'Rejected'].includes(action)) {
       return res.status(400).send('Invalid action');
     }
 
     const order = await Order.findById(orderId).populate('user');
-//console.log('Order:', order);  // After fetching order
+//console.log('Order:', order);
 
 if (!order || order.returnStatus !== 'Requested') {
   return res.status(400).send('Invalid return request');
@@ -788,12 +781,10 @@ order.statusHistory.push({
  if (action === 'Approved') {
       const user = order.user;
       let totalRefund = 0;
-
-      // Process each returned item
+      
       for (const returnedItem of order.returnedItems) {
         if (returnedItem.status !== 'Pending') continue;
 
-        // Find the original ordered product
         const orderedProduct = order.products.find(p => 
           p.product && p.product._id.toString() === returnedItem.product._id.toString()
         );
@@ -809,7 +800,6 @@ order.statusHistory.push({
           const itemRefund = price * returnedItem.quantity;
           totalRefund += itemRefund;
 
-          // Mark item as processed
           returnedItem.status = 'Approved';
         }
       }
@@ -850,11 +840,9 @@ exports.cancelOrder = async (req, res) => {
     const order = await Order.findOne({ orderId }).populate('products.product').exec();
     if (!order) return res.status(404).json({ error: 'Order not found' });
 
-    // Mark as cancelled
     order.status = 'Cancelled';
     await order.save();
 
-    // Restore product quantity
     const bulkOps = order.products.map(item => ({
       updateOne: {
         filter: { _id: item.product._id },
@@ -863,7 +851,6 @@ exports.cancelOrder = async (req, res) => {
     }));
     if (bulkOps.length > 0) await Product.bulkWrite(bulkOps);
 
-    // Refund to user's wallet
     const user = await User.findById(order.user);
     const refundAmount = order.totalAmount;
 
@@ -883,7 +870,7 @@ exports.cancelOrder = async (req, res) => {
   }
 };
 
-
+// Payment Integration with Razorpay
 exports.initiatePayment = async (req, res) => {
   try {
     const { orderId } = req.params;
@@ -900,7 +887,6 @@ exports.initiatePayment = async (req, res) => {
       amount: amountInPaise,
       currency: 'INR',
       receipt: order.orderId,
-      /*payment_capture: 1*/
     };
 
    // console.log("📦 Razorpay Options:", options);
@@ -937,7 +923,6 @@ exports.verifyPayment = async (req, res) => {
       return res.status(400).send('Invalid Order ID');
     }
 
-    // Verify the signature (in production)
     const generatedSignature = crypto
       .createHmac('sha256', process.env.RAZORPAY_KEY_SECRET)
       .update(razorpay_order_id + "|" + razorpay_payment_id)
@@ -972,7 +957,7 @@ exports.viewOrderDetails = async (req, res) => {
 
     res.render('admin/order-details', { 
       order,
-      isAdmin: true // Flag to show admin-specific controls
+      isAdmin: true 
     });
   } catch (error) {
     console.error(error);
@@ -991,24 +976,20 @@ exports.processUserCancellation = async (req, res) => {
       return res.status(404).send('Order not found');
     }
 
-    // Validate order can be cancelled
     if (!['Pending', 'Shipped'].includes(order.status)) {
       return res.status(400).send('Order cannot be cancelled at this stage');
     }
 
-    // Update order status
     order.status = 'User Cancelled';
     order.cancellationReason = reason || 'No reason provided';
     await order.save();
 
-    // Restore product quantities
     await Promise.all(order.products.map(async item => {
       await Product.findByIdAndUpdate(item.product._id, {
         $inc: { stock: item.quantity }
       });
     }));
 
-    // Redirect based on user type
     if (req.user.role === 'admin') {
       res.redirect(`/admin/orders/${order.orderId}`);
     } else {
@@ -1044,7 +1025,6 @@ exports.processReturnRequest = async (req, res) => {
     order.returnRequestDate = new Date();
     await order.save();
 
-    // Redirect based on user type
     if (req.user.role === 'admin') {
       res.redirect(`/admin/orders/${order.orderId}`);
     } else {
@@ -1068,12 +1048,10 @@ exports.adminCancelOrder = async (req, res) => {
       return res.status(404).send('Order not found');
     }
 
-    // Update order status
     order.status = 'Cancelled';
     order.cancellationReason = reason || 'Admin cancellation';
     await order.save();
 
-    // Restore product quantities
     await Promise.all(order.products.map(async item => {
       await Product.findByIdAndUpdate(item.product._id, {
         $inc: { stock: item.quantity }
@@ -1087,7 +1065,6 @@ exports.adminCancelOrder = async (req, res) => {
   }
 };
 
-// [Keep all your remaining existing methods...]
 
 module.exports = exports;
 
@@ -1108,16 +1085,15 @@ exports.listOffers = async (req, res) => {
 
     const totalPages = Math.ceil(totalOffers / limit);
 
-    // Combine any existing res.locals.messages with your view data
     res.render('admin/offers', {
       offers,
       currentPage: page,
       totalPages,
-      messages: res.locals.messages || {} // Ensure messages exists
+      messages: res.locals.messages || {} 
     });
   } catch (error) {
     console.error('Error listing offers:', error);
-    // Set error message in session for next request
+    
     req.session.messages = {
       error: 'Failed to load offers'
     };
@@ -1139,9 +1115,9 @@ exports.addOfferForm = async (req, res) => {
       categories,
       offerTypes: ['product', 'category', 'referral'],
       discountTypes: ['percentage', 'fixed'],
-      // Pass flash messages to the template
-      success_msg: req.flash('success_msg')[0], // Get first success message
-      error_msg: req.flash('error_msg')[0]      // Get first error message
+      
+      success_msg: req.flash('success_msg')[0], 
+      error_msg: req.flash('error_msg')[0]      
     });
   } catch (error) {
     console.error('Error loading add offer form:', error);
@@ -1152,7 +1128,7 @@ exports.addOfferForm = async (req, res) => {
 function normalizeToArray(value) {
   if (!value) return [];
   if (Array.isArray(value)) return value;
-  return [value]; // wrap single string in array
+  return [value]; 
 }
 
 // Create new offer
@@ -1167,7 +1143,7 @@ exports.createOffer = async (req, res) => {
     const selectedProducts = offerType === 'product' ? normalizeToArray(products) : [];
     const selectedCategories = offerType === 'category' ? normalizeToArray(categories) : [];
 
-    // 🔒 Validation
+    
     if (offerType === 'product' && selectedProducts.length === 0) {
       req.flash('error_msg', 'Please select at least one product.');
       return res.redirect('/admin/offers/add');
@@ -1197,7 +1173,7 @@ exports.createOffer = async (req, res) => {
 
     await newOffer.save();
 
-    // update associations
+    
     if (selectedProducts.length) {
       await Product.updateMany(
         { _id: { $in: selectedProducts } },
@@ -1269,7 +1245,7 @@ exports.updateOffer = async (req, res) => {
    const selectedProducts = offerType === 'product' ? normalizeToArray(req.body.products) : [];
 const selectedCategories = offerType === 'category' ? normalizeToArray(req.body.categories) : [];
 
-    // Remove offer from old products/categories
+    
     if (offer.offerType === 'product' && offer.products.length) {
       await Product.updateMany(
         { _id: { $in: offer.products } },
@@ -1284,7 +1260,6 @@ const selectedCategories = offerType === 'category' ? normalizeToArray(req.body.
       );
     }
 
-    // Update offer fields
     offer.name = name.trim();
     offer.description = description;
     offer.offerType = offerType;
@@ -1294,7 +1269,6 @@ const selectedCategories = offerType === 'category' ? normalizeToArray(req.body.
     offer.endDate = endDate;
     offer.isActive = req.body.hasOwnProperty('isActive');
 
-    // Assign products/categories/referral correctly
     offer.products = selectedProducts;
     offer.categories = selectedCategories;
 
@@ -1314,7 +1288,6 @@ const selectedCategories = offerType === 'category' ? normalizeToArray(req.body.
 
     await offer.save();
 
-    // Add offer to new products/categories
     if (selectedProducts.length) {
       await Product.updateMany(
         { _id: { $in: selectedProducts } },
@@ -1369,7 +1342,6 @@ exports.deleteOffer = async (req, res) => {
   try {
     const offer = await Offer.findById(req.params.id);
     
-    // Remove offer from products/categories
     if (offer.offerType === 'product' && offer.products.length > 0) {
       await Product.updateMany(
         { _id: { $in: offer.products } },
@@ -1417,7 +1389,6 @@ exports.createCoupon = async (req, res) => {
     const trimmedCode = code.trim().toUpperCase();
     const coupons = await Coupon.find();
 
-    // Check if coupon code already exists
     const existingCoupon = await Coupon.findOne({ code: trimmedCode });
     if (existingCoupon) {
       return res.render('admin/coupons', {
@@ -1426,7 +1397,6 @@ exports.createCoupon = async (req, res) => {
       });
     }
 
-    // Date validation
     const start = new Date(startDate);
     const end = new Date(endDate);
     if (start > end) {
@@ -1436,12 +1406,10 @@ exports.createCoupon = async (req, res) => {
       });
     }
 
-    // Parse numbers
     const parsedDiscount = parseFloat(discount);
     const parsedMinPurchase = parseFloat(minPurchase) || 0;
     const parsedMaxDiscount = parseFloat(maxDiscount) || 0;
 
-    // Validate discount
     if (discountType === 'percentage') {
       if (parsedDiscount < 1 || parsedDiscount > 90) {
         return res.render('admin/coupons', {
@@ -1458,7 +1426,6 @@ exports.createCoupon = async (req, res) => {
       }
     }
 
-    // Save coupon
     const newCoupon = new Coupon({
       code: trimmedCode,
       discountType,
@@ -1576,7 +1543,6 @@ exports.filterSalesReport = async (req, res) => {
       endDate.setHours(23, 59, 59, 999);
     }
 
-    // Fetch orders
     const allOrders = await Order.find({
       createdAt: { $gte: startDate, $lte: endDate }
     }).populate("user", "name");
@@ -1640,7 +1606,6 @@ exports.downloadSalesReportExcel = async (req, res) => {
     const workbook = new ExcelJS.Workbook();
     const sheet = workbook.addWorksheet('Sales Report');
 
-    // Headers
     sheet.mergeCells('A1', 'E1');
     sheet.getCell('A1').value = 'Sales Report';
     sheet.getCell('A1').alignment = { horizontal: 'center' };
@@ -1650,7 +1615,6 @@ exports.downloadSalesReportExcel = async (req, res) => {
     sheet.getCell('A2').value = `From: ${moment(start).format('YYYY-MM-DD')} To: ${moment(end).format('YYYY-MM-DD')}`;
     sheet.getCell('A2').alignment = { horizontal: 'center' };
 
-    // Column definitions
     sheet.columns = [
       { header: 'User Name', key: 'userName', width: 25 },
       { header: 'Date', key: 'date', width: 15 },
@@ -1659,7 +1623,6 @@ exports.downloadSalesReportExcel = async (req, res) => {
       { header: 'Coupon (₹)', key: 'coupon', width: 18 }
     ];
 
-    // Data + Totals
     let totalAmount = 0;
     let totalDiscount = 0;
     let totalCoupon = 0;
@@ -1682,20 +1645,16 @@ exports.downloadSalesReportExcel = async (req, res) => {
       });
     });
 
-    // Blank row
     sheet.addRow({});
 
-    // Summary section
     sheet.addRow(['Summary']);
     sheet.addRow([`Total Orders:`, orders.length]);
     sheet.addRow([`Total Sales Amount:`, '', '', '', `₹${totalAmount.toFixed(2)}`]);
     sheet.addRow([`Total Discounts (incl. coupon):`, '', '', '', `₹${(totalDiscount + totalCoupon).toFixed(2)}`]);
 
-    // Style summary title
     const summaryTitleRow = sheet.getRow(sheet.lastRow.number - 3);
     summaryTitleRow.font = { bold: true, underline: true };
 
-    // Style totals
     const finalRows = [sheet.lastRow.number - 2, sheet.lastRow.number - 1];
     finalRows.forEach(rowNum => {
       const row = sheet.getRow(rowNum);
@@ -1735,7 +1694,6 @@ exports.downloadSalesReportPDF = async (req, res) => {
     res.setHeader('Content-Disposition', 'attachment; filename=SalesReport.pdf');
     doc.pipe(res);
 
-    // --- Logo ---
     const logoPath = path.join(__dirname, '../public/images/logo1.png');
     if (fs.existsSync(logoPath)) {
       doc.image(logoPath, 40, 30, { width: 100 });
@@ -1746,7 +1704,6 @@ exports.downloadSalesReportPDF = async (req, res) => {
     doc.fontSize(12).fillColor('#555').text(`From: ${moment(start).format('YYYY-MM-DD')}   To: ${moment(end).format('YYYY-MM-DD')}`, { align: 'center' });
     doc.moveDown(1.5);
 
-    // --- SUMMARY AT THE TOP ---
     let totalAmount = 0;
     let totalDiscount = 0;
 
@@ -1755,7 +1712,6 @@ exports.downloadSalesReportPDF = async (req, res) => {
       totalDiscount += (order.discountAmount || 0) + (order.couponDiscount || 0);
     });
 
-    // Generated timestamp
     const generatedAt = moment().format('YYYY-MM-DD HH:mm:ss');
 
     doc
@@ -1775,7 +1731,6 @@ exports.downloadSalesReportPDF = async (req, res) => {
 
     doc.moveDown(1.5);
 
-    // --- TABLE ---
     const tableTop = doc.y;
     const colSpacing = [90, 100, 90, 90, 90];
 

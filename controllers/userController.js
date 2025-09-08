@@ -20,7 +20,7 @@ exports.loadHome = async (req, res) => {
     res.render('user/home', {
       products,
       user: req.session.user,
-      loginSuccess    // ✅ pass to EJS
+      loginSuccess    
     });
 
   } catch (error) {
@@ -276,10 +276,8 @@ exports.viewOrders = async (req, res) => {
     const userId = req.session.user._id;
     const { sortBy = 'newest', page = 1 } = req.query; //page
 
-    //sort
     const sortCriteria = sortBy === 'oldest' ? { createdAt: 1 } : { createdAt: -1 };
 
-    //no:of items in one page
     const ordersPerPage = 5;
 
     const skip = (page - 1) * ordersPerPage;
@@ -384,7 +382,6 @@ exports.downloadInvoice = async (req, res) => {
       }
     });
 
-    // Set response headers
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader(
       'Content-Disposition',
@@ -393,19 +390,16 @@ exports.downloadInvoice = async (req, res) => {
 
     doc.pipe(res);
 
-    // Colors
     const primaryColor = '#3498db';
     const secondaryColor = '#2c3e50';
     const lightColor = '#f8f9fa';
     const darkColor = '#343a40';
     const successColor = '#28a745';
 
-    // Helper function for horizontal line
     const addHorizontalLine = (y, width = 550) => {
       doc.moveTo(50, y).lineTo(50 + width, y).stroke(primaryColor).lineWidth(1);
     };
 
-    // Header
     doc.fillColor(secondaryColor)
        .fontSize(24)
        .font('Helvetica-Bold')
@@ -415,7 +409,6 @@ exports.downloadInvoice = async (req, res) => {
        .fontSize(10)
        .text(`#${order.orderId}`, 50, 80);
 
-    // Company Info
     doc.fillColor(darkColor)
        .fontSize(10)
        .text('Keitai', 400, 50, { align: 'right' })
@@ -426,7 +419,6 @@ exports.downloadInvoice = async (req, res) => {
 
     addHorizontalLine(130);
 
-    // Invoice Details
     doc.fillColor(secondaryColor)
        .fontSize(12)
        .text('Invoice Date:', 50, 150)
@@ -441,7 +433,6 @@ exports.downloadInvoice = async (req, res) => {
        .fillColor(successColor)
        .text(order.status, 150, 190);
 
-    // Billing Address
     doc.fillColor(secondaryColor)
        .fontSize(14)
        .font('Helvetica-Bold')
@@ -457,7 +448,6 @@ exports.downloadInvoice = async (req, res) => {
 
     addHorizontalLine(350);
 
-    // Products Table Header
     const productsStartY = 370;
     doc.fillColor(lightColor)
        .rect(50, productsStartY, 500, 20)
@@ -472,7 +462,6 @@ exports.downloadInvoice = async (req, res) => {
        .text('Qty', 430, productsStartY + 5, { width: 40, align: 'right' })
        .text('Total', 470, productsStartY + 5, { width: 80, align: 'right' });
 
-    // Products List
     let subtotal = 0;
     let currentY = productsStartY + 30;
 
@@ -498,7 +487,6 @@ exports.downloadInvoice = async (req, res) => {
       currentY += 20;
     });
 
-    // Summary
     const summaryStartY = currentY + 20;
     addHorizontalLine(summaryStartY - 10);
 
@@ -519,7 +507,6 @@ exports.downloadInvoice = async (req, res) => {
          .fillColor(secondaryColor);
     }
 
-    // Total
     doc.fillColor(secondaryColor)
        .font('Helvetica-Bold')
        .text('Total Amount:', 400, summaryStartY + 70, { width: 80, align: 'right' })
@@ -527,7 +514,6 @@ exports.downloadInvoice = async (req, res) => {
        .fontSize(14)
        .text(`₹${order.totalAmount.toFixed(2)}`, 470, summaryStartY + 70, { width: 80, align: 'right' });
 
-    // Footer
     const footerY = doc.page.height - 100;
     addHorizontalLine(footerY - 20);
 
@@ -537,7 +523,6 @@ exports.downloadInvoice = async (req, res) => {
        .text('Terms & Conditions: Payment due within 15 days', 50, footerY + 15, { align: 'center' })
        .text('Questions? Email: support@yourcompany.com', 50, footerY + 30, { align: 'center' });
 
-    // Add page numbers
     doc.on('pageAdded', () => {
       doc.fontSize(10)
          .fillColor(darkColor)
@@ -573,7 +558,6 @@ exports.cancelOrder = async (req, res) => {
       return res.redirect("/user/orders");
     }
 
-    // 1️⃣ Restock items
     for (let item of order.products) {
       if (item.product && item.status !== "Cancelled") {
         item.product.quantity += item.quantity;
@@ -593,13 +577,11 @@ exports.cancelOrder = async (req, res) => {
     let refundAmount = 0;
 
     if (order.paymentMethod !== "COD" && order.paymentStatus === "Refunded") {
-      // Refund full total amount for whole order
       refundAmount = order.products.reduce(
         (sum, p) => sum + (p.quantity * (p.unitPrice || p.product.salesPrice || 0)),
         0
       );
 
-      // Atomic wallet update like single item cancellation
       await User.findByIdAndUpdate(order.user, {
         $inc: { "wallet.balance": refundAmount },
         $push: {
@@ -637,7 +619,6 @@ exports.getProducts = async (req, res) => {
     const skip = (page - 1) * perPage;
     const query = { isBlocked: false };
 
-    // Your existing filtering logic for category, search.
 
     let sortOption = {};
     if (sort === 'price-asc') sortOption = { salesPrice: 1 };
@@ -680,7 +661,6 @@ exports.getProducts = async (req, res) => {
       };
     }));
 
-    // Re-sort 
     if (sort === 'price-asc' || sort === 'price-desc') {
       products.sort((a, b) =>
         sort === 'price-asc'
@@ -728,7 +708,6 @@ exports.getProductDetails = async (req, res) => {
       return res.status(404).send('Product not found or is unavailable');
     }
 
-    //offer
     const offerDetails = await product.getBestOfferPrice();
     
     const relatedProducts = await Product.find({
@@ -776,7 +755,6 @@ exports.checkout = async (req, res) => {
       isFromCart: false
     };
 
-    // 🛒 Cart Checkout
     if (productIds && quantities && Array.isArray(productIds) && Array.isArray(quantities)) {
       let total = 0;
       let offers = [];
@@ -805,7 +783,6 @@ exports.checkout = async (req, res) => {
       sessionCheckout.isFromCart = true;
 
     } else if (productId && quantity) {
-      // 🛒 Single Product Checkout
       const product = await Product.findById(productId);
       if (!product || product.isBlocked || product.isDeleted) {
         return res.status(404).send('Product not available');
@@ -829,16 +806,14 @@ exports.checkout = async (req, res) => {
     } else {
       return res.redirect('/cart');
     }
-// If no address, just store checkout session & redirect
 if (!user.addresses || user.addresses.length === 0) {
   req.session.checkout = sessionCheckout;
   return res.redirect('/user/checkout'); 
 }
 
-// // Otherwise create the pending order immediately
+
 
 //  console.log("Order created with ID:(chekout)", order._id);
-// ✅ Create a pending order if not retry
 if (!req.session.retryOrderId) {
   const order = new Order({
     user: req.session.user._id,
@@ -857,13 +832,12 @@ if (!req.session.retryOrderId) {
 
   req.session.checkout = { ...sessionCheckout, orderId: order._id.toString() };
 } else {
-  // ✅ Use retry order directly
   req.session.checkout = { ...sessionCheckout, orderId: req.session.retryOrderId.toString(), isRetry: true };
 }
 
 return res.redirect('/user/checkout');
 
-return res.redirect('/user/checkout');
+//return res.redirect('/user/checkout');
 
   } catch (err) {
     console.error('Checkout POST error:', err);
@@ -878,7 +852,6 @@ exports.getCheckout = async (req, res) => {
     let checkout = req.session.checkout;
     const user = await User.findById(req.session.user._id);
 
-    // ✅ Retry branch
     if ((!checkout || !checkout.productIds?.length) && req.session.retryOrderId) {
       const retryOrder = await Order.findById(req.session.retryOrderId).populate('products.product');
 
@@ -889,9 +862,9 @@ exports.getCheckout = async (req, res) => {
      checkout = {
   productIds: retryOrder.products.map(p => p.product._id.toString()),
   quantities: retryOrder.products.map(p => p.quantity),
-  offerPrices: retryOrder.products.map(p => p.unitPrice),  // ✅ use unitPrice from schema
+  offerPrices: retryOrder.products.map(p => p.unitPrice),  
   totalAmount: retryOrder.totalAmount,
-  orderId: retryOrder._id.toString(),   // ✅ Always use Mongo _id
+  orderId: retryOrder._id.toString(),   
   isRetry: true
 };
 req.session.checkout = checkout;
@@ -950,7 +923,6 @@ exports.retryPayment = async (req, res) => {
     const order = await Order.findById(orderId);
     if (!order) return res.status(404).send("Order not found");
 
-    // Save to session
     req.session.retryOrderId = order._id;
     req.session.checkout = {
       productIds: order.products.map(p => p.product),
@@ -973,7 +945,6 @@ exports.retryCheckout = async (req, res) => {
 
     const userId = req.session.user._id;
 
-    // Get the most recent failed or pending order
     const lastOrder = await Order.findOne({
       user: userId,
       paymentStatus: { $in: ['failed', 'pending'] }
@@ -997,7 +968,7 @@ exports.retryCheckout = async (req, res) => {
 
       sessionCheckout.productIds.push(product._id.toString());
       sessionCheckout.quantities.push(item.quantity);
-      sessionCheckout.offerPrices.push(item.price); // fallback
+      sessionCheckout.offerPrices.push(item.price); 
       sessionCheckout.totalAmount += item.quantity * item.price;
     }
 
@@ -1023,7 +994,6 @@ exports.retryCheckoutWithOrderId = async (req, res) => {
       return res.redirect('/user/orders');
     }
 
-    // rebuild checkout session
     const sessionCheckout = {
       productIds: order.products.map(p => p.product._id.toString()),
       quantities: order.products.map(p => p.quantity),
@@ -1046,7 +1016,6 @@ exports.createInlineAddress = async (req, res) => {
   try {
     const { name, street, city, state, zip, country, phone } = req.body;
 
-    // Validate input
     if (!name || !street || !city || !state || !zip || !country || !phone) {
       return res.status(400).json({
         success: false,
@@ -1100,37 +1069,29 @@ function calculateDiscountAmount(products, quantities, offerPrices = []) {
 }
 
 
-
-
-// Place Order
 // Place Order
 exports.placeOrder = async (req, res) => {
   try {
     const { selectedAddress, paymentMethod } = req.body;
     const checkoutData = req.session.checkout;
 
-    // 1. Validate checkout session
     if (!checkoutData || !Array.isArray(checkoutData.productIds)) {
       return res.status(400).send("Checkout session missing or invalid.");
     }
 
     const { productIds, quantities, offerPrices } = checkoutData;
 
-    // 2. Get user
     const user = await User.findById(req.session.user._id);
     if (!user) return res.status(404).send("User not found");
 
-    // 3. Get selected address
     const address = user.addresses.id(selectedAddress);
     if (!address) return res.status(404).send("Address not found");
 
-    // 4. Get products
     const products = await Product.find({ _id: { $in: productIds } });
     if (products.length !== productIds.length) {
       return res.status(404).send("One or more products not found");
     }
 
-    // 5. Calculate totals
     let totalAmount = 0;
     const orderItems = [];
 
@@ -1145,7 +1106,6 @@ exports.placeOrder = async (req, res) => {
     let deliveryCharge = totalAmount < 50000 ? 80 : 0;
     totalAmount += deliveryCharge;
 
-    // 6. Apply coupon if any
     let couponDiscount = 0;
     if (req.session.coupon?.discountAmount) {
       const discount = parseFloat(req.session.coupon.discountAmount);
@@ -1155,7 +1115,6 @@ exports.placeOrder = async (req, res) => {
       }
     }
 
-    // 7. Payment restrictions
     if (paymentMethod === "COD" && totalAmount > 20000) {
       return res.status(400).send("COD is only available for orders up to ₹20,000.");
     }
@@ -1166,15 +1125,12 @@ exports.placeOrder = async (req, res) => {
       return res.status(400).send("Insufficient wallet balance.");
     }
 
-    // 8. Delivery estimate
     const estimatedDate = new Date();
     estimatedDate.setDate(estimatedDate.getDate() + 6);
 
     let createdOrder;
 
-    // 9. Retry flow OR New order
     if (req.session.retryOrderId) {
-      // ✅ Retry flow: update existing failed order
       createdOrder = await Order.findById(req.session.retryOrderId);
       if (!createdOrder) return res.status(404).send("Order not found for retry");
 
@@ -1198,11 +1154,9 @@ exports.placeOrder = async (req, res) => {
 
       await createdOrder.save();
 
-      // Clear retry flag
       req.session.retryOrderId = null;
 
     } else {
-      // 🔄 Normal new order
       createdOrder = await Order.create({
         user: user._id,
         selectedAddress: address._id,
@@ -1225,7 +1179,6 @@ exports.placeOrder = async (req, res) => {
         couponDiscount,
       });
 
-      // 10. Wallet handling (only for new orders)
       if (paymentMethod === "Wallet") {
         user.wallet.balance -= totalAmount;
         user.wallet.transactions.push({
@@ -1238,7 +1191,6 @@ exports.placeOrder = async (req, res) => {
         await user.save();
       }
 
-      // 11. Stock update (only for new orders)
       for (let i = 0; i < products.length; i++) {
         const quantityOrder = parseInt(quantities[i]);
         await Product.findByIdAndUpdate(products[i]._id, {
@@ -1246,14 +1198,12 @@ exports.placeOrder = async (req, res) => {
         });
       }
 
-      // 12. Remove items from cart (only for new orders)
       await Cart.updateOne(
         { user: req.session.user._id },
         { $pull: { items: { product: { $in: productIds } } } }
       );
     }
 
-    // 13. Save order details in session
     req.session.orderItems = orderItems;
     req.session.address = address;
     req.session.paymentMethod = paymentMethod;
@@ -1264,7 +1214,6 @@ exports.placeOrder = async (req, res) => {
     req.session.orderId = createdOrder._id;
     req.session.paymentVerified = paymentMethod === "Wallet";
 
-    // 14. Render confirmation
     res.render("user/order-confirmation", {
       orderItems,
       address,
@@ -1298,7 +1247,7 @@ exports.paymentFailed = async (req, res) => {
     await order.save();
 
     req.flash("error", "Payment failed. Please retry payment.");
-    return res.redirect(`/order/${order._id}`);  // ✅ send to order details
+    return res.redirect(`/order/${order._id}`); 
   } catch (err) {
     console.error("❌ Error marking order failed:", err.message);
     res.status(500).send("Internal Server Error");
@@ -1732,7 +1681,6 @@ exports.cancelEntireOrder = async (req, res) => {
       return res.redirect("/user/orders");
     }
 
-    // 1️⃣ Restock all products
     for (let item of order.products) {
       if (item.product && item.status !== "Cancelled") {
         item.product.quantity += item.quantity;
@@ -1742,7 +1690,6 @@ exports.cancelEntireOrder = async (req, res) => {
       }
     }
 
-    // 2️⃣ Mark order cancelled
     order.status = "User Cancelled";
     order.cancellationReason = reason || "";
     order.statusHistory.push({
@@ -1752,7 +1699,6 @@ exports.cancelEntireOrder = async (req, res) => {
 
     let refundAmount = 0;
 
-    // 3️⃣ Refund if online payment (not COD)
     if (order.paymentMethod !== "COD" && order.paymentStatus === "Paid") {
       const userDoc = await User.findById(order.user);
 
@@ -1829,7 +1775,6 @@ exports.returnProduct = async (req, res) => {
       return res.redirect(`/user/orders/${orderId}`);
     }
 
-    // Prevent double return
     const alreadyReturned = order.returnedItems.find(
       item => item.product.toString() === productId
     );
@@ -1838,14 +1783,11 @@ exports.returnProduct = async (req, res) => {
       return res.redirect(`/user/orders/${orderId}`);
     }
 
-    // Parse quantity safely
     const qty = parseInt(quantity || productEntry.quantity, 10);
 
-    // Use stored price snapshot from order
     const unitPrice = Number(productEntry.unitPrice || 0);
     const refundAmount = unitPrice * qty;
 
-    // Save return request in order
     order.returnedItems.push({
       product: productEntry.product._id,
       quantity: qty,
@@ -1858,7 +1800,6 @@ exports.returnProduct = async (req, res) => {
     order.returnStatus = 'Requested';
     await order.save();
 
-    // Update user wallet (only once here, no duplicate)
     const user = await User.findById(order.user);
     if (!user) {
       req.flash('error', 'User not found');
@@ -1873,8 +1814,8 @@ user.wallet.balance += refundAmount;
 user.wallet.transactions.push({
   type: 'Credit',
   amount: refundAmount,
-  orderId: order._id.toString(),                // <- match EJS
-  reason: `Refund for returned product ${productEntry.product?.name || 'N/A'}`, // <- match EJS
+  orderId: order._id.toString(),                
+  reason: `Refund for returned product ${productEntry.product?.name || 'N/A'}`, 
   date: new Date()
 });
 
@@ -1913,7 +1854,6 @@ exports.returnOrder = async (req, res) => {
       return res.redirect(`/user/orders/${orderId}`);
     }
 
-    // 🟢 Case 1: Full Order Return
     if (!items || items.length === 0) {
       order.returnRequested = true;
       order.returnStatus = 'Requested';
@@ -1940,7 +1880,6 @@ exports.returnOrder = async (req, res) => {
       return res.redirect(`/user/orders/${orderId}`);
     }
 
-    // 🟢 Case 2: Partial Return
     let refundTotal = 0;
     items.forEach((item) => {
       const orderedProduct = order.products.find(
@@ -2041,14 +1980,11 @@ exports.cancelSingleItem = async (req, res) => {
       return res.redirect(`/user/order/${orderId}`);
     }
 
-    // Refund calculation
     const price = item.product.salesPrice || item.product.regularPrice;
     const refundAmount = price * qtyToCancel;
 
-    // Restock product
     await Product.findByIdAndUpdate(productId, { $inc: { quantity: qtyToCancel } });
 
-    // Refund to wallet
     await User.findByIdAndUpdate(order.user, {
   $inc: { 'wallet.balance': refundAmount },
   $push: {
@@ -2061,7 +1997,6 @@ exports.cancelSingleItem = async (req, res) => {
     }
   }
 });
-    // Update order item quantity or status
     if (qtyToCancel === item.quantity) {
       item.status = 'Cancelled';
     } else {
@@ -2069,10 +2004,8 @@ exports.cancelSingleItem = async (req, res) => {
     }
     item.cancellationReason = reason;
 
-    // Adjust total amount
     order.totalAmount -= refundAmount;
 
-    // If all items are cancelled, mark order as cancelled
     const allCancelled = order.products.every(p => p.status === 'Cancelled');
     if (allCancelled) {
       order.status = 'User Cancelled';
@@ -2195,7 +2128,6 @@ exports.addToCartFromWishlist = async (req, res) => {
 
     await cart.save();
 
-    // Remove from wishlist
     await Wishlist.updateOne(
       { user: userId },
       { $pull: { products: productId } }
