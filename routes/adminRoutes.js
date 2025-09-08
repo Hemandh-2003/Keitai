@@ -62,6 +62,7 @@ router.post('/orders/cancel/:orderId', isAdmin, cancelOrder); // Route to cancel
 router.get('/users', isAdmin, listUsers);
 router.post('/block/:id', isAdmin, blockUser);
 router.post('/unblock/:id', isAdmin, unblockUser);
+router.get('/search-users', adminController.searchUsers);
 
 // Category Management Routes
 router.get('/categories', isAdmin, loadCategories);
