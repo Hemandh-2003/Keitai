@@ -44,7 +44,7 @@
          <div class="add-category">
   <h2>Add New Category</h2>
   <form action="/admin/add-category" method="POST" onsubmit="return validateCategoryForm()">
-    <input type="text" name="name" id="categoryName" placeholder="Category Name" required pattern="[A-Za-z\s]{1,20}" title="Only letters allowed, up to 20 characters">
+    <input type="text" name="name" id="categoryName" placeholder="Category Name" required pattern="[A-Za-z\s]{1,11}" title="Only letters allowed, up to 11 characters">
     <button type="submit">Add</button>
   </form>
 </div>
@@ -88,12 +88,12 @@
       return false;
     }
 
-    const regex = /^[A-Za-z\s]{1,20}$/;
+    const regex = /^[A-Za-z\s]{1,11}$/;
     if (!regex.test(value)) {
       Swal.fire({
         icon: 'error',
         title: 'Invalid Input',
-        text: 'Category name must contain only letters and up to 20 characters.',
+        text: 'Category name must contain only letters and up to 11 characters.',
       });
       return false;
     }

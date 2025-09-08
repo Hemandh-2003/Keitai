@@ -222,11 +222,11 @@ exports.addCategory = async (req, res) => {
       });
     }
 
-    if (!/^[A-Za-z\s]{1,20}$/.test(trimmedName)) {
+    if (!/^[A-Za-z\s]{1,11}$/.test(trimmedName)) {
       const categories = await Category.find();
       return res.render('admin/categories', {
         categories,
-        error: 'Category name must contain only letters and up to 20 characters.',
+        error: 'Category name must contain only letters and up to 11 characters.',
       });
     }
 
