@@ -212,31 +212,45 @@ exports.loadCategories = async (req, res) => {
 exports.addCategory = async (req, res) => {
   try {
     const { name } = req.body;
-    const slug = name.toLowerCase().replace(/\s+/g, '-'); 
+    const trimmedName = name.trim();
 
-    
-    const existingCategory = await Category.findOne({ name: name.toLowerCase() });
-    if (existingCategory) {
-      const categories = await Category.find(); 
+    if (!trimmedName) {
+      const categories = await Category.find();
       return res.render('admin/categories', {
         categories,
-        error: 'This category already exists in the list.', 
+        error: 'Category name cannot be empty.',
       });
     }
 
-    
-    const newCategory = new Category({ name, slug });
+    if (!/^[A-Za-z\s]{1,20}$/.test(trimmedName)) {
+      const categories = await Category.find();
+      return res.render('admin/categories', {
+        categories,
+        error: 'Category name must contain only letters and up to 20 characters.',
+      });
+    }
+
+    const slug = trimmedName.toLowerCase().replace(/\s+/g, '-');
+
+    const existingCategory = await Category.findOne({ name: new RegExp(`^${trimmedName}$`, 'i') });
+    if (existingCategory) {
+      const categories = await Category.find();
+      return res.render('admin/categories', {
+        categories,
+        error: 'This category already exists in the list.',
+      });
+    }
+
+    const newCategory = new Category({ name: trimmedName, slug });
     await newCategory.save();
 
     res.redirect('/admin/categories');
   } catch (error) {
     console.error('Error adding category:', error);
-    
-    
-    const categories = await Category.find(); 
+    const categories = await Category.find();
     return res.render('admin/categories', {
       categories,
-      error: 'Yo Look the List below Please, That category is persent ', 
+      error: 'Something went wrong. Please try again.',
     });
   }
 };

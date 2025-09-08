@@ -7,14 +7,9 @@
   <link rel="stylesheet" href="/css/edit-category.css">
 </head>
 <body>
+  <body>
   <div class="container">
     <h1>Edit Category</h1>
-    
-    <% if (typeof errorMessage !== 'undefined') { %>
-      <div class="error-message">
-        <p><%= errorMessage %></p>
-      </div>
-    <% } %>
 
     <form action="/admin/edit-category/<%= category._id %>" method="POST">
       <div class="form-group">
@@ -24,5 +19,50 @@
       <button type="submit">Update</button>
     </form>
   </div>
+
+  <% if (typeof errorMessage !== 'undefined') { %>
+    <script>
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: '<%= errorMessage %>'
+      });
+    </script>
+  <% } %>
+
+</body>
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+  document.querySelector('form').addEventListener('submit', function(e) {
+    const nameInput = document.getElementById('name');
+    const value = nameInput.value.trim();
+
+    if (!value) {
+      e.preventDefault();
+      Swal.fire({
+        icon: 'error',
+        title: 'Oops...',
+        text: 'Category name cannot be empty.',
+      });
+      return false;
+    }
+
+    const regex = /^[A-Za-z\s]{1,20}$/;
+    if (!regex.test(value)) {
+      e.preventDefault();
+      Swal.fire({
+        icon: 'error',
+        title: 'Invalid Input',
+        text: 'Category name must contain only letters and up to 20 characters.',
+      });
+      return false;
+    }
+
+    // Allow form submission if validation passes
+    return true;
+  });
+</script>
+
 </body>
 </html>
