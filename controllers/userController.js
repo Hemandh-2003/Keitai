@@ -1192,11 +1192,19 @@ exports.placeOrder = async (req, res) => {
       }
 
       for (let i = 0; i < products.length; i++) {
-        const quantityOrder = parseInt(quantities[i]);
-        await Product.findByIdAndUpdate(products[i]._id, {
-          $inc: { quantity: -quantityOrder },
-        });
-      }
+  const quantityOrder = parseInt(quantities[i]);
+
+  const updatedProduct = await Product.findOneAndUpdate(
+    { _id: products[i]._id, quantity: { $gte: quantityOrder } },
+    { $inc: { quantity: -quantityOrder } },
+    { new: true }
+  );
+
+  if (!updatedProduct) {
+    throw new Error(`Insufficient stock for product ${products[i].name}`);
+  }
+}
+
 
       await Cart.updateOne(
         { user: req.session.user._id },
