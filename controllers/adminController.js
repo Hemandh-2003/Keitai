@@ -164,36 +164,6 @@ exports.listUsers = async (req, res) => {
     res.status(500).send('Error listing users');
   }
 };
-exports.searchUsers = async (req, res) => {
-  try {
-    const sortBy = req.query.sort || 'all';
-    const search = req.query.search || '';
-
-    let filter = {};
-
-    if (sortBy === 'blocked') {
-      filter.isBlocked = true;
-    } else if (sortBy === 'unblocked') {
-      filter.isBlocked = false;
-    }
-
-    if (search) {
-      const regex = new RegExp(search, 'i');
-      filter.$or = [
-        { name: regex },
-        { email: regex },
-        { userCode: regex }
-      ];
-    }
-
-    const users = await User.find(filter).limit(50);
-
-    res.json({ users });
-  } catch (error) {
-    console.error('Error searching users:', error);
-    res.status(500).json({ error: 'Server error' });
-  }
-};
 
 exports.blockUser = async (req, res) => {
   try {

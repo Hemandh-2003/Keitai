@@ -28,8 +28,11 @@
     <div class="container">
       <h1>Manage Users</h1>
 <div class="search-users">
-  <input type="text" id="search-input" placeholder="Search by name, email, or user code" value="<%= searchQuery || '' %>">
-  <button type="button" onclick="handleSearch()">Search</button>
+  <form action="/admin/users" method="GET" onsubmit="return handleSearch(event)">
+    <input type="text" id="search-input" name="search" placeholder="Search by name, email, or user code" value="<%= searchQuery || '' %>">
+    <input type="hidden" name="sort" value="<%= sortBy %>">
+    <button type="submit">Search</button>
+  </form>
 </div>
       <!-- Sort Dropdown -->
       <div class="sort-products">
@@ -112,46 +115,13 @@
       window.location.href = `/admin/users${queryParams}`;
     }
   </script>
-<script>
-  function handleSearch() {
-    const searchValue = document.getElementById('search-input').value.trim();
-    const sortBy = '<%= sortBy %>'; // pass current sort option
-
-    fetch(`/admin/search-users?search=${encodeURIComponent(searchValue)}&sort=${encodeURIComponent(sortBy)}`)
-      .then(response => response.json())
-      .then(data => {
-        const tbody = document.querySelector('#usersTable tbody');
-        tbody.innerHTML = '';
-
-        if (data.users.length === 0) {
-          tbody.innerHTML = '<tr><td colspan="5">No users found.</td></tr>';
-          return;
-        }
-
-        data.users.forEach(user => {
-          const row = document.createElement('tr');
-          row.innerHTML = `
-            <td>${user.userCode}</td>
-            <td>${user.name}</td>
-            <td>${user.email}</td>
-            <td>${user.isBlocked ? '<span style="color:red;">Blocked</span>' : '<span style="color:green;">Active</span>'}</td>
-            <td>
-              ${!user.isBlocked ? 
-                `<form action="/admin/block/${user._id}" method="POST" style="display:inline;">
-                  <button type="submit" class="btn btn-warning">Block</button>
-                </form>` : 
-                `<form action="/admin/unblock/${user._id}" method="POST" style="display:inline;">
-                  <button type="submit" class="btn btn-success">Unblock</button>
-                </form>`}
-              <a href="/admin/reviews?user=${user._id}" class="btn btn-info">View Reviews</a>
-            </td>
-          `;
-          tbody.appendChild(row);
-        });
-      })
-      .catch(error => {
-        console.error('Error searching users:', error);
-      });
+  <script>
+  function handleSearch(event) {
+    const input = document.getElementById('search-input');
+    if (!input.value.trim()) {
+      return true;
+    }
+    return true;
   }
 </script>
 
