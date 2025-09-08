@@ -115,42 +115,47 @@ exports.getDashboardStats = async (req, res) => {
 // User management
 exports.listUsers = async (req, res) => {
   try {
-    const sortBy = req.query.sort || 'all'; 
+    const sortBy = req.query.sort || 'all';
+    const search = req.query.search || '';
     const page = parseInt(req.query.page) || 1;
-    const limit = 10; 
+    const limit = 10;
     const skip = (page - 1) * limit;
 
-   
     let filter = {};
-    let sort = { createdAt: -1 }; 
+    let sort = { createdAt: -1 };
 
     switch (sortBy) {
       case 'blocked':
-        filter.isBlocked = true; 
+        filter.isBlocked = true;
         break;
       case 'unblocked':
-        filter.isBlocked = false; 
+        filter.isBlocked = false;
         break;
       default:
         break;
     }
 
-    
+    if (search) {
+      filter.$or = [
+        { name: { $regex: search, $options: 'i' } },
+        { email: { $regex: search, $options: 'i' } },
+        { userCode: { $regex: search, $options: 'i' } }
+      ];
+    }
+
     const totalUsers = await User.countDocuments(filter);
 
-    
     const users = await User.find(filter)
       .sort(sort)
       .skip(skip)
       .limit(limit);
 
-    
     const totalPages = Math.ceil(totalUsers / limit);
 
-    
     res.render('admin/users', {
       users,
       sortBy,
+      searchQuery: search,
       currentPage: page,
       totalPages,
     });
