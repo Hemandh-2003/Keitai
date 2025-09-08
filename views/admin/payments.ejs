@@ -31,7 +31,32 @@
     <div class="container">
       <h1>All Payments</h1>
 
-      <% if (orders && orders.length > 0) { %>
+      <!-- Filter Form -->
+      <form action="/admin/payments" method="GET" class="filter-form">
+        <div>
+          <label for="paymentMethod">Payment Method:</label>
+          <select name="paymentMethod" id="paymentMethod">
+            <option value="">All</option>
+            <option value="COD" <%=paymentMethod==='COD' ? 'selected' : '' %>>COD</option>
+            <option value="Online" <%=paymentMethod==='Online' ? 'selected' : '' %>>Online</option>
+          </select>
+        </div>
+
+        <div>
+          <label for="startDate">Start Date:</label>
+          <input type="date" name="startDate" id="startDate" value="<%= startDate %>">
+        </div>
+
+        <div>
+          <label for="endDate">End Date:</label>
+          <input type="date" name="endDate" id="endDate" value="<%= endDate %>">
+        </div>
+
+        <button type="submit">Filter</button>
+      </form>
+
+
+      <% if (orders && orders.length> 0) { %>
         <table>
           <thead>
             <tr>
@@ -45,38 +70,59 @@
             </tr>
           </thead>
           <tbody>
-            <% orders.forEach(order => { %>
+            <% orders.forEach(order=> { %>
               <tr>
                 <td>
                   <strong>#<%= order.orderId %></strong><br>
-                  <small><%= new Date(order.createdAt).toLocaleDateString() %></small>
+                  <small>
+                    <%= new Date(order.createdAt).toLocaleDateString() %>
+                  </small>
                 </td>
-                <td><%= order.user?.name || 'N/A' %></td>
-                <td><%= order.user?.email || 'N/A' %></td>
-                <td><%= order.paymentMethod %></td>
-                <td>₹<%= order.totalAmount?.toFixed(2) %></td>
-                <td><%= new Date(order.createdAt).toLocaleDateString() %></td>
+                <td>
+                  <%= order.user?.name || 'N/A' %>
+                </td>
+                <td>
+                  <%= order.user?.email || 'N/A' %>
+                </td>
+                <td>
+                  <%= order.paymentMethod %>
+                </td>
+                <td>₹<%= order.totalAmount?.toFixed(2) %>
+                </td>
+                <td>
+                  <%= new Date(order.createdAt).toLocaleDateString() %>
+                </td>
                 <td><a href="/admin/orders/<%= order._id %>/payment">View</a></td>
               </tr>
-            <% }) %>
+              <% }) %>
           </tbody>
         </table>
-      <% } else { %>
-        <p>No payments found.</p>
-      <% } %>
-
-      <!-- Pagination -->
-      <% if (totalPages > 1) { %>
-        <div class="pagination">
-          <% for (let i = 1; i <= totalPages; i++) { %>
-            <% if (i === currentPage) { %>
-              <span><%= i %></span>
-            <% } else { %>
-              <a href="?page=<%= i %>"><%= i %></a>
-            <% } %>
+        <% } else { %>
+          <p>No payments found.</p>
           <% } %>
-        </div>
-      <% } %>
+
+            <!-- Pagination -->
+            <% if (totalPages> 1) { %>
+              <div class="pagination">
+                <% for (let i=1; i <=totalPages; i++) { %>
+                  <% let query=`?page=${i}`; %>
+                    <% if (paymentMethod) query +=`&paymentMethod=${paymentMethod}`; %>
+                      <% if (startDate) query +=`&startDate=${startDate}`; %>
+                        <% if (endDate) query +=`&endDate=${endDate}`; %>
+
+                          <% if (i===currentPage) { %>
+                            <span>
+                              <%= i %>
+                            </span>
+                            <% } else { %>
+                              <a href="<%= query %>">
+                                <%= i %>
+                              </a>
+                              <% } %>
+                                <% } %>
+              </div>
+              <% } %>
+
 
     </div>
   </div>

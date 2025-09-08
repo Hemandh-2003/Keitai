@@ -1936,9 +1936,6 @@ exports.returnOrder = async (req, res) => {
   }
 };
 
-
-
-
 exports.cancelSingleItem = async (req, res) => {
   const { orderId, productId } = req.params;
   const qtyToCancel = parseInt(req.body.quantity, 10);

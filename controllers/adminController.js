@@ -1782,18 +1782,41 @@ exports.listAllPayments = async (req, res) => {
     const limit = 10;
     const skip = (page - 1) * limit;
 
-    const orders = await Order.find({})
+    const { paymentMethod, startDate, endDate } = req.query;
+
+    let filter = {};
+
+    if (paymentMethod) {
+      filter.paymentMethod = paymentMethod;
+    }
+
+    if (startDate || endDate) {
+      filter.createdAt = {};
+      if (startDate) {
+        filter.createdAt.$gte = new Date(startDate);
+      }
+      if (endDate) {
+        const end = new Date(endDate);
+        end.setHours(23, 59, 59, 999);
+        filter.createdAt.$lte = end;
+      }
+    }
+
+    const orders = await Order.find(filter)
       .populate("user")
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit);
 
-    const totalOrders = await Order.countDocuments();
+    const totalOrders = await Order.countDocuments(filter);
 
     res.render("admin/payments", {
       orders,
       totalPages: Math.ceil(totalOrders / limit),
       currentPage: page,
+      paymentMethod: paymentMethod || '',
+      startDate: startDate || '',
+      endDate: endDate || ''
     });
   } catch (err) {
     console.error("Error fetching payments:", err);
