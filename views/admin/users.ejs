@@ -4,6 +4,7 @@
 <head>
   <title>Admin - Users</title>
   <link rel="stylesheet" href="/css/users.css">
+  <link rel="stylesheet" href="/css/loader.css">
 </head>
 
 <body>
@@ -27,6 +28,7 @@
 
     <div class="container">
       <h1>Manage Users</h1>
+      <div id="loader" class="loader"></div>
 <div class="search-users">
   <form action="/admin/users" method="GET" onsubmit="return handleSearch(event)">
     <input type="text" id="search-input" name="search" placeholder="Search by name, email, or user code" value="<%= searchQuery || '' %>">
@@ -123,6 +125,24 @@
     }
     return true;
   }
+</script>
+<script>
+  // Show loader when form is submitted
+  document.addEventListener("DOMContentLoaded", function() {
+    const loader = document.getElementById("loader");
+
+    // Show loader on any form submission
+    document.querySelectorAll("form").forEach(form => {
+      form.addEventListener("submit", function() {
+        loader.style.display = "block";
+      });
+    });
+
+    // Optionally, hide loader when the page fully loads
+    window.addEventListener("load", function() {
+      loader.style.display = "none";
+    });
+  });
 </script>
 
 </body>
