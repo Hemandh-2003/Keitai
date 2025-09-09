@@ -1,8 +1,7 @@
 exports.isAdmin = (req, res, next) => {
-  if (req.session.isAdmin) {
-    //console.log('Admin authenticated successfully'); // Optional: Debug log
-    return next(); // Proceed if admin session exists
+  if (req.session && req.session.isAdmin) {
+    return next();
   }
-  console.log('Admin session not found, redirecting to login');
-  res.redirect('/admin/adminlog'); // Redirect to admin login page
-};  
+  console.log('Admin session not found or expired, redirecting to login');
+  return res.redirect('/admin/adminlog');
+};
