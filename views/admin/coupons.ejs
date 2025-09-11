@@ -146,6 +146,27 @@
                     </tbody>
 
                   </table>
+                  <div class="pagination">
+                    <% if (totalPages> 1) { %>
+                      <ul>
+                        <% if (currentPage> 1) { %>
+                          <li><a href="?page=<%= currentPage - 1 %>">&laquo; Previous</a></li>
+                          <% } %>
+
+                            <% for(let i=1; i <=totalPages; i++) { %>
+                              <li class="<%= currentPage === i ? 'active' : '' %>">
+                                <a href="?page=<%= i %>">
+                                  <%= i %>
+                                </a>
+                              </li>
+                              <% } %>
+
+                                <% if (currentPage < totalPages) { %>
+                                  <li><a href="?page=<%= currentPage + 1 %>">Next &raquo;</a></li>
+                                  <% } %>
+                      </ul>
+                      <% } %>
+                  </div>
                 </div>
       </section>
     </div>

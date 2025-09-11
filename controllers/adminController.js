@@ -1385,14 +1385,25 @@ exports.deleteOffer = async (req, res) => {
 // Show coupons page
 exports.getCoupons = async (req, res) => {
   try {
-    const coupons = await Coupon.find().sort({ endDate: 1 });
+    const perPage = 5;
+    const page = parseInt(req.query.page) || 1;
 
-    res.render('admin/coupons', {
-      coupons,
-      messages: req.flash()
-    });
-  } catch (error) {
-    console.error('Error fetching coupons:', error);
+    const totalCoupons = await Coupon.countDocuments();
+    const totalPages = Math.ceil(totalCoupons / perPage);
+
+    const coupons = await Coupon.find()
+      .sort({ endDate: 1})
+      .skip((page - 1) * perPage)
+      .limit(perPage);
+
+      res.render('admin/coupons',{
+        coupons,
+        currentPage: page,
+        totalPages,
+        messages: req.flash()
+      });
+  } catch (err) {
+    console.error('Error Fetching coupons:',err);
     res.redirect('/admin/dashboard');
   }
 };
@@ -1454,21 +1465,16 @@ exports.createCoupon = async (req, res) => {
 
     await newCoupon.save();
 
-    const updatedCoupons = await Coupon.find();
-    return res.render('admin/coupons', {
-      coupons: updatedCoupons,
-      messages: { success: 'Coupon added successfully!' }
-    });
-
+req.flash('success', 'Coupon added successfully!');
+    return res.redirect('/admin/coupons');
   } catch (err) {
     console.error('Error creating coupon:', err.message);
-    const coupons = await Coupon.find();
-    return res.render('admin/coupons', {
-      coupons,
-      messages: { error: 'Failed to create coupon. Please try again.' }
-    });
+    req.flash('error', 'Failed to create coupon. Please try again.');
+    return res.redirect('/admin/coupons');
   }
 };
+
+
 
 // Delete coupon
 exports.deleteCoupon = async (req, res) => {
@@ -1478,11 +1484,12 @@ exports.deleteCoupon = async (req, res) => {
     req.flash('success', 'Coupon deleted');
     res.redirect('/admin/coupons');
   } catch (err) {
-    console.error(err);
-    req.flash('error', 'Failed to delete coupon');
+    console.error('Error deleting coupon:', err);
+    req.flash('error', 'Failed to delete coupon.');
     res.redirect('/admin/coupons');
   }
 };
+
 
 //Report
 exports.renderSalesReportPage = async (req, res) => {

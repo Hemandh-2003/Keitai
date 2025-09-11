@@ -543,3 +543,25 @@ input:checked + .slider:before {
     margin-bottom: 5px;
   }
 }
+.pagination ul {
+    list-style: none;
+    padding: 0;
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+    margin-top: 20px;
+  }
+  .pagination li {
+    display: inline-block;
+  }
+  .pagination a {
+    padding: 8px 12px;
+    border: 1px solid #ccc;
+    text-decoration: none;
+    color: #ffffff;
+  }
+  .pagination .active a {
+    background-color: #007bff;
+    color: white;
+    border-color: #007bff;
+  }
