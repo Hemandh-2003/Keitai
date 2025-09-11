@@ -41,6 +41,7 @@
           <div class="form-group">
             <label for="category">Category:</label>
             <select id="category" name="category" required>
+              <option value="" disable selected>Select a Category</option>
               <% categories.forEach((category)=> { %>
                 <option value="<%= category._id %>">
                   <%= category.name %>
