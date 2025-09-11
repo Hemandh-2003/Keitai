@@ -212,7 +212,6 @@ exports.loadCategories = async (req, res) => {
   }
 };
 
-
 // Add a new category
 exports.addCategory = async (req, res) => {
   try {
@@ -259,7 +258,6 @@ exports.addCategory = async (req, res) => {
     });
   }
 };
-
 
 // Delete a category
 exports.deleteCategory = async (req, res) => {
@@ -1383,6 +1381,7 @@ exports.deleteOffer = async (req, res) => {
     res.redirect('/admin/offers');
   }
 };
+
 // Show coupons page
 exports.getCoupons = async (req, res) => {
   try {
@@ -1397,8 +1396,6 @@ exports.getCoupons = async (req, res) => {
     res.redirect('/admin/dashboard');
   }
 };
-
-
 
 // Create coupon
 exports.createCoupon = async (req, res) => {

@@ -608,9 +608,6 @@ exports.cancelOrder = async (req, res) => {
   }
 };
 
-
-
-
 // Get Products
 exports.getProducts = async (req, res) => {
   try {
@@ -810,8 +807,6 @@ if (!user.addresses || user.addresses.length === 0) {
   req.session.checkout = sessionCheckout;
   return res.redirect('/user/checkout'); 
 }
-
-
 
 //  console.log("Order created with ID:(chekout)", order._id);
 if (!req.session.retryOrderId) {
@@ -1237,7 +1232,7 @@ exports.placeOrder = async (req, res) => {
     });
 
   } catch (err) {
-    console.error("❌ Error placing order:", err.message);
+    console.error("Error placing order:", err.message);
     res.status(500).send(err.message || "Internal Server Error");
   }
 };
@@ -1257,7 +1252,7 @@ exports.paymentFailed = async (req, res) => {
     req.flash("error", "Payment failed. Please retry payment.");
     return res.redirect(`/order/${order._id}`); 
   } catch (err) {
-    console.error("❌ Error marking order failed:", err.message);
+    console.error("Error marking order failed:", err.message);
     res.status(500).send("Internal Server Error");
   }
 };
