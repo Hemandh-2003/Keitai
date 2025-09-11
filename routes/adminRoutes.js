@@ -18,9 +18,9 @@ const {
   unblockProduct,
   viewProductDetails,
 getProductDetailsWithRelated ,  
-  listOrders, // Add this method to list orders
-  changeOrderStatus, // Add this for changing order status
-  cancelOrder, // Add this for canceling orders
+  listOrders, 
+  changeOrderStatus, 
+  cancelOrder,
 } = require('../controllers/adminController');
 const { isAdmin } = require('../middleware/adminMiddleware');
 const checkBlockedUser = require('../middleware/checkBlocked');

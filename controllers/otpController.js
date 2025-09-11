@@ -1,20 +1,19 @@
 const nodemailer = require('nodemailer');
 
-// Temporary in-memory OTP storage
 let otpStorage = {};
 
 // Nodemailer transporter setup
 const transporter = nodemailer.createTransport({
   host: 'smtp.gmail.com',
-  port: 587, // TLS port
-  secure: false, // Use TLS, not SSL
+  port: 587, 
+  secure: false, 
   auth: {
-    user: process.env.EMAIL_USER, // Your email
-    pass: process.env.EMAIL_PASS, // App password or email password
+    user: process.env.EMAIL_USER, 
+    pass: process.env.EMAIL_PASS, 
   },
 });
 
-// Verify transporter connection
+
 transporter.verify((error, success) => {
   if (error) {
     console.error('SMTP Transporter Error:', error);
@@ -29,9 +28,9 @@ exports.generateOtp = (email) => {
   
     otpStorage[email] = {
       otp: otp,
-      expiry: Date.now() + 5 * 60 * 1000, // OTP expires in 5 minutes
+      expiry: Date.now() + 5 * 60 * 1000, 
     };
-    //console.log(`Generated OTP for ${email}: ${otp}`);//consoling the otp
+    //console.log(`Generated OTP for ${email}: ${otp}`);
   
     return otp;
 };  
@@ -43,14 +42,13 @@ exports.validateOtp = (email, otp) => {
     //console.log(`Received OTP for validation: ${otp}`);
   
     if (otpData && otpData.otp == otp) {
-      // Check if OTP expired
       if (Date.now() > otpData.expiry) {
         console.warn(`OTP for ${email} has expired`);
-        delete otpStorage[email]; // Clear expired OTP
-        return false; // Expired OTP
+        delete otpStorage[email]; 
+        return false; 
       }
       
-      delete otpStorage[email]; // Clear OTP after validation
+      delete otpStorage[email];
       //console.log(`OTP validated successfully for ${email}`);
       return true;
     }
@@ -69,10 +67,10 @@ exports.sendOtpEmail = async (email, otp) => {
 
   try {
     const info = await transporter.sendMail(mailOptions);
-    //console.log(`OTP sent successfully to ${email}:`, info.response); // Debugging
+    //console.log(`OTP sent successfully to ${email}:`, info.response); 
     return true;
   } catch (err) {
-    console.error('Error sending OTP email:', err); // Debugging
+    console.error('Error sending OTP email:', err); 
     return false;
   }
 };

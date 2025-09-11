@@ -3,21 +3,19 @@ const Category = require('../models/Category');
 const path = require('path');
 const fs = require('fs');
 
-// GET all banners (Admin view)
+//Admin
 exports.getBanners = async (req, res) => {
   try {
-    // Fetch banners and populate category
     const banners = await Banner.find()
       .populate({
         path: 'category',
-        select: 'name', // only fetch the name field
+        select: 'name',
       });
 
-    // Fetch all categories for the "Add Banner" form (ignore isDeleted)
     const categories = await Category.find({});
 
-   // console.log('Categories:', categories); // debug to see populated categories
-    //console.log('Banners:', banners); // debug to see banners
+   // console.log('Categories:', categories); 
+    //console.log('Banners:', banners); 
 
     res.render('admin/banners', { banners, categories });
   } catch (err) {
@@ -27,7 +25,7 @@ exports.getBanners = async (req, res) => {
 };
 
 
-// POST add new banner
+// Add new banner
 exports.addBanner = async (req, res) => {
   try {
     const { title, category } = req.body;
@@ -36,7 +34,7 @@ exports.addBanner = async (req, res) => {
     const banner = new Banner({
       title,
       image: req.file.filename,
-      category: category || null // null means "All Categories"
+      category: category || null 
     });
 
     await banner.save();
@@ -53,7 +51,6 @@ exports.deleteBanner = async (req, res) => {
     const banner = await Banner.findById(req.params.bannerId);
     if (!banner) return res.status(404).json({ error: 'Banner not found' });
 
-    // Delete image file
     const imagePath = path.join(__dirname, '../public/uploads/banners', banner.image);
     if (fs.existsSync(imagePath)) fs.unlinkSync(imagePath);
 

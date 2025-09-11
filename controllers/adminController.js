@@ -1437,10 +1437,10 @@ exports.createCoupon = async (req, res) => {
         });
       }
     } else if (discountType === 'fixed') {
-      if (parsedDiscount < 1 || parsedDiscount > 50000) {
+      if (parsedDiscount < 2000 || parsedDiscount > 50000) {
         return res.render('admin/coupons', {
           coupons,
-          messages: { error: 'Fixed discount must be between ₹1 and ₹50,000.' }
+          messages: { error: 'Fixed discount must be between ₹2000 and ₹50,000.' }
         });
       }
     }

@@ -6,7 +6,6 @@ exports.applyCoupon = async (req, res) => {
   try {
     const formattedCode = code.toUpperCase();
 
-    // ✅ prevent duplicate application
     if (req.session.coupon && req.session.coupon.code === formattedCode) {
       return res.status(400).json({ success: false, message: 'Coupon already applied' });
     }
@@ -22,7 +21,6 @@ exports.applyCoupon = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Coupon is not valid at this time' });
     }
 
-    // ✅ Check minimum purchase
     if (total < coupon.minPurchase) {
       return res.status(400).json({
         success: false,

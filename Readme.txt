@@ -94,12 +94,12 @@ npm install
 
 Create a .env file with the following variables:
 
-MONGO_URI=your_mongodb_connection_string
-SESSION_SECRET=your_session_secret
-RAZORPAY_KEY_ID=your_razorpay_key_id
-RAZORPAY_KEY_SECRET=your_razorpay_key_secret
-EMAIL_USER=your_email_address
-EMAIL_PASS=your_email_password
+MONGO_URI=
+SESSION_SECRET=
+RAZORPAY_KEY_ID=
+RAZORPAY_KEY_SECRET=
+EMAIL_USER=
+EMAIL_PASS=
 
 
 Start the development server:

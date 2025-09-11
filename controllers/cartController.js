@@ -1,7 +1,7 @@
 const Cart = require('../models/Cart');
 const Product = require('../models/Product');
 
-//add to cart module
+//add to cart
 exports.addToCart = async (req, res) => {
   try {
     const { productId, quantity } = req.body;
@@ -11,7 +11,6 @@ exports.addToCart = async (req, res) => {
       return res.status(404).json({ error: 'Product not found or unavailable' });
     }
 
-    // 🚨 Check stock
     if (product.stock <= 0) {
       return res.status(400).json({ error: 'Product is out of stock' });
     }
@@ -35,7 +34,6 @@ exports.addToCart = async (req, res) => {
         });
       }
 
-      // 🚨 Ensure not exceeding stock
       if (newTotalQuantity > product.stock) {
         return res.status(400).json({
           error: `Only ${product.stock - existingItem.quantity} more unit(s) available in stock.`,
@@ -93,7 +91,6 @@ exports.getCart = async (req, res) => {
     const totalItems = cart.items.length;
     const totalPages = Math.ceil(totalItems / perPage);
 
-    // If current page exceeds total pages after deletion, redirect to the last valid page
     if (page > totalPages) {
       return res.redirect(`/cart?page=${totalPages}`);
     }
@@ -195,7 +192,6 @@ exports.updateCart = async (req, res) => {
     const item = cart.items.find(item => item.product._id.toString() === productId);
     if (!item) return res.status(404).json({ error: 'Product not in cart' });
 
-    // Check stock availability
     if (requestedQuantity > item.product.quantity) {
       return res.status(400).json({
         error: `Only ${item.product.quantity} units available in stock.`,
@@ -263,7 +259,6 @@ exports.clearCart = async (req, res) => {
   //console.log('Clear cart initiated - Session:', req.session);
   
   try {
-    // Verify session exists
     if (!req.session.user?._id) {
       console.error('No user in session');
       return res.status(401).json({ 

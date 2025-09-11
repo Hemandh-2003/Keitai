@@ -10,19 +10,16 @@ exports.cancelOrder = async (req, res) => {
       return res.redirect("/user/orders");
     }
 
-    // Restore product stock
     for (let item of order.items) {
       await Product.findByIdAndUpdate(item.product, {
         $inc: { stock: item.quantity }
       });
     }
 
-    // Update order status
     order.status = "Cancelled";
     order.cancellationReason = reason || "User cancelled";
     await order.save();
 
-    // Refund logic (only if prepaid)
     if (order.paymentMethod !== "COD" && order.paymentStatus === "Paid") {
       order.user.wallet += order.totalAmount;
       await order.user.save();
@@ -42,7 +39,7 @@ exports.cancelOrder = async (req, res) => {
 exports.requestReturn = async (req, res) => {
   try {
     const { orderId, reason } = req.body;
-    // Validate mandatory reason and process return
+    
     res.redirect(`/orders/${orderId}`);
   } catch (err) {
     res.status(500).send(err);

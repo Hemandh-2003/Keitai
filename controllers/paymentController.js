@@ -162,7 +162,6 @@ exports.retryPaymentFromOrder = async (req, res) => {
       return res.status(400).send('Payment retry is not allowed for this order');
     }
 
-    // ✅ Set session for checkout (simulate fresh checkout)
     req.session.retryOrder = {
       orderId: order._id,
       products: order.products.map(p => ({

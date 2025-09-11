@@ -198,12 +198,12 @@
           return;
         }
       } else if (discountType === 'fixed') {
-        if (discount < 1 || discount > 50000) {
+        if (discount < 2000 || discount > 50000) {
           e.preventDefault();
           Swal.fire({
             icon: 'error',
             title: 'Invalid Discount',
-            text: 'Fixed discount must be between ₹1 and ₹50,000.'
+            text: 'Fixed discount must be between ₹2000 and ₹50,000.'
           });
           return;
         }
@@ -218,7 +218,6 @@
       }
     });
 
-    // Show flash messages as SweetAlerts
     `<% if (messages && messages.success) { %>
       Swal.fire({
         icon: 'success',
@@ -258,7 +257,6 @@ discountTypeSelect.addEventListener('change', function () {
 });
 
 
-// Run once on page load to set correct visibility
 discountTypeSelect.dispatchEvent(new Event('change'));
 
   </script>
