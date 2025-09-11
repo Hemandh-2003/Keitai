@@ -13,9 +13,8 @@ module.exports = {
   },
 
   preventAuthPages: (req, res, next) => {
-    // If user is already logged in, block access to /login or /signup
     if (req.session.user) {
-      return res.redirect('/home'); // redirect to home/dashboard
+      return res.redirect('/home'); 
     }
     next();
   }

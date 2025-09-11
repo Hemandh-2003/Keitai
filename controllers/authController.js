@@ -7,18 +7,15 @@ const generateUniqueUserCode = require('../utils/userCode');
 exports.loadLandingPage = (req, res) => {
   res.render('user/index', {
     title: 'Welcome to Keitai',
-    user: req.session.user || null  // 🔑 Fix: Pass user to view
+    user: req.session.user || null 
   });
 };
 
 
 // Load login page
-// Load login page
 exports.loadLogin = (req, res) => {
   res.render('user/login', { error: null });
 };
-
-
 
 
 // Register user

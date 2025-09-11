@@ -49,9 +49,9 @@ app.use(
     resave: false,
     saveUninitialized: false,
     cookie: {
-      secure: process.env.NODE_ENV === 'production', // Use HTTPS in production
-      httpOnly: true, // Ensures cookie can't be accessed by JavaScript
-      maxAge: 24 * 60 * 60 * 1000, // 1 day expiry
+      secure: process.env.NODE_ENV === 'production', 
+      httpOnly: true, 
+      maxAge: 24 * 60 * 60 * 1000, 
     },
   })
 );
@@ -133,13 +133,13 @@ app.post('/admin/products/create', (req, res, next) => {
       console.error('Upload error:', err);
       return res.status(500).send('Upload Error');
     }
-    next(); // Proceed to controller
+    next(); 
   });
 }, createProduct);
 
 
 
-// Fetch categories from database and pass to all pages
+
 const fetchCategories = async () => {
   try {
     const categories = await Category.find();
@@ -150,7 +150,7 @@ const fetchCategories = async () => {
   }
 };
 
-// Middleware to fetch categories and make them available on all routes
+// Middleware to fetch categories
 app.use(async (req, res, next) => {
   const categories = await fetchCategories();
   res.locals.categories = categories;
@@ -159,7 +159,7 @@ app.use(async (req, res, next) => {
 
 // Routes
 app.use('/admin', checkBlockedUser, adminRoutes);
-app.use('/review', reviewRoutes); // Mount admin routes once with middleware
+app.use('/review', reviewRoutes); 
 app.use('/', authRoutes);
 app.use('/user', userRoutes);
 app.use('/wishlist', wishlistRoutes);
@@ -169,14 +169,13 @@ app.get('/', (req, res) => {
 });
 app.get('/product/:productId', async (req, res) => {
   try {
-    // Redirect to the user route version
     res.redirect(`/user/product/${req.params.productId}`);
   } catch (error) {
     console.error('Redirect error:', error);
     res.status(500).send('Server Error');
   }
 });
-// Dynamic category route (Slug-based)
+// Dynamic category route
 app.get('/:slug', async (req, res) => {
   try {
     const { slug } = req.params;
@@ -227,14 +226,14 @@ app.get('/:slug', async (req, res) => {
       return { ...product.toObject(), offerDetails };
     }));
 
-    // 8️⃣ Render the category page with banners
+  
     res.render(`user/${category.slug}`, {
       activePage: category.slug,
       category,
       products: productsWithOffers,
       query: req.query,
       wishlist,
-      banners // ✅ pass banners to template
+      banners
     });
 
   } catch (error) {

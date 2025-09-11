@@ -282,7 +282,7 @@ exports.loadEditCategory = async (req, res) => {
 
     res.status(200).render('admin/edit-category', { category });
   } catch (error) {
-    console.error('Error loading edit page:', error);//for error consoling
+    console.error('Error loading edit page:', error);
     res.status(500).send('Server Error');
   }
 };
@@ -1126,7 +1126,7 @@ exports.addOfferForm = async (req, res) => {
     const categories = await Category.find({
   $or: [
     { isDeleted: false },
-    { isDeleted: { $exists: false } }  // <-- include docs without this field
+    { isDeleted: { $exists: false } }  
   ]
 });
     res.render('admin/add-offer', { 
@@ -1231,7 +1231,7 @@ exports.editOfferForm = async (req, res) => {
     const products = await Product.find({ isBlocked: false });
     const categories = await Category.find({ isDeleted: false });
 
-   // console.log('Offer fetched for editing:', offer); // Optional log
+   // console.log('Offer fetched for editing:', offer); 
 
    res.render('admin/edit-offer', { 
   offer,
@@ -1473,8 +1473,6 @@ exports.createCoupon = async (req, res) => {
   }
 };
 
-
-
 // Delete coupon
 exports.deleteCoupon = async (req, res) => {
   try {
@@ -1517,7 +1515,7 @@ exports.renderSalesReportPage = async (req, res) => {
       endDate: endOfDay.toISOString().split('T')[0],
       currentPage: page,
       totalPages,
-      filterType: "daily"  // 👈 default filter type
+      filterType: "daily" 
     });
   } catch (err) {
     console.error('Error loading sales report:', err.message);

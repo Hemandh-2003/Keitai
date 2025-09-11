@@ -274,7 +274,7 @@ exports.removeAddress = async (req, res) => {
 exports.viewOrders = async (req, res) => {
   try {
     const userId = req.session.user._id;
-    const { sortBy = 'newest', page = 1 } = req.query; //page
+    const { sortBy = 'newest', page = 1 } = req.query; 
 
     const sortCriteria = sortBy === 'oldest' ? { createdAt: 1 } : { createdAt: -1 };
 
@@ -1290,7 +1290,7 @@ exports.confirmPayment = async (req, res) => {
       return res.status(404).send('One or more products not found');
     }
     if (req.session.orderId) {
-  return res.redirect('/user/confirm-payment'); // Order already created
+  return res.redirect('/user/confirm-payment');
 }
     let totalAmount = 0;
     const orderItems = [];
@@ -1535,7 +1535,7 @@ exports.verifyOtpForReset = async (req, res) => {
 exports.getResetPasswordPage = (req, res) => {
   const { email } = req.query;
   if (!email) {
-    return res.redirect('/forgot-password'); // Redirect to forgot-password if email is missing
+    return res.redirect('/forgot-password'); 
   }
   res.render('user/reset-password', { email, error: null });
 };
@@ -2075,17 +2075,17 @@ exports.renderWalletPage = async (req, res) => {
 
 exports.getWalletPage = async (req, res) => {
   try {
-    const user = await User.findById(req.session.user._id).lean(); // Use .lean() if using EJS
+    const user = await User.findById(req.session.user._id).lean(); 
 
     if (!user.wallet) {
-      user.wallet = { balance: 0, transactions: [] }; // fallback if missing
+      user.wallet = { balance: 0, transactions: [] }; 
     }
 
     res.render('user/wallet', {
       user
     });
   } catch (err) {
-    console.error('❌ Error loading wallet page:', err.message);
+    console.error('Error loading wallet page:', err.message);
     res.status(500).render('user/error', { message: 'Unable to load wallet page' });
   }
 };

@@ -1,6 +1,6 @@
 const passport = require('passport');
 const GoogleStrategy = require('passport-google-oauth20').Strategy;
-const User = require('../models/User'); // Assuming User is a Mongoose model
+const User = require('../models/User'); 
 require('dotenv').config();
 
 passport.use(
@@ -8,11 +8,10 @@ passport.use(
     {
       clientID: process.env.GOOGLE_CLIENT_ID,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-      callbackURL: process.env.CALLBACK_URL, // Use the CALLBACK_URL from .env
+      callbackURL: process.env.CALLBACK_URL,
     },
     async (accessToken, refreshToken, profile, done) => {
       try {
-        // Find or create a user
         let user = await User.findOne({ googleId: profile.id });
         // console.log('user:17',user)
         if (!user) {
@@ -34,13 +33,13 @@ passport.use(
 );
 
 passport.serializeUser((user, done) => {
-  done(null, user.id); // Serialize user by their ID
+  done(null, user.id); 
 });
 
 passport.deserializeUser(async (id, done) => {
   try {
     const user = await User.findById(id);
-    done(null, user); // Attach the user to req.user
+    done(null, user); 
   } catch (err) {
     console.error('Error deserializing user:', err);
     done(err, null);
