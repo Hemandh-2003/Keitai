@@ -70,6 +70,7 @@
                   <tr>
                     <td class="order-id-cell">
                       <div class="order-id">#<%= order.orderId %>
+                        <a href="/admin/orders/<%= order._id %>/payment">View</a>
                       </div>
                       <div class="order-date">
                         <%= new Date(order.createdAt).toLocaleDateString() %>

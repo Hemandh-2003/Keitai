@@ -1209,7 +1209,7 @@ exports.createOffer = async (req, res) => {
     res.redirect('/admin/offers');
 
   } catch (err) {
-    console.error('❌ Offer creation error:', err);
+    console.error('Offer creation error:', err);
     req.flash('error_msg', 'Error creating offer');
     res.redirect('/admin/offers/add');
   }
