@@ -9,7 +9,7 @@ const otpController = require('../controllers/otpController');
 const bcrypt = require('bcryptjs');
 const Wishlist = require('../models/Wishlist');
 const PDFDocument = require('pdfkit');
-
+// Home Page
 exports.loadHome = async (req, res) => {
   try {
     const products = await Product.find({ isBlocked: false });
@@ -246,30 +246,6 @@ exports.removeAddress = async (req, res) => {
   }
 };
 
-exports.removeAddress = async (req, res) => {
-  try {
-    const addressId = req.params.addressId;
-    const user = await User.findById(req.session.user._id);
-    
-    if (!user) {
-      return res.status(404).send('User not found');
-    }
-
-    const address = user.addresses.id(addressId);
-    if (!address) {
-      return res.status(404).send('Address not found');
-    }
-
-    user.addresses.pull(addressId);
-
-    await user.save();
-
-    res.redirect('/user/address');
-  } catch (err) {
-    console.error('Error removing address:', err);
-    res.status(500).send('Internal Server Error');
-  }
-};
 //Order
 exports.viewOrders = async (req, res) => {
   try {
