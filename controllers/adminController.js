@@ -1414,13 +1414,24 @@ exports.createCoupon = async (req, res) => {
     const { code, discountType, discount, minPurchase, maxDiscount, startDate, endDate } = req.body;
 
     const trimmedCode = code.trim().toUpperCase();
-    const coupons = await Coupon.find();
+
+    const perPage = 5;
+    const page = parseInt(req.query.page) || 1;
+    const totalCoupons = await Coupon.countDocuments();
+    const totalPages = Math.ceil(totalCoupons / perPage);
+
+    const coupons = await Coupon.find()
+      .sort({ endDate: 1 })
+      .skip((page - 1) * perPage)
+      .limit(perPage);
 
     const existingCoupon = await Coupon.findOne({ code: trimmedCode });
     if (existingCoupon) {
       return res.render('admin/coupons', {
         coupons,
-        messages: { error: 'Coupon code already exists.' }
+        messages: { error: 'Coupon code already exists.' },
+        totalPages,
+        currentPage: page
       });
     }
 
@@ -1429,7 +1440,9 @@ exports.createCoupon = async (req, res) => {
     if (start > end) {
       return res.render('admin/coupons', {
         coupons,
-        messages: { error: 'Start date must be before end date.' }
+        messages: { error: 'Start date must be before end date.' },
+        totalPages,
+        currentPage: page
       });
     }
 
@@ -1441,30 +1454,42 @@ exports.createCoupon = async (req, res) => {
       if (parsedDiscount < 1 || parsedDiscount > 90) {
         return res.render('admin/coupons', {
           coupons,
-          messages: { error: 'Percentage discount must be between 1% and 90%.' }
+          messages: { error: 'Percentage discount must be between 1% and 90%.' },
+          totalPages,
+          currentPage: page
         });
       }
     } else if (discountType === 'fixed') {
       if (parsedDiscount < 2000 || parsedDiscount > 50000) {
         return res.render('admin/coupons', {
           coupons,
-          messages: { error: 'Fixed discount must be between ₹2000 and ₹50,000.' }
+          messages: { error: 'Fixed discount must be between ₹2000 and ₹50,000.' },
+          totalPages,
+          currentPage: page
         });
       }
     }
 
-    /*if (parsedMinPurchase < 2000) {
+    if (discountType === 'fixed' || discountType === 'percentage') {
+    if (parsedMinPurchase < 2000) {
       return res.render('admin/coupons', {
         coupons,
-      messages: { error: 'Minimum purchase amount must be at least 2000'} 
+        messages: { error: 'Minimum purchase amount must be at least ₹2000.' },
+        totalPages,
+        currentPage: page
       });
     }
+  }
+  if (discountType === 'percentage') {
     if (parsedMaxDiscount < 2500) {
       return res.render('admin/coupons', {
         coupons,
-        messages: {error: 'Maximum discount amount must be at least 2500'}
+        messages: { error: 'Maximum discount amount must be at least ₹2500.' },
+        totalPages,
+        currentPage: page
       });
-    }*/
+    }
+  }
 
     const newCoupon = new Coupon({
       code: trimmedCode,
@@ -1478,7 +1503,7 @@ exports.createCoupon = async (req, res) => {
 
     await newCoupon.save();
 
-req.flash('success', 'Coupon added successfully!');
+    req.flash('success', 'Coupon added successfully!');
     return res.redirect('/admin/coupons');
   } catch (err) {
     console.error('Error creating coupon:', err.message);
@@ -1486,7 +1511,6 @@ req.flash('success', 'Coupon added successfully!');
     return res.redirect('/admin/coupons');
   }
 };
-
 
 
 // Delete coupon
