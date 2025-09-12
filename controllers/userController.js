@@ -578,7 +578,7 @@ exports.cancelOrder = async (req, res) => {
 
     return res.redirect("/user/orders");
   } catch (err) {
-    console.error("❌ Error canceling order:", err);
+    console.error("Error canceling order:", err);
     req.flash("error", "Failed to cancel order");
     return res.redirect("/user/orders");
   }

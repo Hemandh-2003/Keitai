@@ -3,7 +3,6 @@ const User = require('../models/User');
 const otpController = require('./otpController');
 const generateUniqueUserCode = require('../utils/userCode');
 
-// Load landing page
 exports.loadLandingPage = (req, res) => {
   res.render('user/index', {
     title: 'Welcome to Keitai',
@@ -12,13 +11,10 @@ exports.loadLandingPage = (req, res) => {
 };
 
 
-// Load login page
 exports.loadLogin = (req, res) => {
   res.render('user/login', { error: null });
 };
 
-
-// Register user
 exports.register = async (req, res) => {
   try {
     const { name, email, password, confirm, referralCode } = req.body;
@@ -37,7 +33,6 @@ exports.register = async (req, res) => {
 
     const existingUser = await User.findOne({ email });
     if (existingUser) {
-      //('Validation failed: email already in use');
       return res.render('user/signup', { error: 'Email already in use.' });
     }
 
@@ -62,7 +57,6 @@ if (code) {
    // console.log('Referrer found:', referrer.email);
     user.referredBy = code;
 
-    // Reward new user
     user.wallet.balance += 500;
     user.wallet.transactions.push({
       type: 'Credit',
@@ -72,7 +66,6 @@ if (code) {
     });
    // console.log('New user rewarded with 500');
 
-    // Reward referrer
     referrer.wallet.balance += 1000;
     referrer.wallet.transactions.push({
       type: 'Credit',
@@ -83,7 +76,6 @@ if (code) {
     referrer.referralRewards = (referrer.referralRewards || 0) + 1000;
     //console.log('Referrer rewarded with 1000');
 
-    // Save both users
     await referrer.save();
    // console.log('Referrer saved successfully');
 
@@ -99,7 +91,6 @@ if (code) {
   //console.log('New user saved without referral code');
 }
 
-    // OTP flow
     const otp = otpController.generateOtp(email);
     const otpSent = await otpController.sendOtpEmail(email, otp);
    // console.log('OTP sent status:', otpSent);
@@ -117,7 +108,6 @@ if (code) {
   }
 };
 
-// Login user
 exports.login = async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -144,7 +134,6 @@ exports.login = async (req, res) => {
   }
 };
 
-// Verify OTP
 exports.verifyOtp = (req, res) => {
   const { email, otp } = req.body;
 
@@ -155,7 +144,6 @@ exports.verifyOtp = (req, res) => {
   res.json({ success: false, error: 'Invalid OTP. Please try again.' });
 };
 
-// Resend OTP
 exports.resendOtp = async (req, res) => {
   const { email } = req.query;
 
@@ -178,7 +166,6 @@ exports.resendOtp = async (req, res) => {
   }
 };
 
-// Logout user
 exports.logout = (req, res) => {
   req.session.destroy(err => {
     if (err) {
@@ -190,7 +177,6 @@ exports.logout = (req, res) => {
   });
 };
 
-// Session status
 exports.sessionStatus = (req, res) => {
   res.json({ isLoggedIn: !!req.session.user });
 };
