@@ -77,8 +77,18 @@
       });
     });
 
-    // Example of handling server error with SweetAlert
   </script>
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      <% if (typeof error !== 'undefined' && error) { %>
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: '<%= error_msg %>'
+        });
+      <% } %>
+    });
+  </script>
 </body>
 </html>

@@ -1,5 +1,3 @@
-// Include SweetAlert library in your HTML file if not already included
-
 // Function to validate login form
 function validateLoginForm() {
   const email = document.getElementById('email').value;
@@ -23,7 +21,6 @@ function validateSignupForm() {
   const password = document.getElementById('password').value;
   const confirmPassword = document.getElementById('confirm').value;
 
-  // Check if any field is empty
   if (!email || !password || !confirmPassword) {
     Swal.fire({
       icon: 'error',
@@ -34,7 +31,6 @@ function validateSignupForm() {
     return false;
   }
 
-  // Check if passwords match
   if (password !== confirmPassword) {
     Swal.fire({
       icon: 'error',
@@ -45,10 +41,8 @@ function validateSignupForm() {
     return false;
   }
 
-  // Password validation pattern
   const passwordPattern = /^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
 
-  // Validate password against the pattern
   if (!passwordPattern.test(password)) {
     Swal.fire({
       icon: 'error',
@@ -59,5 +53,26 @@ function validateSignupForm() {
     return false;
   }
 
+  return true;
+}
+
+// Validation
+function validateSignupForm(){
+  const name = document.getElementById(name).value.trim();
+  const email = document.getElementById(email).value.trim();
+  const password = document.getElementById(password).value.trim();
+  const confirm = document.getElementById(confirm).value.trim();
+
+  const nameRegex = /^[A-Za-z0-9]+$/;
+
+  if(!name || !email || !password || !confirm){
+    swal.fire('error', 'All fields are required,', 'error');
+    return false;
+  }
+
+  if(!nameRegextest(name)){
+    swal.fire('error', 'Name can only contain letters and numbers.','error');
+    return false;
+  }
   return true;
 }

@@ -26,6 +26,11 @@ exports.register = async (req, res) => {
       return res.render('user/signup', { error: 'All fields are required.' });
     }
 
+     const nameRegex = /^[A-Za-z0-9]+$/;
+    if(!nameRegex.test(name)) {
+      return res.render('user/signup', {error: 'Name can only contain letter and Numbers'})
+    }
+
     if (password !== confirm) {
      // console.log('Validation failed: passwords do not match');
       return res.render('user/signup', { error: 'Passwords do not match.' });
