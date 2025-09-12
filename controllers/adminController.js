@@ -1453,6 +1453,19 @@ exports.createCoupon = async (req, res) => {
       }
     }
 
+    if (parsedMinPurchase < 2000) {
+      return res.render('admin/coupons', {
+        coupons,
+      messages: { error: 'Minimum purchase amount must be at least 2000'} 
+      });
+    }
+    if (parsedMaxDiscount < 2500) {
+      return res.render('admin/coupons', {
+        coupons,
+        messages: {error: 'Maximum discount amount must be at least 2500'}
+      });
+    }
+
     const newCoupon = new Coupon({
       code: trimmedCode,
       discountType,
