@@ -21,9 +21,9 @@ cartSchema.methods.calculateTotal = async function () {
     return map;
   }, {});
 
-  // Calculate the total price
+
   this.totalPrice = this.items.reduce((total, item) => {
-    const price = productMap[item.product.toString()] || 0; // Default to 0 if product not found
+    const price = productMap[item.product.toString()] || 0; 
     return total + price * item.quantity;
   }, 0);
 };
@@ -32,7 +32,6 @@ cartSchema.methods.calculateTotal = async function () {
 
   const products = await mongoose.model('Product').find({ _id: { $in: productIds } });
 
-  // Build a map of offer prices using dynamic logic
   const productMap = {};
   for (const product of products) {
     const offer = product.getBestOfferPrice ? await product.getBestOfferPrice() : null;
@@ -40,7 +39,6 @@ cartSchema.methods.calculateTotal = async function () {
     productMap[product._id.toString()] = price;
   }
 
-  // Calculate total using best offer prices
   this.totalPrice = this.items.reduce((total, item) => {
     const price = productMap[item.product.toString()] || 0;
     return total + price * item.quantity;

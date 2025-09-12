@@ -119,7 +119,7 @@ discountAmount: {
       'User Cancelled',
       'Return Requested',
       'Payment Failed',
-      'Paid' // ✅ Paid added
+      'Paid' 
     ],
     default: 'Pending',
   },
@@ -157,13 +157,11 @@ discountAmount: {
   },
 });
 
-// Auto-update `updatedAt`
 orderSchema.pre('save', function (next) {
   this.updatedAt = new Date();
   next();
 });
 
-// Method to populate product details
 orderSchema.methods.populateProductDetails = function () {
   return this.populate('products.product', 'name');
 };

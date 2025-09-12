@@ -60,7 +60,6 @@ const productSchema = new mongoose.Schema(
       trim: true, 
       default: '' 
     },
-    // New: Variants array
     variants: [
       {
         type: mongoose.Schema.Types.ObjectId,
@@ -75,10 +74,8 @@ const productSchema = new mongoose.Schema(
   }
 );
 
-// Text index for search
 productSchema.index({ name: 'text', description: 'text', brand: 'text' });
 
-// Validation
 productSchema.pre('save', function (next) {
   if (this.salesPrice && this.salesPrice > this.regularPrice) {
     next(new Error('Sales price cannot be higher than the regular price.'));
@@ -87,7 +84,6 @@ productSchema.pre('save', function (next) {
   }
 });
 
-// Methods
 productSchema.methods.isInStock = function () {
   return this.quantity > 0 && !this.isBlocked;
 };
@@ -111,7 +107,6 @@ productSchema.virtual('availability').get(function () {
   return this.quantity > 0 ? 'In Stock' : 'Out of Stock';
 });
 
-// Method to calculate best offer price
 productSchema.methods.getBestOfferPrice = async function() {
   try {
     const Offer = mongoose.model('Offer');

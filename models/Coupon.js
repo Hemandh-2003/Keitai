@@ -19,11 +19,11 @@ const couponSchema = new mongoose.Schema({
   },
   minPurchase: {
     type: Number,
-    default: 0  // minimum cart total required
+    default: 0  
   },
   maxDiscount: {
     type: Number,
-    default: 0  // only applies for percentage coupons
+    default: 0  
   },
   startDate: {
     type: Date,
@@ -39,7 +39,6 @@ const couponSchema = new mongoose.Schema({
   }
 });
 
-// ✅ Auto-uppercase and trim coupon code before saving
 couponSchema.pre('save', function (next) {
   this.code = this.code.toUpperCase().trim();
   next();

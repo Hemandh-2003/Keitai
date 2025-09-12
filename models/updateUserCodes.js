@@ -1,5 +1,5 @@
 const mongoose = require('mongoose');
-const User = require('./User'); // adjust the path if needed
+const User = require('./User'); 
 const generateUniqueUserCode = require('../utils/userCode');
 
 

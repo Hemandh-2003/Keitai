@@ -21,12 +21,10 @@ const categorySchema = new mongoose.Schema(
       type: Boolean, 
       default: false 
     },
-    // Add offers reference
     offers: [{
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Offer'
     }],
-    // Optional category-specific offer
     categoryOffer: { 
       type: String, 
       trim: true, 
@@ -38,7 +36,7 @@ const categorySchema = new mongoose.Schema(
   }
 );
 
-// Pre-save hook to generate slug
+
 categorySchema.pre('save', function(next) {
   if (!this.slug) {
     this.slug = this.name.toLowerCase().replace(/\s+/g, '-');
@@ -46,7 +44,6 @@ categorySchema.pre('save', function(next) {
   next();
 });
 
-// Virtual for product count
 categorySchema.virtual('productCount', {
   ref: 'Product',
   localField: '_id',
@@ -54,7 +51,6 @@ categorySchema.virtual('productCount', {
   count: true
 });
 
-// Method to get active offers
 categorySchema.methods.getActiveOffers = async function () {
   const Offer = mongoose.model('Offer');
   const now = new Date();

@@ -17,7 +17,7 @@ const userSchema = new mongoose.Schema({
   password: { type: String, required: false },
   isBlocked: { type: Boolean, default: false },
   googleId: { type: String },
-  addresses: [addressSchema], // Embed addresses in the user schema
+  addresses: [addressSchema], 
 });
 
 module.exports = mongoose.model('User', userSchema);

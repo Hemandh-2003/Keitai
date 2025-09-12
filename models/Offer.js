@@ -69,7 +69,6 @@ const offerSchema = new mongoose.Schema({
   toObject: { virtuals: true }
 });
 
-// Add validation to ensure end date is after start date
 offerSchema.pre('save', function(next) {
   if (this.endDate <= this.startDate) {
     throw new Error('End date must be after start date');

@@ -29,7 +29,7 @@ const reviewSchema = new mongoose.Schema({
     trim: true
   },
   images: [{
-    type: String // Store paths to uploaded images
+    type: String 
   }],
   adminReply: {
     text: String,
