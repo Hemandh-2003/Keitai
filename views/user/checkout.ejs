@@ -4,65 +4,409 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Checkout</title>
+  <title>Secure Checkout | Keitai</title>
   <link rel="stylesheet" href="/css/checkout.css" />
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
   <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+<style>
+    .secure-banner {
+      background-color: #f0f9ff;
+      color: #0369a1;
+      text-align: center;
+      padding: 10px 0;
+      font-size: 0.9rem;
+      font-weight: 500;
+      border-bottom: 1px solid #bae6fd;
+    }
+
+    .secure-banner i {
+      margin-right: 5px;
+    }
+
+    .checkout-container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+      display: grid;
+      grid-template-columns: 1fr 400px;
+      gap: 30px;
+    }
+
+    @media (max-width: 768px) {
+      .checkout-container {
+        grid-template-columns: 1fr;
+        padding: 15px;
+      }
+    }
+
+    .checkout-steps {
+      display: flex;
+      margin-bottom: 2rem;
+      grid-column: 1 / -1;
+    }
+
+    .step {
+      flex: 1;
+      text-align: center;
+      padding: 12px 0;
+      font-weight: 500;
+      color: var(--text-light);
+      border-bottom: 3px solid var(--border);
+      position: relative;
+    }
+
+    .step.active {
+      color: var(--primary);
+      border-bottom-color: var(--primary);
+    }
+
+    .step.completed {
+      color: var(--success);
+      border-bottom-color: var(--success);
+    }
+
+    .step-number {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 24px;
+      height: 24px;
+      background-color: var(--border);
+      color: white;
+      border-radius: 50%;
+      margin-right: 8px;
+      font-size: 0.8rem;
+    }
+
+    .step.active .step-number {
+      background-color: var(--primary);
+    }
+
+    .step.completed .step-number {
+      background-color: var(--success);
+    }
+
+    .section h2 {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .section h2 i {
+      color: var(--primary);
+    }
+
+    .address-item.selected {
+      border-color: var(--primary);
+      background-color: #f0f9ff;
+    }
+
+    .add-address {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-top: 1rem;
+      font-weight: 500;
+      color: var(--primary);
+      cursor: pointer;
+      padding: 12px 16px;
+      border: 1px dashed var(--primary);
+      border-radius: 8px;
+      width: 100%;
+      justify-content: center;
+      transition: all 0.2s ease;
+    }
+
+    .add-address:hover {
+      background-color: #f0f9ff;
+    }
+
+    .order-summary {
+      position: sticky;
+      top: 20px;
+    }
+
+    .trust-badges {
+      display: flex;
+      justify-content: center;
+      gap: 20px;
+      margin-top: 20px;
+      padding: 15px;
+      background: #f8fafc;
+      border-radius: 8px;
+    }
+
+    .trust-badge {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 5px;
+      font-size: 0.8rem;
+      color: var(--text-light);
+    }
+
+    .trust-badge i {
+      font-size: 1.5rem;
+      color: var(--primary);
+    }
+
+    .footer-links {
+      display: flex;
+      justify-content: center;
+      gap: 20px;
+      margin-top: 30px;
+      padding-top: 20px;
+      border-top: 1px solid var(--border);
+      font-size: 0.9rem;
+      color: var(--text-light);
+    }
+
+    .footer-links a {
+      color: var(--text-light);
+      text-decoration: none;
+    }
+
+    .footer-links a:hover {
+      color: var(--primary);
+      text-decoration: underline;
+    }
+
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 9999;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.6);
+      overflow-y: auto;
+      padding: 30px 0;
+    }
+
+    .modal-content {
+      background-color: #fff;
+      margin: auto;
+      padding: 30px 40px;
+      border-radius: 12px;
+      max-width: 500px;
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+      animation: fadeIn 0.3s ease;
+      position: relative;
+    }
+
+    .close-modal {
+      background: #ccc;
+      border: none;
+      color: #333;
+      font-weight: 600;
+      padding: 10px 18px;
+      border-radius: 6px;
+      cursor: pointer;
+      margin-top: 15px;
+      width: 100%;
+    }
+
+    .close-modal:hover {
+      background: #999;
+    }
+
+    #addAddressForm label {
+      display: block;
+      margin-top: 15px;
+      margin-bottom: 5px;
+      font-weight: 500;
+      font-size: 14px;
+    }
+
+    #addAddressForm input {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      font-size: 14px;
+      margin-bottom: 10px;
+    }
+
+    #addAddressForm input:focus {
+      outline: none;
+      border-color: #007bff;
+      box-shadow: 0 0 0 2px rgba(0,123,255,0.2);
+    }
+
+    .save-btn {
+      margin-top: 20px;
+      background-color: var(--success);
+      color: white;
+      padding: 12px 20px;
+      border: none;
+      border-radius: 6px;
+      font-weight: 600;
+      font-size: 14px;
+      width: 100%;
+      cursor: pointer;
+    }
+
+    .save-btn:hover {
+      background-color: var(--success-hover);
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @media (max-width: 768px) {
+      .checkout-steps {
+        flex-direction: column;
+        gap: 10px;
+      }
+      
+      .step {
+        text-align: left;
+        padding: 10px;
+        border-bottom: none;
+        border-left: 3px solid var(--border);
+      }
+      
+      .step.active, .step.completed {
+        border-left-color: var(--primary);
+      }
+      
+      .trust-badges {
+        flex-wrap: wrap;
+      }
+    }
+
+    @media (max-width: 600px) {
+      .modal-content {
+        padding: 25px 20px;
+        width: 90%;
+        margin: 20px auto;
+      }
+    }
+
+    .address-item::before,
+    .edit-link::before,
+    .add-address::before,
+    .order-summary::before,
+    .discount-label::before,
+    .payment-option::before {
+      display: none;
+    }
+  </style>
 </head>
 
 <body>
-  <div class="checkout-container">
-    <nav class="navbar">
+  <nav class="navbar">
       <div class="logo">
         <a href="/"><img src="/images/logo1.png" alt="Keitai Logo" /></a>
       </div>
     </nav>
-    <!-- Header -->
+  <div class="secure-banner">
+    <i class="fas fa-lock"></i> Secure Checkout - Your information is protected with 256-bit SSL encryption
+  </div>
+
+  <div class="checkout-container">
+
     <header class="checkout-header">
       <h1>Checkout</h1>
       <a href="/home" class="cancel-btn"><i class="fas fa-times"></i> Cancel</a>
     </header>
 
-    <!-- Checkout Form -->
+    <div class="checkout-steps">
+      <div class="step completed">
+        <span class="step-number">1</span>
+        <span class="step-text">Shipping</span>
+      </div>
+      <div class="step active">
+        <span class="step-number">2</span>
+        <span class="step-text">Payment</span>
+      </div>
+      <div class="step">
+        <span class="step-number">3</span>
+        <span class="step-text">Confirmation</span>
+      </div>
+    </div>
+
     <form action="/user/place-order" method="POST" class="checkout-form">
       <input type="hidden" name="totalAmount" value="<%= totalAmount %>">
 
-      <!-- Shipping Address Section -->
-      <section class="section shipping-address">
-        <h2>Shipping Address</h2>
-        <div class="address-list">
-          <% addresses.forEach((address)=> { %>
-            <label class="address-item">
-              <input type="radio" name="selectedAddress" value="<%= address._id %>" <%=address.default ? 'checked' : ''
-                %>>
-              <div class="address-details">
-                <p class="address-name"><strong>
-                    <%= address.name %>
-                  </strong></p>
-                <p class="address-info">
-                  <%= address.street %>, <%= address.city %>, <%= address.state %> - <%= address.zip %>
-                </p>
-                <p class="address-country">
-                  <%= address.country %>
-                </p>
-                <p class="address-phone">Phone: <%= address.phone %>
-                </p>
-                <a href="/user/address/edit/<%= address._id %>" class="edit-link"><i class="fas fa-edit"></i> Edit</a>
-              </div>
-            </label>
-            <% }); %>
-              <button type="button" class="add-address" id="openAddAddressModal">
-                <i class="fas fa-plus-circle"></i> Add New Address
-              </button>
+      <div class="checkout-main">
+        <section class="section shipping-address">
+          <h2><i class="fas fa-map-marker-alt"></i> Shipping Address</h2>
+          <div class="address-list">
+            <% addresses.forEach((address, index)=> { %>
+              <label class="address-item <%= address.default ? 'selected' : '' %>">
+                <input type="radio" name="selectedAddress" value="<%= address._id %>" <%=address.default ? 'checked' : '' %>>
+                <div class="address-details">
+                  <p class="address-name"><strong>
+                      <%= address.name %>
+                    </strong></p>
+                  <p class="address-info">
+                    <%= address.street %>, <%= address.city %>, <%= address.state %> - <%= address.zip %>
+                  </p>
+                  <p class="address-country">
+                    <%= address.country %>
+                  </p>
+                  <p class="address-phone">Phone: <%= address.phone %>
+                  </p>
+                  <a href="/user/address/edit/<%= address._id %>" class="edit-link"><i class="fas fa-edit"></i> Edit</a>
+                </div>
+              </label>
+              <% }); %>
+                <button type="button" class="add-address" id="openAddAddressModal">
+                  <i class="fas fa-plus-circle"></i> Add New Address
+                </button>
+          </div>
+        </section>
 
-        </div>
-      </section>
+        <section class="section payment-method">
+          <h2><i class="fas fa-credit-card"></i> Payment Method</h2>
+          
+          <label class="payment-option">
+            <input type="radio" name="paymentMethod" value="COD" checked> 
+            <i class="fas fa-money-bill-wave"></i> Cash on Delivery
+          </label>
 
-      <!-- Order Summary Section -->
-      <section class="section order-summary">
-        <h2>Order Summary</h2>
+          <label class="payment-option">
+            <input type="radio" name="paymentMethod" value="Wallet" <%=walletBalance < totalAmount ? 'disabled' : '' %>>
+            <i class="fas fa-wallet"></i> Pay with Wallet (₹ <%= walletBalance.toFixed(2) %> available)
+          </label>
+
+          <label class="payment-option">
+            <input type="radio" name="paymentMethod" value="Online"> 
+            <i class="fas fa-credit-card"></i> Online Payment (Card/ Net Banking)
+          </label>
+
+          <div id="razorpay-container" style="display: none; margin-top: 15px;">
+            <div id="rzp-indicator" class="razorpay-indicator">
+              <i class="fas fa-credit-card"></i> Pay with Razorpay
+            </div>
+          </div>
+
+          <div class="trust-badges">
+            <div class="trust-badge">
+              <i class="fas fa-shield-alt"></i>
+              <span>SSL Secure</span>
+            </div>
+            <div class="trust-badge">
+              <i class="fas fa-lock"></i>
+              <span>256-bit Encryption</span>
+            </div>
+            <div class="trust-badge">
+              <i class="fas fa-award"></i>
+              <span>Money Back Guarantee</span>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <div class="order-summary section">
+        <h2><i class="fas fa-shopping-bag"></i> Order Summary</h2>
+        
         <ul class="order-list">
           <% let totalPrice=0; %>
             <% cart.forEach(item=> { %>
@@ -75,7 +419,7 @@
                         <p class="item-name">
                           <%= item.product.name %> (x<%= item.quantity %>)
                               <% if (originalPrice> itemPrice) { %>
-                                <span class="discount-label">(Discount Applied)</span>
+                                <span class="discount-label"><i class="fas fa-tag"></i> Discount Applied</span>
                                 <% } %>
                         </p>
                         <p class="item-price">
@@ -96,7 +440,6 @@
                 <p class="delivery-charge">Delivery Charge: ₹<%= deliveryCharge %>
                 </p>
 
-                <!-- Coupon Section -->
                 <div class="coupon-section">
                   <% if (!session.coupon) { %>
                     <select id="couponCode" class="coupon-select">
@@ -114,7 +457,7 @@
                     <button type="button" id="applyCouponBtn" class="btn-primary">Apply Coupon</button>
                     <% } else { %>
                       <p class="applied-coupon">
-                        Coupon "<%= session.coupon.code %>" applied - ₹<%= session.coupon.discountAmount %>
+                        <i class="fas fa-ticket-alt"></i> Coupon "<%= session.coupon.code %>" applied - ₹<%= session.coupon.discountAmount %>
                             <button type="button" id="removeCouponBtn" class="btn-delete">Remove</button>
                       </p>
                       <% } %>
@@ -127,43 +470,32 @@
 
                     <p class="total"><strong>Grand Total: ₹<%= grandTotal %></strong></p>
               </div>
-      </section>
 
-      <!-- Payment Method Section -->
-      <section class="section payment-method">
-        <h2>Payment Method</h2>
-        <label class="payment-option">
-          <input type="radio" name="paymentMethod" value="COD" checked> 💵 Cash on Delivery
-        </label>
+              <div class="disclaimer-box">
+                <p class="disclaimer-text">
+                  <i class="fas fa-info-circle"></i> 
+                  Orders above ₹20,000 are not eligible for Cash on Delivery. 
+                  For orders above ₹4.5 lakhs, please contact customer support.
+                </p>
+              </div>
 
-        <label class="payment-option">
-          <input type="radio" name="paymentMethod" value="Wallet" <%=walletBalance < totalAmount ? 'disabled' : '' %>>
-          🪙 Pay with Wallet (₹ <%= walletBalance.toFixed(2) %> available)
-        </label>
+              <% cart.forEach(item=> { %>
+                <input type="hidden" name="productIds[]" value="<%= item.product._id %>">
+                <input type="hidden" name="quantities[]" value="<%= item.quantity %>">
+                <input type="hidden" name="offerPrices[]"
+                  value="<%= item.product.offerDetails ? item.product.offerDetails.price : (item.product.salesPrice || item.product.regularPrice) %>">
+                <% }); %>
 
-        <label class="payment-option">
-          <input type="radio" name="paymentMethod" value="Online"> 💳 Online Payment (Card / UPI / Net Banking)
-        </label>
-
-        <div id="razorpay-container" style="display: none; margin-top: 15px;">
-          <div id="rzp-indicator" class="razorpay-indicator">
-            <i class="fas fa-credit-card"></i> Pay with Razorpay
-          </div>
-        </div>
-      </section>
-
-      <!-- Hidden Inputs for Order Details -->
-      <% cart.forEach(item=> { %>
-        <input type="hidden" name="productIds[]" value="<%= item.product._id %>">
-        <input type="hidden" name="quantities[]" value="<%= item.quantity %>">
-        <input type="hidden" name="offerPrices[]"
-          value="<%= item.product.offerDetails ? item.product.offerDetails.price : (item.product.salesPrice || item.product.regularPrice) %>">
-        <% }); %>
-          
-          <!-- Submit Button -->
-          <button type="submit" class="submit-btn">Continue</button>
+                <button type="submit" class="submit-btn">Complete Order</button>
+                
+                <div class="footer-links">
+                  <a href="/privacy-policy">Privacy Policy</a>
+                  <a href="/terms-of-service">Terms of Service</a>
+                  <a href="/refund-policy">Refund Policy</a>
+                </div>
+      </div>
     </form>
-    <!-- Add Address Modal -->
+
     <div id="addAddressModal" class="modal">
       <div class="modal-content">
         <h2>Add New Address</h2>
@@ -187,104 +519,118 @@
         <button class="close-modal">Cancel</button>
       </div>
     </div>
-
   </div>
 
-  <!-- SweetAlert2 -->
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
   <script>
+    document.querySelectorAll('.address-item').forEach(item => {
+      item.addEventListener('click', function() {
+        document.querySelectorAll('.address-item').forEach(i => i.classList.remove('selected'));
+        this.classList.add('selected');
+        this.querySelector('input').checked = true;
+      });
+    });
+
+    document.addEventListener('DOMContentLoaded', function() {
+      const selectedAddress = document.querySelector('input[name="selectedAddress"]:checked');
+      if (selectedAddress) {
+        selectedAddress.closest('.address-item').classList.add('selected');
+      }
+    });
+
     document.querySelector('.submit-btn').addEventListener('click', async (e) => {
-  e.preventDefault();
+      e.preventDefault();
 
-  if (!validateAddress()) return;
+      if (!validateAddress()) return;
 
-  const paymentMethod = document.querySelector('input[name="paymentMethod"]:checked')?.value;
-  const grandTotal = Number(`<%= grandTotal %>`);
-  const walletBalance = Number(`<%= walletBalance %>`);
+      const paymentMethod = document.querySelector('input[name="paymentMethod"]:checked')?.value;
+      const grandTotal = Number(`<%= grandTotal %>`);
+      const walletBalance = Number(`<%= walletBalance %>`);
 
-  if (paymentMethod === 'COD') {
-    if (grandTotal > 20000) {
-      return Swal.fire({
-        icon: 'warning',
-        title: 'COD Not Allowed',
-        text: 'Cash on Delivery is only available for orders up to ₹20,000. Please choose Online Payment.'
-      });
-    }
-    document.querySelector('.checkout-form').submit();
+      if (paymentMethod === 'COD') {
+        if (grandTotal > 20000) {
+          return Swal.fire({
+            icon: 'warning',
+            title: 'COD Not Allowed',
+            text: 'Cash on Delivery is only available for orders up to ₹20,000. Please choose Online Payment.'
+          });
+        }
+        document.querySelector('.checkout-form').submit();
 
-  } else if (paymentMethod === 'Wallet') {
-    if (walletBalance < grandTotal) {
-      return Swal.fire({
-        icon: 'error',
-        title: 'Insufficient Wallet Balance',
-        text: 'You don’t have enough wallet balance to place this order.'
-      });
-    }
-    document.querySelector('.checkout-form').submit();
+      } else if (paymentMethod === 'Wallet') {
+        if (walletBalance < grandTotal) {
+          return Swal.fire({
+            icon: 'error',
+            title: 'Insufficient Wallet Balance',
+            text: 'You dont have enough wallet balance to place this order.'
+          });
+        }
+        document.querySelector('.checkout-form').submit();
 
-  } else if (paymentMethod === 'Online') {
-    if (grandTotal > 450000) {
-      return Swal.fire({
-        icon: 'error',
-        title: 'Payment Limit Exceeded',
-        text: 'Online payment is only allowed for orders up to ₹4.5 lakhs. Please reduce your cart total.'
-      });
-    }
+      } else if (paymentMethod === 'Online') {
+        if (grandTotal > 450000) {
+          return Swal.fire({
+            icon: 'error',
+            title: 'Payment Limit Exceeded',
+            text: 'Online payment is only allowed for orders up to ₹4.5 lakhs. Please reduce your cart total.'
+          });
+        }
 
-    try {
-      const response = await fetch('/payment/create-order', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          amount: grandTotal,
-          currency: 'INR',
-          receipt: 'order_' + Date.now()
-        })
-      });
-      console.log('🔥 Razorpay order creation response:', response);
+        try {
+          const response = await fetch('/payment/create-order', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              amount: grandTotal,
+              currency: 'INR',
+              receipt: 'order_' + Date.now()
+            })
+          });
+          console.log('🔥 Razorpay order creation response:', response);
 
-      const paymentData = await response.json();
+          const paymentData = await response.json();
 
-      const options = {
-        key: '<%= process.env.RAZORPAY_KEY_ID %>',
-        amount: paymentData.amount,
-        currency: paymentData.currency,
-        name: "Keitai",
-        description: "Order Payment",
-        order_id: paymentData.id,
-        handler: function (response) {
-          const form = document.querySelector('.checkout-form');
-          const paymentInput = document.createElement('input');
-          paymentInput.type = 'hidden';
-          paymentInput.name = 'paymentDetails';
-          paymentInput.value = JSON.stringify(response);
-          form.appendChild(paymentInput);
-          form.submit();
-        },
-        prefill: {
-          name: '<%= user.name %>',
-          email: '<%= user.email %>',
-          contact: '<%= user.phone || "9999999999" %>'
-        },
-        theme: { color: "#3399cc" }
-      };
+          const options = {
+            key: '<%= process.env.RAZORPAY_KEY_ID %>',
+            amount: paymentData.amount,
+            currency: paymentData.currency,
+            name: "Keitai",
+            description: "Order Payment",
+            order_id: paymentData.id,
+            handler: function (response) {
+              const form = document.querySelector('.checkout-form');
+              const paymentInput = document.createElement('input');
+              paymentInput.type = 'hidden';
+              paymentInput.name = 'paymentDetails';
+              paymentInput.value = JSON.stringify(response);
+              form.appendChild(paymentInput);
+              form.submit();
+            },
+            prefill: {
+              name: '<%= user.name %>',
+              email: '<%= user.email %>',
+              contact: '<%= user.phone || "9999999999" %>'
+            },
+            theme: { color: "#3399cc" }
+          };
 
-      const rzp = new Razorpay(options);
-      rzp.on('payment.failed', function (response) {
-        window.location.href = `/payment/failed?error=${encodeURIComponent(response.error.description)}`;
-      });
-      rzp.open();
+          const rzp = new Razorpay(options);
+          rzp.on('payment.failed', function (response) {
+            window.location.href = `/payment/failed?error=${encodeURIComponent(response.error.description)}`;
+          });
+          rzp.open();
 
-    } catch (err) {
-      Swal.fire({
-        icon: 'error',
-        title: 'Payment Error',
-        text: 'Something went wrong while initiating payment. Please try again.'
-      });
-    }
-  }
-});
+        } catch (err) {
+          Swal.fire({
+            icon: 'error',
+            title: 'Payment Error',
+            text: 'Something went wrong while initiating payment. Please try again.'
+          });
+        }
+      }
+    });
+
     function validateAddress() {
       const selectedAddress = document.querySelector('input[name="selectedAddress"]:checked');
       if (!selectedAddress) {
@@ -298,7 +644,6 @@
       return true;
     }
 
-    // Razorpay UI toggle
     document.querySelectorAll('input[name="paymentMethod"]').forEach(radio => {
       radio.addEventListener('change', function () {
         document.getElementById('razorpay-container').style.display =
@@ -306,149 +651,64 @@
       });
     });
 
-    document.getElementById('rzp-button')?.addEventListener('click', async function (e) {
-      e.preventDefault();
-      if (!validateAddress()) return;
+    document.getElementById('applyCouponBtn')?.addEventListener('click', async () => {
+      const code = document.getElementById('couponCode').value.trim();
+      const total = `<%= totalPrice + deliveryCharge %>`;
 
-      const selectedAddress = document.querySelector('input[name="selectedAddress"]:checked').value;
-      const amountInRupees = parseFloat("<%= grandTotal %>");
+      if (!code) {
+        return Swal.fire({
+          icon: 'warning',
+          title: 'Select a Coupon',
+          text: 'Please choose a coupon to apply.'
+        });
+      }
+
+      const confirm = await Swal.fire({
+        title: 'Apply Coupon?',
+        text: `Do you want to apply the coupon "${code}"?`,
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonText: 'Yes, Apply',
+        cancelButtonText: 'Cancel',
+        reverseButtons: true
+      });
+
+      if (!confirm.isConfirmed) return;
 
       try {
-        const response = await fetch('/payment/create-order', {
+        const res = await fetch('/user/apply-coupon', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            amount: amountInRupees,
-            currency: 'INR',
-            receipt: 'order_' + Date.now()
-          })
+          body: JSON.stringify({ code, total })
         });
 
-        const paymentData = await response.json();
+        const data = await res.json();
 
-        const options = {
-          key: '<%= process.env.RAZORPAY_KEY_ID %>',
-          amount: paymentData.amount,
-          currency: paymentData.currency,
-          name: "Keitai",
-          description: "Order Payment",
-          order_id: paymentData.id,
-          handler: async function (response) {
-            try {
-              const confirmResponse = await fetch('/user/confirm-payment', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                  selectedAddress,
-                  paymentMethod: 'Online',
-                  razorpayPaymentId: response.razorpay_payment_id,
-                  razorpayOrderId: response.razorpay_order_id,
-                  razorpaySignature: response.razorpay_signature
-                })
-              });
-
-              if (confirmResponse.ok) {
-                window.location.href = '/user/confirm-payment';
-              } else {
-                throw new Error('Payment confirmation failed');
-              }
-            } catch (err) {
-              console.error("❌ Error confirming payment:", err);
-              Swal.fire({
-                icon: 'error',
-                title: 'Payment Error',
-                text: 'Payment was successful but order confirmation failed.'
-              });
-            }
-          },
-          prefill: {
-            name: '<%= user.name %>',
-            email: '<%= user.email %>',
-            contact: '<%= user.phone || "9999999999" %>'
-          },
-          theme: { color: "#3399cc" }
-        };
-
-        const rzp = new Razorpay(options);
-        rzp.on('payment.failed', function (response) {
-          window.location.href = `/payment/failed?error=${encodeURIComponent(response.error.description)}`;
-        });
-        rzp.open();
+        if (data.success) {
+          await Swal.fire({
+            icon: 'success',
+            title: 'Coupon Applied!',
+            text: `You saved ₹${data.discountAmount}`,
+            timer: 2000,
+            showConfirmButton: false
+          });
+          window.location.reload();
+        } else {
+          Swal.fire({
+            icon: 'error',
+            title: 'Coupon Error',
+            text: data.message || 'Failed to apply coupon.'
+          });
+        }
       } catch (err) {
-        console.error("🔥 Razorpay init error:", err);
         Swal.fire({
           icon: 'error',
-          title: 'Payment Error',
-          text: 'Something went wrong while starting payment. Try again.'
+          title: 'Server Error',
+          text: 'Something went wrong. Please try again.'
         });
       }
     });
 
-
-    // Coupon Apply
-    // Coupon Apply
-document.getElementById('applyCouponBtn')?.addEventListener('click', async () => {
-  const code = document.getElementById('couponCode').value.trim();
-  const total = `<%= totalPrice + deliveryCharge %>`;
-
-  if (!code) {
-    return Swal.fire({
-      icon: 'warning',
-      title: 'Select a Coupon',
-      text: 'Please choose a coupon to apply.'
-    });
-  }
-
-  // ❌ Removed 2 lakh restriction ✅
-
-  const confirm = await Swal.fire({
-    title: 'Apply Coupon?',
-    text: `Do you want to apply the coupon "${code}"?`,
-    icon: 'question',
-    showCancelButton: true,
-    confirmButtonText: 'Yes, Apply',
-    cancelButtonText: 'Cancel',
-    reverseButtons: true
-  });
-
-  if (!confirm.isConfirmed) return;
-
-  try {
-    const res = await fetch('/user/apply-coupon', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ code, total })
-    });
-
-    const data = await res.json();
-
-    if (data.success) {
-      await Swal.fire({
-        icon: 'success',
-        title: 'Coupon Applied!',
-        text: `You saved ₹${data.discountAmount}`,
-        timer: 2000,
-        showConfirmButton: false
-      });
-      window.location.reload();
-    } else {
-      Swal.fire({
-        icon: 'error',
-        title: 'Coupon Error',
-        text: data.message || 'Failed to apply coupon.'
-      });
-    }
-  } catch (err) {
-    Swal.fire({
-      icon: 'error',
-      title: 'Server Error',
-      text: 'Something went wrong. Please try again.'
-    });
-  }
-});
-
-
-    // Coupon Remove
     document.getElementById('removeCouponBtn')?.addEventListener('click', async () => {
       await fetch('/user/remove-coupon', {
         method: 'POST',
@@ -457,8 +717,6 @@ document.getElementById('applyCouponBtn')?.addEventListener('click', async () =>
       location.reload();
     });
 
-  </script>
-  <script>
     const addAddressBtn = document.getElementById('openAddAddressModal');
     const modal = document.getElementById('addAddressModal');
     const closeModal = document.querySelector('.close-modal');
@@ -478,7 +736,6 @@ document.getElementById('applyCouponBtn')?.addEventListener('click', async () =>
       }
     });
 
-    // Optional: SweetAlert validation before submit
     const isSafeInput = (value) => /^[a-zA-Z0-9\s\-]+$/.test(value);
 
     addAddressForm?.addEventListener('submit', async (event) => {
@@ -527,7 +784,7 @@ document.getElementById('applyCouponBtn')?.addEventListener('click', async () =>
 
         if (result.success) {
           await Swal.fire({ icon: 'success', title: 'Address Added!', timer: 1500 });
-          window.location.reload(); // reload to reflect new address
+          window.location.reload(); 
         } else {
           Swal.fire({ icon: 'error', title: 'Error', text: result.message || 'Could not add address' });
         }
@@ -536,27 +793,5 @@ document.getElementById('applyCouponBtn')?.addEventListener('click', async () =>
       }
     });
   </script>
-<script>
-async function applyCoupon() {
-  const code = document.getElementById("couponCode").value;
-
-  const res = await fetch("/apply-coupon", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ code })
-  });
-
-  const data = await res.json();
-
-  if (data.success) {
-    document.getElementById("discount").innerText = "Discount: ₹" + data.discount;
-    document.getElementById("finalAmount").innerText = "Final: ₹" + data.finalAmount;
-  } else {
-    Swal.fire("Error", data.message, "error");
-  }
-}
-</script>
-
 </body>
-
 </html>
