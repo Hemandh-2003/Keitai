@@ -110,41 +110,42 @@
                       </tr>
                     </thead>
                     <tbody>
-                      <% coupons.forEach(coupon=> { %>
-                        <tr>
-                          <td>
-                            <%= coupon.code %>
-                          </td>
-                          <td>
-                            <%= coupon.discountType==='percentage' ? 'Percentage' : 'Fixed' %>
-                          </td>
-                          <td>
-                            <%= coupon.discountType==='percentage' ? coupon.discount + ' %' : '₹' + coupon.discount %>
-                          </td>
-                          <td>₹<%= coupon.minPurchase || 0 %>
-                          </td>
-                          <td>
-                            <%= coupon.discountType==='percentage' ? '₹' + (coupon.maxDiscount || 'No Limit' ) : '-' %>
-                          </td>
-                          <td>
-                            <%= new Date(coupon.startDate).toLocaleDateString() %>
-                          </td>
-                          <td>
-                            <%= new Date(coupon.endDate).toLocaleDateString() %>
-                          </td>
-                          <td>
-                            <%= new Date(coupon.endDate)> new Date() ? 'Active' : 'Expired' %>
-                          </td>
-                          <td class="actions">
-                            <form action="/admin/coupons/delete/<%= coupon._id %>" method="POST"
-                              onsubmit="return confirm('Delete this coupon?')">
-                              <button class="btn btn-sm btn-delete"><i class="fas fa-trash"></i></button>
-                            </form>
-                          </td>
-                        </tr>
-                        <% }) %>
-                    </tbody>
+  <% coupons.forEach(coupon=> { %>
+    <tr>
+      <td><%= coupon.code %></td>
+      <td><%= coupon.discountType==='percentage' ? 'Percentage' : 'Fixed' %></td>
+      <td><%= coupon.discountType==='percentage' ? coupon.discount + ' %' : '₹' + coupon.discount %></td>
+      <td>₹<%= coupon.minPurchase || 0 %></td>
+      <td><%= coupon.discountType==='percentage' ? '₹' + (coupon.maxDiscount || 'No Limit') : '-' %></td>
+      <td><%= new Date(coupon.startDate).toLocaleDateString() %></td>
+      <td><%= new Date(coupon.endDate).toLocaleDateString() %></td>
+      <td><%= new Date(coupon.endDate) > new Date() ? 'Active' : 'Expired' %></td>
 
+      <!-- ✅ Only one Actions column -->
+      <td class="actions">
+        <!-- Edit Button -->
+        <button type="button" 
+          class="btn btn-sm btn-edit" 
+          data-id="<%= coupon._id %>"
+          data-code="<%= coupon.code %>"
+          data-type="<%= coupon.discountType %>"
+          data-discount="<%= coupon.discount %>"
+          data-minpurchase="<%= coupon.minPurchase %>"
+          data-maxdiscount="<%= coupon.maxDiscount %>"
+          data-start="<%= coupon.startDate.toISOString().split('T')[0] %>"
+          data-end="<%= coupon.endDate.toISOString().split('T')[0] %>">
+          <i class="fas fa-edit"></i>
+        </button>
+
+        <!-- Delete Button -->
+        <form action="/admin/coupons/delete/<%= coupon._id %>" method="POST"
+          onsubmit="return confirm('Delete this coupon?')">
+          <button class="btn btn-sm btn-delete"><i class="fas fa-trash"></i></button>
+        </form>
+      </td>
+    </tr>
+  <% }) %>
+</tbody>
                   </table>
                   <div class="pagination">
                     <% if (totalPages> 1) { %>
@@ -173,21 +174,17 @@
   </div>
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   <script>
-    // Date validation for coupon form
     document.getElementById('couponStartDate').addEventListener('change', function () {
       const startDate = this.value;
       const endDateInput = document.getElementById('couponEndDate');
 
-      // Set the minimum end date to be the same as start date
       endDateInput.min = startDate;
 
-      // If current end date is before start date, reset it
       if (endDateInput.value && endDateInput.value < startDate) {
         endDateInput.value = startDate;
       }
     });
 
-    // Form validation
     const couponForm = document.querySelector('form[action="/admin/coupons/create"]');
 
     couponForm.addEventListener('submit', function (e) {
@@ -196,7 +193,6 @@
       const startDate = couponForm.querySelector('input[name="startDate"]').value;
       const endDate = couponForm.querySelector('input[name="endDate"]').value;
 
-      // Date validation
       if (new Date(endDate) < new Date(startDate)) {
         e.preventDefault();
         Swal.fire({
@@ -206,8 +202,6 @@
         });
         return;
       }
-
-      // Discount validation
       if (discountType === 'percentage') {
         if (discount < 1 || discount > 90) {
           e.preventDefault();
@@ -255,30 +249,86 @@
       });
     <% } %>`
     const discountTypeSelect = document.querySelector('select[name="discountType"]');
-const minPurchaseField = document.getElementById('minPurchaseField');
-const maxDiscountField = document.getElementById('maxDiscountField');
+    const minPurchaseField = document.getElementById('minPurchaseField');
+    const maxDiscountField = document.getElementById('maxDiscountField');
 
-discountTypeSelect.addEventListener('change', function () {
-  if (this.value === 'percentage') {
-    minPurchaseField.style.display = 'block';
-    maxDiscountField.style.display = 'block';
-    minPurchaseField.querySelector('input').required = true;
-    maxDiscountField.querySelector('input').required = true;
-  } else if (this.value === 'fixed') {
-    minPurchaseField.style.display = 'block';
-    maxDiscountField.style.display = 'none';
-    minPurchaseField.querySelector('input').required = true;
-    maxDiscountField.querySelector('input').required = false;
-  } else {
-    minPurchaseField.style.display = 'none';
-    maxDiscountField.style.display = 'none';
-    minPurchaseField.querySelector('input').required = false;
-    maxDiscountField.querySelector('input').required = false;
-  }
+    discountTypeSelect.addEventListener('change', function () {
+      if (this.value === 'percentage') {
+        minPurchaseField.style.display = 'block';
+        maxDiscountField.style.display = 'block';
+        minPurchaseField.querySelector('input').required = true;
+        maxDiscountField.querySelector('input').required = true;
+      } else if (this.value === 'fixed') {
+        minPurchaseField.style.display = 'block';
+        maxDiscountField.style.display = 'none';
+        minPurchaseField.querySelector('input').required = true;
+        maxDiscountField.querySelector('input').required = false;
+      } else {
+        minPurchaseField.style.display = 'none';
+        maxDiscountField.style.display = 'none';
+        minPurchaseField.querySelector('input').required = false;
+        maxDiscountField.querySelector('input').required = false;
+      }
+    });
+
+
+    discountTypeSelect.dispatchEvent(new Event('change'));
+document.querySelectorAll('.btn-edit').forEach(button => {
+  button.addEventListener('click', function () {
+    const id = this.dataset.id;
+    const code = this.dataset.code;
+    const type = this.dataset.type;
+    const discount = this.dataset.discount;
+    const minPurchase = this.dataset.minpurchase;
+    const maxDiscount = this.dataset.maxdiscount;
+    const start = this.dataset.start;
+    const end = this.dataset.end;
+
+   Swal.fire({
+  title: 'Edit Coupon',
+  html: `
+    <form id="editCouponForm" action="/admin/coupons/edit/${id}" method="POST">
+      <input type="text" name="code" value="${code}" placeholder="Coupon Code" class="swal2-input" required>
+      <select id="editDiscountType" name="discountType" class="swal2-input" required>
+        <option value="percentage" ${type === 'percentage' ? 'selected' : ''}>Percentage (%)</option>
+        <option value="fixed" ${type === 'fixed' ? 'selected' : ''}>Fixed Amount</option>
+      </select>
+      <input type="number" id="editDiscount" name="discount" value="${discount}" placeholder="Discount" class="swal2-input" required>
+      <input type="number" id="editMinPurchase" name="minPurchase" value="${minPurchase || ''}" placeholder="Min Purchase" class="swal2-input">
+      <input type="number" id="editMaxDiscount" name="maxDiscount" value="${maxDiscount || ''}" placeholder="Max Discount" class="swal2-input">
+      <input type="date" id="editStartDate" name="startDate" value="${start}" class="swal2-input" required>
+      <input type="date" id="editEndDate" name="endDate" value="${end}" class="swal2-input" required>
+    </form>
+  `,
+  focusConfirm: false,
+  preConfirm: () => {
+    const discountType = document.getElementById("editDiscountType").value;
+    const discount = parseFloat(document.getElementById("editDiscount").value);
+    const startDate = document.getElementById("editStartDate").value;
+    const endDate = document.getElementById("editEndDate").value;
+
+    if (new Date(endDate) < new Date(startDate)) {
+      Swal.showValidationMessage("End date cannot be before start date.");
+      return false;
+    }
+    if (discountType === "percentage" && (discount < 1 || discount > 90)) {
+      Swal.showValidationMessage("Percentage discount must be between 1% and 90%.");
+      return false;
+    }
+    if (discountType === "fixed" && (discount < 2000 || discount > 50000)) {
+      Swal.showValidationMessage("Fixed discount must be between ₹2000 and ₹50,000.");
+      return false;
+    }
+
+    document.getElementById("editCouponForm").submit();
+  },
+  showCancelButton: true,
+  confirmButtonText: 'Update',
+  cancelButtonText: 'Cancel'
 });
 
-
-discountTypeSelect.dispatchEvent(new Event('change'));
+  });
+});
 
   </script>
 </body>
