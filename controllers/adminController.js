@@ -112,6 +112,204 @@ exports.getDashboardStats = async (req, res) => {
     res.status(500).json({ error: 'Server error' });
   }
 };
+// User management
+exports.listUsers = async (req, res) => {
+  try {
+    const sortBy = req.query.sort || 'all';
+    const search = req.query.search || '';
+    const page = parseInt(req.query.page) || 1;
+    const limit = 10;
+    const skip = (page - 1) * limit;
+
+    let filter = {};
+    let sort = { createdAt: -1 };
+
+    switch (sortBy) {
+      case 'blocked':
+        filter.isBlocked = true;
+        break;
+      case 'unblocked':
+        filter.isBlocked = false;
+        break;
+      default:
+        break;
+    }
+
+    if (search) {
+      filter.$or = [
+        { name: { $regex: search, $options: 'i' } },
+        { email: { $regex: search, $options: 'i' } },
+        { userCode: { $regex: search, $options: 'i' } }
+      ];
+    }
+
+    const totalUsers = await User.countDocuments(filter);
+
+    const users = await User.find(filter)
+      .sort(sort)
+      .skip(skip)
+      .limit(limit);
+
+    const totalPages = Math.ceil(totalUsers / limit);
+
+    res.render('admin/users', {
+      users,
+      sortBy,
+      searchQuery: search,
+      currentPage: page,
+      totalPages,
+    });
+  } catch (error) {
+    console.error('Error listing users:', error);
+    res.status(500).send('Error listing users');
+  }
+};
+
+exports.blockUser = async (req, res) => {
+  try {
+    
+    const user = await User.findByIdAndUpdate(req.params.id, { isBlocked: true });
+
+    
+    if (req.session.userId === user._id.toString()) {
+      req.session.isBlocked = true; 
+    }
+
+    res.redirect('/admin/users');
+  } catch (error) {
+    console.error('Error blocking user:', error);
+    res.status(500).send('Error blocking user');
+  }
+};
+
+
+exports.unblockUser = async (req, res) => {
+  try {
+    
+    const user = await User.findByIdAndUpdate(req.params.id, { isBlocked: false });
+
+    
+    if (req.session.userId === user._id.toString()) {
+      req.session.isBlocked = false; 
+    }
+
+    res.redirect('/admin/users');
+  } catch (error) {
+    console.error('Error unblocking user:', error);
+    res.status(500).send('Error unblocking user');
+  }
+};
+
+
+// Category management
+exports.loadCategories = async (req, res) => {
+  try {
+    const categories = await Category.find();
+    res.render('admin/categories', { categories, error: null }); 
+  } catch (error) {
+    console.error('Error loading categories:', error);
+    res.status(500).send('Server Error');
+  }
+};
+
+// Add a new category
+exports.addCategory = async (req, res) => {
+  try {
+    const { name } = req.body;
+    const trimmedName = name.trim();
+
+    if (!trimmedName) {
+      const categories = await Category.find();
+      return res.render('admin/categories', {
+        categories,
+        error: 'Category name cannot be empty.',
+      });
+    }
+
+    if (!/^[A-Za-z\s]{1,11}$/.test(trimmedName)) {
+      const categories = await Category.find();
+      return res.render('admin/categories', {
+        categories,
+        error: 'Category name must contain only letters and up to 11 characters.',
+      });
+    }
+
+    const slug = trimmedName.toLowerCase().replace(/\s+/g, '-');
+
+    const existingCategory = await Category.findOne({ name: new RegExp(`^${trimmedName}$`, 'i') });
+    if (existingCategory) {
+      const categories = await Category.find();
+      return res.render('admin/categories', {
+        categories,
+        error: 'This category already exists in the list.',
+      });
+    }
+
+    const newCategory = new Category({ name: trimmedName, slug });
+    await newCategory.save();
+
+    res.redirect('/admin/categories');
+  } catch (error) {
+    console.error('Error adding category:', error);
+    const categories = await Category.find();
+    return res.render('admin/categories', {
+      categories,
+      error: 'Something went wrong. Please try again.',
+    });
+  }
+};
+
+// Delete a category
+exports.deleteCategory = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    await Category.findByIdAndDelete(id);
+    res.redirect('/admin/categories');
+  } catch (error) {
+    console.error('Error deleting category:', error);
+    res.status(500).send('Server Error');
+  }
+};
+
+// Edit a category
+exports.loadEditCategory = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const category = await Category.findById(id);
+
+    res.status(200).render('admin/edit-category', { category });
+  } catch (error) {
+    console.error('Error loading edit page:', error);
+    res.status(500).send('Server Error');
+  }
+};
+
+exports.editCategory = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { name } = req.body;
+
+    const slug = name.toLowerCase().replace(/\s+/g, '-');
+
+    
+    const existingCategory = await Category.findOne({ slug });
+    if (existingCategory && existingCategory._id.toString() !== id) {
+      return res.status(400).render('admin/edit-category', {
+        errorMessage: 'Category name already exists.',
+        category: { name }  
+      });
+    }
+
+    
+    await Category.findByIdAndUpdate(id, { name, slug });
+
+    res.redirect('/admin/categories');
+  } catch (error) {
+    console.error('Error editing category:', error);
+    res.status(500).send('Server Error');
+  }
+};
 
 // Product management
 exports.listProducts = async (req, res) => {
@@ -481,6 +679,211 @@ exports.viewProductDetails = async (req, res) => {
   }
 };
 
+exports.listOrders = async (req, res) => {
+  try {
+    const sort = req.query.sort || 'new';
+    const page = parseInt(req.query.page) || 1;
+    const limit = 5;
+    let sortCriteria = {};
+    let filterCriteria = {};
+
+    switch (sort) {
+      case 'new':
+        sortCriteria = { createdAt: -1 };
+        break;
+      case 'old':
+        sortCriteria = { createdAt: 1 };
+        break;
+      case 'cancelled':
+        filterCriteria = { status: 'Cancelled' };
+        sortCriteria = { createdAt: -1 };
+        break;
+      case 'user-cancelled':
+        filterCriteria = { status: 'User Cancelled' };
+        sortCriteria = { createdAt: -1 };
+        break;
+      case 'shipped':
+        filterCriteria = { status: 'Shipped' };
+        sortCriteria = { createdAt: -1 };
+        break;
+      case 'delivered':
+        filterCriteria = { status: 'Delivered' };
+        sortCriteria = { createdAt: -1 };
+        break;
+      case 'pending':
+        filterCriteria = { status: 'Pending' };
+        sortCriteria = { createdAt: -1 };
+        break;
+      case 'return-requested':
+        filterCriteria = { returnRequested: true, returnStatus: 'Requested' };
+        sortCriteria = { createdAt: -1 };
+        break;
+      default:
+        sortCriteria = { createdAt: -1 };
+    }
+
+    const orders = await Order.find(filterCriteria)
+      .sort(sortCriteria)
+      .skip((page - 1) * limit)
+      .limit(limit)
+      .populate('user')
+      .populate('products.product')
+      .exec();
+
+    const totalOrders = await Order.countDocuments(filterCriteria);
+    const totalPages = Math.ceil(totalOrders / limit);
+
+    res.render('admin/orders', {
+      orders,
+      sort,
+      currentPage: page,
+      totalPages,
+    });
+  } catch (error) {
+    console.error('Error listing orders:', error.message);
+    res.status(500).send('Error retrieving orders');
+  }
+};
+
+
+// Change Order Status
+exports.changeOrderStatus = async (req, res) => {
+  try {
+    const { orderId } = req.params;
+    const { status } = req.body;
+
+    const order = await Order.findOneAndUpdate(
+      { orderId: orderId },
+      { status },
+      { new: true }
+    );
+
+    if (!order) {
+      return res.status(404).json({ success: false, message: 'Order not found' });
+    }
+
+    res.redirect('/admin/orders');
+  } catch (error) {
+    console.error('Error changing order status:', error);
+    res.status(500).send('Error changing order status');
+  }
+};
+
+exports.updateReturnStatus = async (req, res) => {
+  try {
+    const orderId = req.params.id;
+    const { action } = req.body;
+
+    if (!['Approved', 'Rejected'].includes(action)) {
+      return res.status(400).send('Invalid action');
+    }
+
+    const order = await Order.findById(orderId).populate('user');
+//console.log('Order:', order);
+
+if (!order || order.returnStatus !== 'Requested') {
+  return res.status(400).send('Invalid return request');
+}
+
+order.returnStatus = action;
+order.returnRequested = false;
+order.statusHistory.push({
+  status: `Return ${action}`,
+  updatedAt: new Date(),
+});
+
+ if (action === 'Approved') {
+      const user = order.user;
+      let totalRefund = 0;
+      
+      for (const returnedItem of order.returnedItems) {
+        if (returnedItem.status !== 'Pending') continue;
+
+        const orderedProduct = order.products.find(p => 
+          p.product && p.product._id.toString() === returnedItem.product._id.toString()
+        );
+
+        if (orderedProduct) {
+          const price = returnedItem.refundAmount / returnedItem.quantity || 
+                       orderedProduct.unitPrice || 
+                       orderedProduct.price || 
+                       orderedProduct.product?.salesPrice || 
+                       orderedProduct.product?.regularPrice || 
+                       0;
+
+          const itemRefund = price * returnedItem.quantity;
+          totalRefund += itemRefund;
+
+          returnedItem.status = 'Approved';
+        }
+      }
+
+    if (totalRefund > 0) {
+  await User.findByIdAndUpdate(user._id, {
+    $inc: { 'wallet.balance': totalRefund },
+    $push: {
+      'wallet.transactions': {
+        type: 'Credit',
+        amount: totalRefund,
+        reason: `Refund for returned items from order #${order.orderId}`,
+        orderId: order._id,
+        date: new Date()
+      }
+    }
+  });
+}
+
+    }
+
+    await order.save();
+
+    res.redirect('/admin/orders?sort=return-requested');
+  } catch (error) {
+    console.error('Error updating return status:', error);
+    res.status(500).send('Server error');
+  }
+};
+
+
+
+// Cancel Order
+exports.cancelOrder = async (req, res) => {
+  try {
+    const { orderId } = req.params;
+
+    const order = await Order.findOne({ orderId }).populate('products.product').exec();
+    if (!order) return res.status(404).json({ error: 'Order not found' });
+
+    order.status = 'Cancelled';
+    await order.save();
+
+    const bulkOps = order.products.map(item => ({
+      updateOne: {
+        filter: { _id: item.product._id },
+        update: { $inc: { quantity: item.quantity } }
+      }
+    }));
+    if (bulkOps.length > 0) await Product.bulkWrite(bulkOps);
+
+    const user = await User.findById(order.user);
+    const refundAmount = order.totalAmount;
+
+    user.wallet.balance += refundAmount;
+    user.wallet.transactions.push({
+      type: 'Credit',
+      amount: refundAmount,
+      reason: 'Order Cancelled',
+      orderId: order._id,
+    });
+    await user.save();
+
+    res.redirect('/admin/orders');
+  } catch (error) {
+    console.error('Error canceling order:', error);
+    res.status(500).send('Server error');
+  }
+};
+
 // Payment Integration with Razorpay
 exports.initiatePayment = async (req, res) => {
   try {
@@ -646,6 +1049,36 @@ exports.processReturnRequest = async (req, res) => {
     res.status(500).send('Return request failed');
   }
 };
+
+
+exports.adminCancelOrder = async (req, res) => {
+  try {
+    const { orderId } = req.params;
+    const { reason } = req.body;
+
+    const order = await Order.findOne({ orderId }).populate('products.product');
+    
+    if (!order) {
+      return res.status(404).send('Order not found');
+    }
+
+    order.status = 'Cancelled';
+    order.cancellationReason = reason || 'Admin cancellation';
+    await order.save();
+
+    await Promise.all(order.products.map(async item => {
+      await Product.findByIdAndUpdate(item.product._id, {
+        $inc: { stock: item.quantity }
+      });
+    }));
+
+    res.redirect(`/admin/orders/${order.orderId}`);
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('Cancellation failed');
+  }
+};
+
 
 module.exports = exports;
 
@@ -1076,70 +1509,7 @@ exports.createCoupon = async (req, res) => {
   }
 };
 
-// Edit coupon
-exports.editCoupon = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { code, discountType, discount, minPurchase, maxDiscount, startDate, endDate } = req.body;
 
-    const trimmedCode = code.trim().toUpperCase();
-
-    const existingCoupon = await Coupon.findOne({ code: trimmedCode, _id: { $ne: id } });
-    if (existingCoupon) {
-      req.flash('error', 'Coupon code already exists.');
-      return res.redirect('/admin/coupons');
-    }
-
-    const start = new Date(startDate);
-    const end = new Date(endDate);
-    if (start > end) {
-      req.flash('error', 'Start date must be before end date.');
-      return res.redirect('/admin/coupons');
-    }
-
-    const parsedDiscount = parseFloat(discount);
-    const parsedMinPurchase = parseFloat(minPurchase) || 0;
-    const parsedMaxDiscount = parseFloat(maxDiscount) || 0;
-
-    if (discountType === 'percentage') {
-      if (parsedDiscount < 1 || parsedDiscount > 90) {
-        req.flash('error', 'Percentage discount must be between 1% and 90%.');
-        return res.redirect('/admin/coupons');
-      }
-      if (parsedMaxDiscount < 2500) {
-        req.flash('error', 'Maximum discount must be at least ₹2500.');
-        return res.redirect('/admin/coupons');
-      }
-    } else if (discountType === 'fixed') {
-      if (parsedDiscount < 2000 || parsedDiscount > 50000) {
-        req.flash('error', 'Fixed discount must be between ₹2000 and ₹50,000.');
-        return res.redirect('/admin/coupons');
-      }
-    }
-
-    if (parsedMinPurchase < 2000) {
-      req.flash('error', 'Minimum purchase must be at least ₹2000.');
-      return res.redirect('/admin/coupons');
-    }
-
-    await Coupon.findByIdAndUpdate(id, {
-      code: trimmedCode,
-      discountType,
-      discount: parsedDiscount,
-      minPurchase: parsedMinPurchase,
-      maxDiscount: parsedMaxDiscount,
-      startDate: start,
-      endDate: end
-    });
-
-    req.flash('success', 'Coupon updated successfully!');
-    res.redirect('/admin/coupons');
-  } catch (err) {
-    console.error('Error editing coupon:', err);
-    req.flash('error', 'Failed to update coupon. Please try again.');
-    res.redirect('/admin/coupons');
-  }
-};
 
 // Delete coupon
 exports.deleteCoupon = async (req, res) => {

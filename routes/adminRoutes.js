@@ -1,14 +1,27 @@
 const express = require('express');
 const {
-  adminDashboard, 
+  adminDashboard,
+  listUsers,
+  blockUser,
+  unblockUser,
+  loadCategories,
+  addCategory,
+  deleteCategory,
+  loadEditCategory,
+  editCategory,
+  listProducts,
+  addProduct,
+  createProduct,
+  editProduct,
+  updateProduct,
+  blockProduct,
+  unblockProduct,
+  viewProductDetails,
+getProductDetailsWithRelated ,  
+  listOrders, 
+  changeOrderStatus, 
+  cancelOrder,
 } = require('../controllers/adminController');
-const adminOrderController= require('../controllers/adminOrderController');
-const adminUserController= require('../controllers/adminUserController');
-const adminCategoryController= require('../controllers/adminCategoryController');
-const offerController= require('../controllers/offerController');
-const couponController= require('../controllers/couponController');
-const productController= require('../controllers/productController')
-const salesReportController= require('../controllers/salesReportController');
 const { isAdmin } = require('../middleware/adminMiddleware');
 const checkBlockedUser = require('../middleware/checkBlocked');
 const multer = require('multer');
@@ -41,33 +54,33 @@ router.post('/adminlog', async (req, res) => {
 router.get('/dashboard', isAdmin, adminDashboard);
 
 // Order Management Routes
-router.get('/orders', isAdmin, adminOrderController.listOrders); 
-router.post('/orders/update-status/:orderId', isAdmin,adminOrderController.changeOrderStatus); 
-router.post('/orders/cancel/:orderId', isAdmin, adminOrderController.cancelOrder); 
+router.get('/orders', isAdmin, listOrders); // Route to list orders
+router.post('/orders/update-status/:orderId', isAdmin, changeOrderStatus); // Route to change order status
+router.post('/orders/cancel/:orderId', isAdmin, cancelOrder); // Route to cancel an order
 
 // User Management Routes
-router.get('/users', isAdmin, adminUserController.listUsers);
-router.post('/block/:id', isAdmin, adminUserController.blockUser);
-router.post('/unblock/:id', isAdmin, adminUserController.unblockUser);
+router.get('/users', isAdmin, listUsers);
+router.post('/block/:id', isAdmin, blockUser);
+router.post('/unblock/:id', isAdmin, unblockUser);
 
 // Category Management Routes
-router.get('/categories', isAdmin, adminCategoryController.loadCategories);
-router.post('/add-category', isAdmin, adminCategoryController.addCategory);
-router.get('/delete-category/:id', isAdmin, adminCategoryController.deleteCategory);
-router.get('/edit-category/:id', isAdmin, adminCategoryController.loadEditCategory);
-router.post('/edit-category/:id', isAdmin, adminCategoryController.editCategory);
+router.get('/categories', isAdmin, loadCategories);
+router.post('/add-category', isAdmin, addCategory);
+router.get('/delete-category/:id', isAdmin, deleteCategory);
+router.get('/edit-category/:id', isAdmin, loadEditCategory);
+router.post('/edit-category/:id', isAdmin, editCategory);
 
 // Product Management Routes
-router.get('/products', isAdmin, productController.listProducts);
-router.get('/products/add', isAdmin, productController.addProduct);
-router.post('/products/create', isAdmin, multer({ dest: './public/uploads' }).array('images', 8), productController.createProduct);
-router.get('/products/edit/:id', isAdmin, productController.editProduct);
-router.post('/products/update/:id', isAdmin, multer({ dest: './public/uploads' }).array('images', 8), productController.updateProduct);
-router.post('/products/block/:id', isAdmin, productController.blockProduct);
-router.post('/products/unblock/:id', isAdmin,productController.unblockProduct);
-router.get('/products/:productId',  productController.getProductDetailsWithRelated );
-router.delete('/products/delete-image/:filename', isAdmin,productController.deleteImage);
-router.delete('/products/delete-highlight/:filename', isAdmin,productController.deleteHighlight);
+router.get('/products', isAdmin, listProducts);
+router.get('/products/add', isAdmin, addProduct);
+router.post('/products/create', isAdmin, multer({ dest: './public/uploads' }).array('images', 8), createProduct);
+router.get('/products/edit/:id', isAdmin, editProduct);
+router.post('/products/update/:id', isAdmin, multer({ dest: './public/uploads' }).array('images', 8), updateProduct);
+router.post('/products/block/:id', isAdmin, blockProduct);
+router.post('/products/unblock/:id', isAdmin,unblockProduct);
+router.get('/products/:productId',  getProductDetailsWithRelated );
+router.delete('/products/delete-image/:filename', isAdmin,adminController.deleteImage);
+router.delete('/products/delete-highlight/:filename', isAdmin,adminController.deleteHighlight);
 // Admin Logout
 router.post('/logout', (req, res) => {
   req.session.destroy((err) => {
@@ -80,33 +93,33 @@ router.post('/logout', (req, res) => {
   });
 });
 //order Management Routes
-router.get('/orders', isAdmin, adminOrderController.listOrders);
-router.post('/orders/update-status/:orderId', isAdmin, adminOrderController.changeOrderStatus);
-router.post('/orders/cancel/:orderId', isAdmin, adminOrderController.cancelOrder);
-router.post('/orders/:id/return-status', isAdmin, adminOrderController.updateReturnStatus);
+router.get('/orders', isAdmin, listOrders);
+router.post('/orders/update-status/:orderId', isAdmin, adminController.changeOrderStatus);
+router.post('/orders/cancel/:orderId', isAdmin, cancelOrder);
+router.post('/orders/:id/return-status', isAdmin, adminController.updateReturnStatus);
 
 
 // Offer Management Routes
-router.get('/offers', isAdmin, offerController.listOffers);
-router.get('/offers/add', isAdmin, offerController.addOfferForm);
-router.post('/offers/create', isAdmin, offerController.createOffer);
-router.get('/offers/edit/:id', isAdmin, offerController.editOfferForm);
-router.post('/offers/update/:id', isAdmin, offerController.updateOffer);
-router.post('/offers/toggle-status/:id', isAdmin, offerController.toggleOfferStatus);
-router.get('/offers/delete/:id', isAdmin, offerController.deleteOffer);
+router.get('/offers', isAdmin, adminController.listOffers);
+router.get('/offers/add', isAdmin, adminController.addOfferForm);
+router.post('/offers/create', isAdmin, adminController.createOffer);
+router.get('/offers/edit/:id', isAdmin, adminController.editOfferForm);
+router.post('/offers/update/:id', isAdmin, adminController.updateOffer);
+router.post('/offers/toggle-status/:id', isAdmin, adminController.toggleOfferStatus);
+router.get('/offers/delete/:id', isAdmin, adminController.deleteOffer);
 
 //Coupons management Routes
-router.get('/coupons', isAdmin,couponController.getCoupons);
-router.post('/coupons/create', isAdmin,couponController.createCoupon);
-router.post('/coupons/edit/:id', isAdmin, couponController.editCoupon);
-router.post('/coupons/delete/:id', isAdmin,couponController.deleteCoupon);
+router.get('/coupons', isAdmin,adminController.getCoupons);
+router.post('/coupons/create', isAdmin,adminController.createCoupon);
+router.post('/coupons/edit/:id', isAdmin, adminController.editCoupon);
+router.post('/coupons/delete/:id', isAdmin,adminController.deleteCoupon);
 
 // Sales Report Routes
-router.get('/sales-report', isAdmin,salesReportController.renderSalesReportPage);
-router.post('/sales-report/filter', isAdmin,salesReportController.filterSalesReport);
-router.get('/sales-report/filter', isAdmin,salesReportController.filterSalesReport); 
-router.post('/sales-report/download/excel', isAdmin,salesReportController.downloadSalesReportExcel);
-router.post('/sales-report/download/pdf', isAdmin,salesReportController.downloadSalesReportPDF);
+router.get('/sales-report', isAdmin,adminController.renderSalesReportPage);
+router.post('/sales-report/filter', isAdmin,adminController.filterSalesReport);
+router.get('/sales-report/filter', isAdmin,adminController.filterSalesReport); // 👈 Add this
+router.post('/sales-report/download/excel', isAdmin,adminController.downloadSalesReportExcel);
+router.post('/sales-report/download/pdf', isAdmin,adminController.downloadSalesReportPDF);
 
 //dashboard
 router.get('/api/dashboard-stats', isAdmin,adminController.getDashboardStats);
