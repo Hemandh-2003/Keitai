@@ -1510,7 +1510,6 @@ exports.createCoupon = async (req, res) => {
 };
 
 
-
 // Delete coupon
 exports.deleteCoupon = async (req, res) => {
   try {
