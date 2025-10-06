@@ -4,7 +4,6 @@ const Order = require('../models/Order');
 const Cart = require('../models/Cart');
 const Coupon = require('../models/Coupon');
 const {HTTP_STATUS}= require('../SM/status');
-
 exports.getCheckout = async (req, res) => {
   try {
     if (!req.session.user) return res.redirect('/login');
@@ -16,7 +15,7 @@ exports.getCheckout = async (req, res) => {
       const retryOrder = await Order.findById(req.session.retryOrderId).populate('products.product');
 
       if (!retryOrder) {
-        return res.status(404).render('user/error', { message: 'Retry order not found' });
+        return res.status(HTTP_STATUS.NOT_FOUND).render('user/error', { message: 'Retry order not found' });
       }
 
      checkout = {
@@ -68,7 +67,7 @@ req.session.checkout = checkout;
     });
   } catch (error) {
     console.error('Checkout GET error:', error);
-    res.status(500).render('user/error', { message: 'Failed to load checkout' });
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).render('user/error', { message: 'Failed to load checkout' });
   }
 };
 
@@ -103,7 +102,7 @@ exports.checkout = async (req, res) => {
 
         const qty = parseInt(quantities[i]);
         if (qty > product.quantity) {
-          return res.status(400).send(`Only ${product.quantity} units available for ${product.name}`);
+          return res.status(HTTP_STATUS.BAD_REQUEST).send(`Only ${product.quantity} units available for ${product.name}`);
         }
 
         const offer = await product.getBestOfferPrice();
@@ -123,12 +122,12 @@ exports.checkout = async (req, res) => {
     } else if (productId && quantity) {
       const product = await Product.findById(productId);
       if (!product || product.isBlocked || product.isDeleted) {
-        return res.status(404).send('Product not available');
+        return res.status(HTTP_STATUS.NOT_FOUND).send('Product not available');
       }
 
       const qty = parseInt(quantity);
       if (qty > product.quantity) {
-        return res.status(400).send(`Only ${product.quantity} unit(s) available for ${product.name}`);
+        return res.status(HTTP_STATUS.BAD_REQUEST).send(`Only ${product.quantity} unit(s) available for ${product.name}`);
       }
 
       const offer = await product.getBestOfferPrice();
@@ -148,6 +147,8 @@ if (!user.addresses || user.addresses.length === 0) {
   req.session.checkout = sessionCheckout;
   return res.redirect('/user/checkout'); 
 }
+
+
 
 //  console.log("Order created with ID:(chekout)", order._id);
 if (!req.session.retryOrderId) {
@@ -177,7 +178,7 @@ return res.redirect('/user/checkout');
 
   } catch (err) {
     console.error('Checkout POST error:', err);
-    res.status(500).send('Internal Server Error');
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).send('Internal Server Error');
   }
 };
 
@@ -187,20 +188,20 @@ exports.placeOrder = async (req, res) => {
     const checkoutData = req.session.checkout;
 
     if (!checkoutData || !Array.isArray(checkoutData.productIds)) {
-      return res.status(400).send("Checkout session missing or invalid.");
+      return res.status(HTTP_STATUS.BAD_REQUEST).send("Checkout session missing or invalid.");
     }
 
     const { productIds, quantities, offerPrices } = checkoutData;
 
     const user = await User.findById(req.session.user._id);
-    if (!user) return res.status(404).send("User not found");
+    if (!user) return res.status(HTTP_STATUS.NOT_FOUND).send("User not found");
 
     const address = user.addresses.id(selectedAddress);
-    if (!address) return res.status(404).send("Address not found");
+    if (!address) return res.status(HTTP_STATUS.NOT_FOUND).send("Address not found");
 
     const products = await Product.find({ _id: { $in: productIds } });
     if (products.length !== productIds.length) {
-      return res.status(404).send("One or more products not found");
+      return res.status(HTTP_STATUS.NOT_FOUND).send("One or more products not found");
     }
 
     let totalAmount = 0;
@@ -227,13 +228,13 @@ exports.placeOrder = async (req, res) => {
     }
 
     if (paymentMethod === "COD" && totalAmount > 20000) {
-      return res.status(400).send("COD is only available for orders up to ₹20,000.");
+      return res.status(HTTP_STATUS.BAD_REQUEST).send("COD is only available for orders up to ₹20,000.");
     }
     if (paymentMethod === "Online" && totalAmount > 450000) {
-      return res.status(400).send("Online payments above ₹4.5 Lakhs not supported.");
+      return res.status(HTTP_STATUS.BAD_REQUEST).send("Online payments above ₹4.5 Lakhs not supported.");
     }
     if (paymentMethod === "Wallet" && (!user.wallet || user.wallet.balance < totalAmount)) {
-      return res.status(400).send("Insufficient wallet balance.");
+      return res.status(HTTP_STATUS.BAD_REQUEST).send("Insufficient wallet balance.");
     }
 
     const estimatedDate = new Date();
@@ -243,7 +244,7 @@ exports.placeOrder = async (req, res) => {
 
     if (req.session.retryOrderId) {
       createdOrder = await Order.findById(req.session.retryOrderId);
-      if (!createdOrder) return res.status(404).send("Order not found for retry");
+      if (!createdOrder) return res.status(HTTP_STATUS.NOT_FOUND).send("Order not found for retry");
 
       createdOrder.paymentMethod = paymentMethod;
       createdOrder.status =
@@ -348,8 +349,8 @@ exports.placeOrder = async (req, res) => {
     });
 
   } catch (err) {
-    console.error("Error placing order:", err.message);
-    res.status(500).send(err.message || "Internal Server Error");
+    console.error("❌ Error placing order:", err.message);
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).send(err.message || "Internal Server Error");
   }
 };
 
@@ -363,23 +364,23 @@ exports.confirmPayment = async (req, res) => {
       !Array.isArray(checkoutData.productIds) ||
       !Array.isArray(checkoutData.quantities)
     ) {
-      return res.status(400).send('Checkout session missing or invalid.');
+      return res.status(HTTP_STATUS.BAD_REQUEST).send('Checkout session missing or invalid.');
     }
 
     const { productIds, quantities, offerPrices } = checkoutData;
 
     const user = await User.findById(req.session.user._id);
-    if (!user) return res.status(404).send('User not found');
+    if (!user) return res.status(HTTP_STATUS.NOT_FOUND).send('User not found');
 
     const address = user.addresses.id(selectedAddress);
-    if (!address) return res.status(404).send('Address not found');
+    if (!address) return res.status(HTTP_STATUS.NOT_FOUND).send('Address not found');
 
     const products = await Product.find({ _id: { $in: productIds } });
     if (products.length !== productIds.length) {
-      return res.status(404).send('One or more products not found');
+      return res.status(HTTP_STATUS.NOT_FOUND).send('One or more products not found');
     }
     if (req.session.orderId) {
-  return res.redirect('/user/confirm-payment');
+  return res.redirect('/user/confirm-payment'); 
 }
     let totalAmount = 0;
     const orderItems = [];
@@ -453,7 +454,7 @@ exports.confirmPayment = async (req, res) => {
     res.redirect('/user/confirm-payment');
   } catch (err) {
     console.error('Error during payment confirmation:', err.message);
-    res.status(500).send(err.message || 'Internal Server Error');
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).send(err.message || 'Internal Server Error');
   }
 };
 
@@ -470,7 +471,7 @@ exports.renderConfirmPayment = async (req, res) => {
     } = req.session;
 
     if (!orderItems || !address || !paymentMethod || !totalAmount || !arrivalDate) {
-      return res.status(400).send('Missing order details.');
+      return res.status(HTTP_STATUS.BAD_REQUEST).send('Missing order details.');
     }
 
     const finalTotalAmount = totalAmount;
@@ -496,7 +497,7 @@ exports.renderConfirmPayment = async (req, res) => {
     });
   } catch (err) {
     console.error('Error rendering confirmation page:', err.message);
-    res.status(500).send(err.message || 'Internal Server Error');
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).send(err.message || 'Internal Server Error');
   }
 };
 
@@ -505,7 +506,7 @@ exports.createInlineAddress = async (req, res) => {
     const { name, street, city, state, zip, country, phone } = req.body;
 
     if (!name || !street || !city || !state || !zip || !country || !phone) {
-      return res.status(400).json({
+      return res.status(HTTP_STATUS.BAD_REQUEST).json({
         success: false,
         message: 'All fields are required.'
       });
@@ -513,7 +514,7 @@ exports.createInlineAddress = async (req, res) => {
 
     const user = await User.findById(req.session.user._id);
     if (!user) {
-      return res.status(404).json({
+      return res.status(HTTP_STATUS.NOT_FOUND).json({
         success: false,
         message: 'User not found.'
       });
@@ -533,15 +534,29 @@ exports.createInlineAddress = async (req, res) => {
     user.addresses.push(newAddress);
     await user.save();
 
-    res.status(200).json({ success: true });
+    res.status(HTTP_STATUS.OK).json({ success: true });
   } catch (err) {
     console.error('❌ Error in createInlineAddress:', err);
-    res.status(500).json({
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
       success: false,
       message: 'Something went wrong. Please try again later.'
     });
   }
 };
+
+function calculateDiscountAmount(products, quantities, offerPrices = []) {
+  let totalDiscount = 0;
+  products.forEach((product, index) => {
+    const quantity = parseInt(quantities[index]);
+    const regular = product.regularPrice;
+    const price = offerPrices[index] || product.salesPrice || regular;
+    if (regular > price) {
+      totalDiscount += (regular - price) * quantity;
+    }
+  });
+  return totalDiscount;
+}
+
 exports.retryCheckout = async (req, res) => {
   try {
     if (!req.session.user) return res.redirect('/login');
@@ -579,9 +594,11 @@ exports.retryCheckout = async (req, res) => {
     return res.redirect('/user/checkout');
   } catch (err) {
     console.error('Retry checkout error:', err);
-    res.status(500).redirect('/cart');
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).redirect('/cart');
   }
 };
+
+
 exports.retryCheckoutWithOrderId = async (req, res) => {
   try {
     const { orderId } = req.params;
