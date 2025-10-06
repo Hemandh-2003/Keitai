@@ -250,33 +250,161 @@ exports.removeAddress = async (req, res) => {
 exports.viewOrders = async (req, res) => {
   try {
     const userId = req.session.user._id;
-    const { sortBy = 'newest', page = 1 } = req.query; 
+    const { 
+      sortBy = 'newest', 
+      page = 1,
+      search = '',
+      status = '',
+      dateRange = ''
+    } = req.query;
 
-    const sortCriteria = sortBy === 'oldest' ? { createdAt: 1 } : { createdAt: -1 };
+    let filterCriteria = { user: userId };
+
+    if (search.trim()) {
+      const searchRegex = { $regex: search.trim(), $options: 'i' };
+      
+      if (/^[A-Z0-9]+$/.test(search.trim().toUpperCase())) {
+        filterCriteria.orderId = searchRegex;
+      } else {
+        const ordersWithProducts = await Order.aggregate([
+          { $match: { user: userId } },
+          { $unwind: '$products' },
+          {
+            $lookup: {
+              from: 'products',
+              localField: 'products.product',
+              foreignKey: '_id',
+              as: 'productDetails'
+            }
+          },
+          { $unwind: '$productDetails' },
+          {
+            $match: {
+              'productDetails.name': searchRegex
+            }
+          },
+          { $group: { _id: '$_id' } }
+        ]);
+        
+        const orderIds = ordersWithProducts.map(order => order._id);
+        if (orderIds.length > 0) {
+          filterCriteria._id = { $in: orderIds };
+        } else {
+          filterCriteria._id = { $in: [] };
+        }
+      }
+    }
+
+    if (status && status !== 'all') {
+      filterCriteria.status = status.toLowerCase();
+    }
+
+    if (dateRange && dateRange !== 'all') {
+      const today = new Date();
+      let startDate = new Date();
+      
+      switch(dateRange) {
+        case '7days':
+          startDate.setDate(today.getDate() - 7);
+          break;
+        case '30days':
+          startDate.setDate(today.getDate() - 30);
+          break;
+        case '3months':
+          startDate.setMonth(today.getMonth() - 3);
+          break;
+        case '6months':
+          startDate.setMonth(today.getMonth() - 6);
+          break;
+        case '1year':
+          startDate.setFullYear(today.getFullYear() - 1);
+          break;
+        default:
+          startDate = null;
+      }
+      
+      if (startDate) {
+        filterCriteria.createdAt = { 
+          $gte: startDate,
+          $lte: today 
+        };
+      }
+    }
+
+    let sortCriteria = {};
+    switch (sortBy) {
+      case 'oldest':
+        sortCriteria = { createdAt: 1 };
+        break;
+      case 'amount_high':
+        sortCriteria = { totalAmount: -1 };
+        break;
+      case 'amount_low':
+        sortCriteria = { totalAmount: 1 };
+        break;
+      case 'newest':
+      default:
+        sortCriteria = { createdAt: -1 };
+        break;
+    }
 
     const ordersPerPage = 5;
+    const skip = (parseInt(page) - 1) * ordersPerPage;
 
-    const skip = (page - 1) * ordersPerPage;
-
-    const orders = await Order.find({ user: userId })
+    const orders = await Order.find(filterCriteria)
       .sort(sortCriteria)
-      .skip(skip) 
+      .skip(skip)
       .limit(ordersPerPage)
-      .populate('products.product', 'name');
+      .populate('products.product', 'name images')
+      .lean();
 
-    const totalOrders = await Order.countDocuments({ user: userId });
-    const totalPages = Math.ceil(totalOrders / ordersPerPage); 
-console.log("console order2",orders);
+    const totalOrders = await Order.countDocuments(filterCriteria);
+    const totalPages = Math.ceil(totalOrders / ordersPerPage);
+
+    const getStatusClass = (orderStatus, returnStatus) => {
+      if (returnStatus && ['Requested', 'Approved', 'Rejected'].includes(returnStatus)) {
+        return 'status-returned';
+      }
+      switch (orderStatus?.toLowerCase()) {
+        case 'delivered': return 'status-delivered';
+        case 'pending': return 'status-pending';
+        case 'shipped': return 'status-shipped';
+        case 'cancelled': return 'status-cancelled';
+        case 'returned': return 'status-returned';
+        default: return 'status-pending';
+      }
+    };
+
+    const generatePageUrl = (pageNum) => {
+      const params = new URLSearchParams();
+      if (search) params.set('search', search);
+      if (status) params.set('status', status);
+      if (sortBy) params.set('sortBy', sortBy);
+      if (dateRange) params.set('dateRange', dateRange);
+      params.set('page', pageNum);
+      return `/user/orders?${params.toString()}`;
+    };
+
     res.render('user/UserOrder', { 
       orders, 
       sortBy, 
-      currentPage: page, 
-      totalPages 
+      currentPage: parseInt(page), 
+      totalPages,
+      searchQuery: search,
+      statusFilter: status,
+      dateRange,
+      getStatusClass,
+      generatePageUrl,
+      hasFilters: !!(search || status || dateRange),
+      totalOrders
     });
 
   } catch (err) {
     console.error('Error fetching orders:', err);
-    res.status(500).send('Server error');
+    res.status(500).render('error', { 
+      message: 'Error loading orders',
+      error: process.env.NODE_ENV === 'development' ? err : {}
+    });
   }
 };
 
