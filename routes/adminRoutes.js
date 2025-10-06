@@ -111,7 +111,7 @@ router.get('/offers/delete/:id', isAdmin, adminController.deleteOffer);
 //Coupons management Routes
 router.get('/coupons', isAdmin,adminController.getCoupons);
 router.post('/coupons/create', isAdmin,adminController.createCoupon);
-router.post('/coupons/edit/:id', isAdmin, adminController.editCoupon);
+router.post('/coupons/edit/:id', isAdmin, couponController.editCoupon);
 router.post('/coupons/delete/:id', isAdmin,adminController.deleteCoupon);
 
 // Sales Report Routes
