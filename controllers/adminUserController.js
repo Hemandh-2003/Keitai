@@ -1,6 +1,7 @@
 const User = require('../models/User');
 const { HTTP_STATUS }= require('../SM/status');
 // User management
+// User management
 exports.listUsers = async (req, res) => {
   try {
     const sortBy = req.query.sort || 'all';
@@ -49,11 +50,10 @@ exports.listUsers = async (req, res) => {
     });
   } catch (error) {
     console.error('Error listing users:', error);
-    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).send('Error listing users');
+    res.status(500).send('Error listing users');
   }
 };
 
-// User Block/Unblock
 exports.blockUser = async (req, res) => {
   try {
     
@@ -67,9 +67,10 @@ exports.blockUser = async (req, res) => {
     res.redirect('/admin/users');
   } catch (error) {
     console.error('Error blocking user:', error);
-    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).send('Error blocking user');
+    res.status(500).send('Error blocking user');
   }
 };
+
 
 exports.unblockUser = async (req, res) => {
   try {
@@ -84,7 +85,6 @@ exports.unblockUser = async (req, res) => {
     res.redirect('/admin/users');
   } catch (error) {
     console.error('Error unblocking user:', error);
-    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).send('Error unblocking user');
+    res.status(500).send('Error unblocking user');
   }
 };
-
