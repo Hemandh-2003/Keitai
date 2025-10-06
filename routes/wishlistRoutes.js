@@ -5,7 +5,7 @@ const { isLoggedIn } = require('../middleware/authMiddleware');
 const checkBlockedUser = require('../middleware/checkBlocked');
 
 const protect = [isLoggedIn, checkBlockedUser];
-// Wishlist 
+
 router.post('/add', ...protect, wishlistController.addToWishlist);
 router.delete('/remove/:productId', ...protect, wishlistController.removeFromWishlist);
 router.get('/', ...protect, wishlistController.viewWishlist);

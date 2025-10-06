@@ -64,7 +64,7 @@ exports.listOrders = async (req, res) => {
     });
   } catch (error) {
     console.error('Error listing orders:', error.message);
-    res.status(500).send('Error retrieving orders');
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).send('Error retrieving orders');
   }
 };
 
@@ -82,13 +82,13 @@ exports.changeOrderStatus = async (req, res) => {
     );
 
     if (!order) {
-      return res.status(404).json({ success: false, message: 'Order not found' });
+      return res.status(HTTP_STATUS.NOT_FOUND).json({ success: false, message: 'Order not found' });
     }
 
     res.redirect('/admin/orders');
   } catch (error) {
     console.error('Error changing order status:', error);
-    res.status(500).send('Error changing order status');
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).send('Error changing order status');
   }
 };
 
@@ -98,14 +98,14 @@ exports.updateReturnStatus = async (req, res) => {
     const { action } = req.body;
 
     if (!['Approved', 'Rejected'].includes(action)) {
-      return res.status(400).send('Invalid action');
+      return res.status(HTTP_STATUS.BAD_REQUEST).send('Invalid action');
     }
 
     const order = await Order.findById(orderId).populate('user');
 //console.log('Order:', order);
 
 if (!order || order.returnStatus !== 'Requested') {
-  return res.status(400).send('Invalid return request');
+  return res.status(HTTP_STATUS.BAD_REQUEST).send('Invalid return request');
 }
 
 order.returnStatus = action;
@@ -163,7 +163,7 @@ order.statusHistory.push({
     res.redirect('/admin/orders?sort=return-requested');
   } catch (error) {
     console.error('Error updating return status:', error);
-    res.status(500).send('Server error');
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).send('Server error');
   }
 };
 
@@ -175,8 +175,7 @@ exports.cancelOrder = async (req, res) => {
     const { orderId } = req.params;
 
     const order = await Order.findOne({ orderId }).populate('products.product').exec();
-    if (!order) return res.status(404).json({ error: 'Order not found' });
-
+    if (!order) return res.status(HTTP_STATUS.NOT_FOUND).json({ error: 'Order not found' });
     order.status = 'Cancelled';
     await order.save();
 
@@ -203,10 +202,9 @@ exports.cancelOrder = async (req, res) => {
     res.redirect('/admin/orders');
   } catch (error) {
     console.error('Error canceling order:', error);
-    res.status(500).send('Server error');
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).send('Server error');
   }
 };
-
 exports.adminCancelOrder = async (req, res) => {
   try {
     const { orderId } = req.params;
@@ -215,7 +213,7 @@ exports.adminCancelOrder = async (req, res) => {
     const order = await Order.findOne({ orderId }).populate('products.product');
     
     if (!order) {
-      return res.status(404).send('Order not found');
+      return res.status(HTTP_STATUS.NOT_FOUND).send('Order not found');
     }
 
     order.status = 'Cancelled';
@@ -231,6 +229,6 @@ exports.adminCancelOrder = async (req, res) => {
     res.redirect(`/admin/orders/${order.orderId}`);
   } catch (err) {
     console.error(err);
-    res.status(500).send('Cancellation failed');
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).send('Cancellation failed');
   }
 };

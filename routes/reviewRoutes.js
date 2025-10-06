@@ -3,7 +3,7 @@ const router = express.Router();
 const reviewController = require('../controllers/reviewController');
 const { isLoggedIn } = require('../middleware/authMiddleware');
 const checkBlockedUser = require('../middleware/checkBlocked');
-const { getProductDetailsWithRelated } = require('../controllers/adminController');
+const { getProductDetailsWithRelated } = require('../controllers/productController');
 const { isAdmin } = require('../middleware/adminMiddleware');
 const multer = require('multer');
 

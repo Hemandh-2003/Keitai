@@ -3,22 +3,7 @@ const User = require('../models/User');
 const Order = require('../models/Order');
 const Cart = require('../models/Cart');
 const Coupon = require('../models/Coupon');
-const { HTTP_STATUS } = require('../SM/status');
-
-// Helper function to calculate discount amount
-function calculateDiscountAmount(products, quantities, offerPrices = []) {
-  let totalDiscount = 0;
-  products.forEach((product, index) => {
-    const quantity = parseInt(quantities[index]);
-    const regular = product.regularPrice;
-    const price = offerPrices[index] || product.salesPrice || regular;
-    if (regular > price) {
-      totalDiscount += (regular - price) * quantity;
-    }
-  });
-  return totalDiscount;
-}
-
+const {HTTP_STATUS}= require('../SM/status');
 exports.getCheckout = async (req, res) => {
   try {
     if (!req.session.user) return res.redirect('/login');
@@ -33,15 +18,16 @@ exports.getCheckout = async (req, res) => {
         return res.status(HTTP_STATUS.NOT_FOUND).render('user/error', { message: 'Retry order not found' });
       }
 
-      checkout = {
-        productIds: retryOrder.products.map(p => p.product._id.toString()),
-        quantities: retryOrder.products.map(p => p.quantity),
-        offerPrices: retryOrder.products.map(p => p.unitPrice),
-        totalAmount: retryOrder.totalAmount,
-        orderId: retryOrder._id.toString(),
-        isRetry: true
-      };
-      req.session.checkout = checkout;
+     checkout = {
+  productIds: retryOrder.products.map(p => p.product._id.toString()),
+  quantities: retryOrder.products.map(p => p.quantity),
+  offerPrices: retryOrder.products.map(p => p.unitPrice),  
+  totalAmount: retryOrder.totalAmount,
+  orderId: retryOrder._id.toString(),   
+  isRetry: true
+};
+req.session.checkout = checkout;
+
     }
 
     if (!checkout || !checkout.productIds?.length) {
@@ -53,8 +39,6 @@ exports.getCheckout = async (req, res) => {
 
     for (let i = 0; i < productIds.length; i++) {
       const product = await Product.findById(productIds[i]);
-      if (!product) continue;
-      
       const offerDetails = await product.getBestOfferPrice();
       cart.push({ product, quantity: quantities[i], offerDetails });
     }
@@ -159,34 +143,38 @@ exports.checkout = async (req, res) => {
     } else {
       return res.redirect('/cart');
     }
+if (!user.addresses || user.addresses.length === 0) {
+  req.session.checkout = sessionCheckout;
+  return res.redirect('/user/checkout'); 
+}
 
-    if (!user.addresses || user.addresses.length === 0) {
-      req.session.checkout = sessionCheckout;
-      return res.redirect('/user/checkout'); 
-    }
 
-    if (!req.session.retryOrderId) {
-      const order = new Order({
-        user: req.session.user._id,
-        products: sessionCheckout.productIds.map((pid, index) => ({
-          product: pid,
-          quantity: sessionCheckout.quantities[index],
-          unitPrice: sessionCheckout.offerPrices[index]
-        })),
-        totalAmount: sessionCheckout.totalAmount,
-        selectedAddress: user.addresses[0]?._id,
-        paymentMethod: "Online",
-        estimatedDelivery: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-        status: "Pending"
-      });
-      await order.save();
 
-      req.session.checkout = { ...sessionCheckout, orderId: order._id.toString() };
-    } else {
-      req.session.checkout = { ...sessionCheckout, orderId: req.session.retryOrderId.toString(), isRetry: true };
-    }
+//  console.log("Order created with ID:(chekout)", order._id);
+if (!req.session.retryOrderId) {
+  const order = new Order({
+    user: req.session.user._id,
+    products: sessionCheckout.productIds.map((pid, index) => ({
+      product: pid,
+      quantity: sessionCheckout.quantities[index],
+      unitPrice: sessionCheckout.offerPrices[index]
+    })),
+    totalAmount: sessionCheckout.totalAmount,
+    selectedAddress: user.addresses[0]?._id,
+    paymentMethod: "Online",
+    estimatedDelivery: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+    status: "Pending"
+  });
+  await order.save();
 
-    return res.redirect('/user/checkout');
+  req.session.checkout = { ...sessionCheckout, orderId: order._id.toString() };
+} else {
+  req.session.checkout = { ...sessionCheckout, orderId: req.session.retryOrderId.toString(), isRetry: true };
+}
+
+return res.redirect('/user/checkout');
+
+//return res.redirect('/user/checkout');
 
   } catch (err) {
     console.error('Checkout POST error:', err);
@@ -277,6 +265,7 @@ exports.placeOrder = async (req, res) => {
       }));
 
       await createdOrder.save();
+
       req.session.retryOrderId = null;
 
     } else {
@@ -315,18 +304,19 @@ exports.placeOrder = async (req, res) => {
       }
 
       for (let i = 0; i < products.length; i++) {
-        const quantityOrder = parseInt(quantities[i]);
+  const quantityOrder = parseInt(quantities[i]);
 
-        const updatedProduct = await Product.findOneAndUpdate(
-          { _id: products[i]._id, quantity: { $gte: quantityOrder } },
-          { $inc: { quantity: -quantityOrder } },
-          { new: true }
-        );
+  const updatedProduct = await Product.findOneAndUpdate(
+    { _id: products[i]._id, quantity: { $gte: quantityOrder } },
+    { $inc: { quantity: -quantityOrder } },
+    { new: true }
+  );
 
-        if (!updatedProduct) {
-          throw new Error(`Insufficient stock for product ${products[i].name}`);
-        }
-      }
+  if (!updatedProduct) {
+    throw new Error(`Insufficient stock for product ${products[i].name}`);
+  }
+}
+
 
       await Cart.updateOne(
         { user: req.session.user._id },
@@ -334,7 +324,6 @@ exports.placeOrder = async (req, res) => {
       );
     }
 
-    // Set session data for confirmation page
     req.session.orderItems = orderItems;
     req.session.address = address;
     req.session.paymentMethod = paymentMethod;
@@ -344,9 +333,6 @@ exports.placeOrder = async (req, res) => {
     req.session.couponDiscount = couponDiscount;
     req.session.orderId = createdOrder._id;
     req.session.paymentVerified = paymentMethod === "Wallet";
-
-    // Clear checkout session to prevent reuse
-    delete req.session.checkout;
 
     res.render("user/order-confirmation", {
       orderItems,
@@ -370,15 +356,14 @@ exports.placeOrder = async (req, res) => {
 
 exports.confirmPayment = async (req, res) => {
   try {
-    // Clear any existing orderId to prevent redirect loops
-    if (req.session.orderId) {
-      delete req.session.orderId;
-    }
-
     const checkoutData = req.session.checkout;
     const { selectedAddress, paymentMethod } = req.body;
 
-    if (!checkoutData || !Array.isArray(checkoutData.productIds)) {
+    if (
+      !checkoutData ||
+      !Array.isArray(checkoutData.productIds) ||
+      !Array.isArray(checkoutData.quantities)
+    ) {
       return res.status(HTTP_STATUS.BAD_REQUEST).send('Checkout session missing or invalid.');
     }
 
@@ -394,7 +379,9 @@ exports.confirmPayment = async (req, res) => {
     if (products.length !== productIds.length) {
       return res.status(HTTP_STATUS.NOT_FOUND).send('One or more products not found');
     }
-
+    if (req.session.orderId) {
+  return res.redirect('/user/confirm-payment'); 
+}
     let totalAmount = 0;
     const orderItems = [];
 
@@ -403,7 +390,7 @@ exports.confirmPayment = async (req, res) => {
       const quantity = parseInt(quantities[i], 10);
 
       if (quantity > product.quantity) {
-        throw new Error(`Insufficient stock for product: ${product.name}`);
+       throw new Error(`Insufficient stock for product: ${product.name}`);
       }
 
       const price = offerPrices ? parseFloat(offerPrices[i]) : (product.salesPrice || product.regularPrice);
@@ -456,7 +443,6 @@ exports.confirmPayment = async (req, res) => {
 
     await newOrder.save();
 
-    // Set session data for confirmation page
     req.session.orderItems = orderItems;
     req.session.address = address;
     req.session.paymentMethod = paymentMethod;
@@ -464,10 +450,6 @@ exports.confirmPayment = async (req, res) => {
     req.session.deliveryCharge = deliveryCharge;
     req.session.arrivalDate = estimatedDate;
     req.session.couponDiscount = couponDiscount;
-    req.session.orderId = newOrder._id;
-
-    // Clear checkout session
-    delete req.session.checkout;
 
     res.redirect('/user/confirm-payment');
   } catch (err) {
@@ -478,14 +460,6 @@ exports.confirmPayment = async (req, res) => {
 
 exports.renderConfirmPayment = async (req, res) => {
   try {
-    console.log('Session data for confirmation:', {
-      hasOrderItems: !!req.session.orderItems,
-      hasAddress: !!req.session.address,
-      hasPaymentMethod: !!req.session.paymentMethod,
-      totalAmount: req.session.totalAmount,
-      arrivalDate: req.session.arrivalDate
-    });
-
     const {
       orderItems,
       address,
@@ -496,24 +470,19 @@ exports.renderConfirmPayment = async (req, res) => {
       couponDiscount
     } = req.session;
 
-    // Better validation with fallbacks
-    if (!orderItems || !address || !paymentMethod || totalAmount === undefined) {
-      console.error('Missing required session data for confirmation');
-      return res.redirect('/user/checkout');
+    if (!orderItems || !address || !paymentMethod || !totalAmount || !arrivalDate) {
+      return res.status(HTTP_STATUS.BAD_REQUEST).send('Missing order details.');
     }
 
     const finalTotalAmount = totalAmount;
-    const estimatedDate = arrivalDate ? new Date(arrivalDate) : new Date(Date.now() + 6 * 24 * 60 * 60 * 1000);
 
     let relatedProducts = [];
-    if (orderItems && orderItems.length > 0) {
-      const categories = orderItems.map(item => item.product?.category).filter(Boolean);
-      if (categories.length > 0) {
-        relatedProducts = await Product.find({
-          category: { $in: categories },
-          _id: { $nin: orderItems.map(item => item.product?._id).filter(Boolean) },
-        }).limit(6);
-      }
+    if (orderItems.length > 0) {
+      const categories = orderItems.map(item => item.product.category);
+      relatedProducts = await Product.find({
+        category: { $in: categories },
+        _id: { $nin: orderItems.map(item => item.product._id) },
+      }).limit(6);
     }
 
     res.render('user/confirm-payment', {
@@ -521,15 +490,14 @@ exports.renderConfirmPayment = async (req, res) => {
       address,
       paymentMethod,
       totalAmount: finalTotalAmount,
-      deliveryCharge: deliveryCharge || 0,
-      arrivalDate: estimatedDate,
+      deliveryCharge,
+      arrivalDate: new Date(arrivalDate),
       relatedProducts,
-      couponDiscount: couponDiscount || 0
+      couponDiscount 
     });
-
   } catch (err) {
     console.error('Error rendering confirmation page:', err.message);
-    res.redirect('/user/checkout');
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).send(err.message || 'Internal Server Error');
   }
 };
 
@@ -576,6 +544,19 @@ exports.createInlineAddress = async (req, res) => {
   }
 };
 
+function calculateDiscountAmount(products, quantities, offerPrices = []) {
+  let totalDiscount = 0;
+  products.forEach((product, index) => {
+    const quantity = parseInt(quantities[index]);
+    const regular = product.regularPrice;
+    const price = offerPrices[index] || product.salesPrice || regular;
+    if (regular > price) {
+      totalDiscount += (regular - price) * quantity;
+    }
+  });
+  return totalDiscount;
+}
+
 exports.retryCheckout = async (req, res) => {
   try {
     if (!req.session.user) return res.redirect('/login');
@@ -605,19 +586,18 @@ exports.retryCheckout = async (req, res) => {
 
       sessionCheckout.productIds.push(product._id.toString());
       sessionCheckout.quantities.push(item.quantity);
-      sessionCheckout.offerPrices.push(item.unitPrice || item.price);
-      sessionCheckout.totalAmount += item.quantity * (item.unitPrice || item.price);
+      sessionCheckout.offerPrices.push(item.price); 
+      sessionCheckout.totalAmount += item.quantity * item.price;
     }
 
     req.session.checkout = sessionCheckout;
-    req.session.retryOrderId = lastOrder._id;
-    
     return res.redirect('/user/checkout');
   } catch (err) {
     console.error('Retry checkout error:', err);
     res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).redirect('/cart');
   }
 };
+
 
 exports.retryCheckoutWithOrderId = async (req, res) => {
   try {
@@ -629,22 +609,21 @@ exports.retryCheckoutWithOrderId = async (req, res) => {
     const order = await Order.findOne({ _id: orderId, user: userId })
       .populate('products.product');
 
-    if (!order) {
+    if (!order || order.paymentStatus !== 'failed') {
       return res.redirect('/user/orders');
     }
 
     const sessionCheckout = {
       productIds: order.products.map(p => p.product._id.toString()),
       quantities: order.products.map(p => p.quantity),
-      offerPrices: order.products.map(p => p.unitPrice || p.price),
+      offerPrices: order.products.map(p => p.price),
       totalAmount: order.totalAmount,
       isFromCart: false,
-      addressId: order.selectedAddress || null
+      addressId: order.address?._id || null,
+      couponId: order.coupon?._id || null
     };
 
     req.session.checkout = sessionCheckout;
-    req.session.retryOrderId = order._id;
-    
     return res.redirect('/user/checkout');
   } catch (err) {
     console.error('Error retrying checkout with orderId:', err);

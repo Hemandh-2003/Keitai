@@ -7,9 +7,10 @@ exports.loadCategories = async (req, res) => {
     res.render('admin/categories', { categories, error: null }); 
   } catch (error) {
     console.error('Error loading categories:', error);
-    res.status(500).send('Server Error');
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).send('Server Error');
   }
 };
+
 
 // Add a new category
 exports.addCategory = async (req, res) => {
@@ -58,6 +59,7 @@ exports.addCategory = async (req, res) => {
   }
 };
 
+
 // Delete a category
 exports.deleteCategory = async (req, res) => {
   try {
@@ -67,7 +69,7 @@ exports.deleteCategory = async (req, res) => {
     res.redirect('/admin/categories');
   } catch (error) {
     console.error('Error deleting category:', error);
-    res.status(500).send('Server Error');
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).send('Server Error');
   }
 };
 
@@ -77,10 +79,10 @@ exports.loadEditCategory = async (req, res) => {
     const { id } = req.params;
     const category = await Category.findById(id);
 
-    res.status(200).render('admin/edit-category', { category });
+    res.status(HTTP_STATUS.OK).render('admin/edit-category', { category });
   } catch (error) {
     console.error('Error loading edit page:', error);
-    res.status(500).send('Server Error');
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).send('Server Error');
   }
 };
 
@@ -94,7 +96,7 @@ exports.editCategory = async (req, res) => {
     
     const existingCategory = await Category.findOne({ slug });
     if (existingCategory && existingCategory._id.toString() !== id) {
-      return res.status(400).render('admin/edit-category', {
+      return res.status(HTTP_STATUS.BAD_REQUEST).render('admin/edit-category', {
         errorMessage: 'Category name already exists.',
         category: { name }  
       });
@@ -106,6 +108,6 @@ exports.editCategory = async (req, res) => {
     res.redirect('/admin/categories');
   } catch (error) {
     console.error('Error editing category:', error);
-    res.status(500).send('Server Error');
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).send('Server Error');
   }
 };
