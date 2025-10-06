@@ -5,74 +5,79 @@ const {HTTP_STATUS}= require('../SM/status');
 
 exports.initiatePayment = async (req, res) => {
   try {
-    const { orderId } = req.params;
-    const order = await Order.findOne({ orderId });
+    const { amount, receipt } = req.body;
 
-    if (!order || isNaN(order.totalAmount)) {
-      console.error('❌ Invalid order or total amount:', order?.totalAmount);
-      return res.status(400).send('Invalid order');
-    }
+    if (!amount) return res.status(HTTP_STATUS.BAD_REQUEST).json({ error: 'Missing amount' });
 
-    const amountInPaise = Math.round(parseFloat(order.totalAmount) * 100);
+    const amountInPaise = Math.round(parseFloat(amount) * 100);
+    //console.log("Amount received (₹):", amount, "➡️ in paise:", amountInPaise);//Debug
 
     const options = {
       amount: amountInPaise,
       currency: 'INR',
-      receipt: order.orderId,
+      receipt: receipt || 'receipt_' + Date.now(),
+      payment_capture: 1
     };
 
-   // console.log("📦 Razorpay Options:", options);
-
     const razorpayOrder = await razorpay.orders.create(options);
-    
-
-    order.paymentMethod = 'Online';
-    order.razorpayOrderId = razorpayOrder.id;
-    order.amount=razorpayOrder.amount;
-    await order.save();
-    //console.log(razorpayOrder)
 
     res.json({
+      success: true,
       id: razorpayOrder.id,
       currency: razorpayOrder.currency,
-      amount: razorpayOrder.amount,
-      order_id: order.orderId
+      amount: razorpayOrder.amount
     });
 
   } catch (err) {
-    console.error('❌ Razorpay creation failed:', err.message || err);
-    res.status(500).send('Payment initiation failed');
+    console.error('Payment initiation failed:', err.message);
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ error: 'Payment initiation failed' });
   }
 };
 
 
 exports.verifyPayment = async (req, res) => {
   try {
-    const { razorpay_payment_id, razorpay_order_id, razorpay_signature } = req.body;
-    const order = await Order.findOne({ razorpayOrderId: razorpay_order_id });
+    const {
+      razorpay_payment_id,
+      razorpay_order_id,
+      razorpay_signature
+    } = req.body;
 
-    if (!order) {
-      return res.status(400).send('Invalid Order ID');
+    const body = razorpay_order_id + "|" + razorpay_payment_id;
+
+    const expectedSignature = crypto
+      .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET)
+      .update(body)
+      .digest("hex");
+
+    if (expectedSignature !== razorpay_signature) {
+      return res.status(HTTP_STATUS.BAD_REQUEST).send("Payment verification failed");
     }
 
-    const generatedSignature = crypto
-      .createHmac('sha256', process.env.RAZORPAY_KEY_SECRET)
-      .update(razorpay_order_id + "|" + razorpay_payment_id)
-      .digest('hex');
+    const order = await Order.findOne({ razorpayOrderId: razorpay_order_id }).populate('products.product');
 
-    if (generatedSignature !== razorpay_signature) {
-      return res.status(400).send('Payment verification failed');
-    }
+    if (!order) return res.status(HTTP_STATUS.NOT_FOUND).send("Order not found");
 
     order.paymentStatus = 'Paid';
+    order.status = 'Placed';
     order.razorpayPaymentId = razorpay_payment_id;
-    order.status = 'Pending'; 
     await order.save();
 
-    res.redirect(`/payment/success/${order.orderId}`);
+    res.render('user/payment-success', {
+      paymentMethod: 'Razorpay',
+      paymentVerified: true,
+      orderId: order.orderId,
+      orderItems: order.products,
+      address: order.selectedAddress,
+      totalAmount: order.totalAmount,
+      deliveryCharge: order.deliveryCharge,
+      estimatedDate: order.estimatedDelivery,
+      checkoutUrl: '/user/checkout'
+    });
+
   } catch (err) {
-    console.error(err);
-    res.redirect('/payment/failed');
+    console.error('Payment verification error:', err.message);
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).send('Internal Server Error during verification');
   }
 };
 

@@ -482,7 +482,78 @@ exports.viewProductDetails = async (req, res) => {
 };
 
 // Payment Integration with Razorpay
+exports.initiatePayment = async (req, res) => {
+  try {
+    const { orderId } = req.params;
+    const order = await Order.findOne({ orderId });
 
+    if (!order || isNaN(order.totalAmount)) {
+      console.error('❌ Invalid order or total amount:', order?.totalAmount);
+      return res.status(400).send('Invalid order');
+    }
+
+    const amountInPaise = Math.round(parseFloat(order.totalAmount) * 100);
+
+    const options = {
+      amount: amountInPaise,
+      currency: 'INR',
+      receipt: order.orderId,
+    };
+
+   // console.log("📦 Razorpay Options:", options);
+
+    const razorpayOrder = await razorpay.orders.create(options);
+    
+
+    order.paymentMethod = 'Online';
+    order.razorpayOrderId = razorpayOrder.id;
+    order.amount=razorpayOrder.amount;
+    await order.save();
+    //console.log(razorpayOrder)
+
+    res.json({
+      id: razorpayOrder.id,
+      currency: razorpayOrder.currency,
+      amount: razorpayOrder.amount,
+      order_id: order.orderId
+    });
+
+  } catch (err) {
+    console.error('❌ Razorpay creation failed:', err.message || err);
+    res.status(500).send('Payment initiation failed');
+  }
+};
+
+
+exports.verifyPayment = async (req, res) => {
+  try {
+    const { razorpay_payment_id, razorpay_order_id, razorpay_signature } = req.body;
+    const order = await Order.findOne({ razorpayOrderId: razorpay_order_id });
+
+    if (!order) {
+      return res.status(400).send('Invalid Order ID');
+    }
+
+    const generatedSignature = crypto
+      .createHmac('sha256', process.env.RAZORPAY_KEY_SECRET)
+      .update(razorpay_order_id + "|" + razorpay_payment_id)
+      .digest('hex');
+
+    if (generatedSignature !== razorpay_signature) {
+      return res.status(400).send('Payment verification failed');
+    }
+
+    order.paymentStatus = 'Paid';
+    order.razorpayPaymentId = razorpay_payment_id;
+    order.status = 'Pending'; 
+    await order.save();
+
+    res.redirect(`/payment/success/${order.orderId}`);
+  } catch (err) {
+    console.error(err);
+    res.redirect('/payment/failed');
+  }
+};
 
 exports.viewOrderDetails = async (req, res) => {
   try {
