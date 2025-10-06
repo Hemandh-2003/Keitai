@@ -24,7 +24,7 @@ getProductDetailsWithRelated ,
 } = require('../controllers/adminController');
 const { isAdmin } = require('../middleware/adminMiddleware');
 const checkBlockedUser = require('../middleware/checkBlocked');
-const couponController= reqiure('../controllers/couponController.js')
+const couponController= require('../controllers/couponController.js')
 const multer = require('multer');
 const path = require('path');
 const adminController = require('../controllers/adminController');
