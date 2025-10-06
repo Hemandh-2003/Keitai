@@ -1509,6 +1509,70 @@ exports.createCoupon = async (req, res) => {
   }
 };
 
+// Edit coupon
+exports.editCoupon = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { code, discountType, discount, minPurchase, maxDiscount, startDate, endDate } = req.body;
+
+    const trimmedCode = code.trim().toUpperCase();
+
+    const existingCoupon = await Coupon.findOne({ code: trimmedCode, _id: { $ne: id } });
+    if (existingCoupon) {
+      req.flash('error', 'Coupon code already exists.');
+      return res.redirect('/admin/coupons');
+    }
+
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    if (start > end) {
+      req.flash('error', 'Start date must be before end date.');
+      return res.redirect('/admin/coupons');
+    }
+
+    const parsedDiscount = parseFloat(discount);
+    const parsedMinPurchase = parseFloat(minPurchase) || 0;
+    const parsedMaxDiscount = parseFloat(maxDiscount) || 0;
+
+    if (discountType === 'percentage') {
+      if (parsedDiscount < 1 || parsedDiscount > 90) {
+        req.flash('error', 'Percentage discount must be between 1% and 90%.');
+        return res.redirect('/admin/coupons');
+      }
+      if (parsedMaxDiscount < 2500) {
+        req.flash('error', 'Maximum discount must be at least ₹2500.');
+        return res.redirect('/admin/coupons');
+      }
+    } else if (discountType === 'fixed') {
+      if (parsedDiscount < 2000 || parsedDiscount > 50000) {
+        req.flash('error', 'Fixed discount must be between ₹2000 and ₹50,000.');
+        return res.redirect('/admin/coupons');
+      }
+    }
+
+    if (parsedMinPurchase < 2000) {
+      req.flash('error', 'Minimum purchase must be at least ₹2000.');
+      return res.redirect('/admin/coupons');
+    }
+
+    await Coupon.findByIdAndUpdate(id, {
+      code: trimmedCode,
+      discountType,
+      discount: parsedDiscount,
+      minPurchase: parsedMinPurchase,
+      maxDiscount: parsedMaxDiscount,
+      startDate: start,
+      endDate: end
+    });
+
+    req.flash('success', 'Coupon updated successfully!');
+    res.redirect('/admin/coupons');
+  } catch (err) {
+    console.error('Error editing coupon:', err);
+    req.flash('error', 'Failed to update coupon. Please try again.');
+    res.redirect('/admin/coupons');
+  }
+};
 
 // Delete coupon
 exports.deleteCoupon = async (req, res) => {
