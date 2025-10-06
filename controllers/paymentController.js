@@ -1,15 +1,16 @@
 const razorpay = require('../config/razorpay');
 const Order = require('../models/Order');
 const crypto = require('crypto');
+const {HTTP_STATUS}= require('../SM/status');
 
 exports.initiatePayment = async (req, res) => {
   try {
     const { amount, receipt } = req.body;
 
-    if (!amount) return res.status(400).json({ error: 'Missing amount' });
+    if (!amount) return res.status(HTTP_STATUS.BAD_REQUEST).json({ error: 'Missing amount' });
 
     const amountInPaise = Math.round(parseFloat(amount) * 100);
-    //console.log("Amount received (₹):", amount, "➡️ in paise:", amountInPaise);
+    //console.log("Amount received (₹):", amount, "➡️ in paise:", amountInPaise);//Debug
 
     const options = {
       amount: amountInPaise,
@@ -29,7 +30,7 @@ exports.initiatePayment = async (req, res) => {
 
   } catch (err) {
     console.error('Payment initiation failed:', err.message);
-    res.status(500).json({ error: 'Payment initiation failed' });
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ error: 'Payment initiation failed' });
   }
 };
 
@@ -50,20 +51,18 @@ exports.verifyPayment = async (req, res) => {
       .digest("hex");
 
     if (expectedSignature !== razorpay_signature) {
-      return res.status(400).send("Payment verification failed");
+      return res.status(HTTP_STATUS.BAD_REQUEST).send("Payment verification failed");
     }
 
-    // ✅ Update Order in DB
     const order = await Order.findOne({ razorpayOrderId: razorpay_order_id }).populate('products.product');
 
-    if (!order) return res.status(404).send("Order not found");
+    if (!order) return res.status(HTTP_STATUS.NOT_FOUND).send("Order not found");
 
     order.paymentStatus = 'Paid';
     order.status = 'Placed';
     order.razorpayPaymentId = razorpay_payment_id;
     await order.save();
 
-    // ✅ Render success page
     res.render('user/payment-success', {
       paymentMethod: 'Razorpay',
       paymentVerified: true,
@@ -78,7 +77,7 @@ exports.verifyPayment = async (req, res) => {
 
   } catch (err) {
     console.error('Payment verification error:', err.message);
-    res.status(500).send('Internal Server Error during verification');
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).send('Internal Server Error during verification');
   }
 };
 
@@ -107,7 +106,7 @@ exports.paymentFailed = async (req, res) => {
 
   } catch (err) {
     console.error('Payment failure handling error:', err.message);
-    res.status(500).send('Internal Server Error during payment failure handling');
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).send('Internal Server Error during payment failure handling');
   }
 };
 
@@ -136,11 +135,10 @@ exports.retryPayment = async (req, res) => {
   const { orderId } = req.params;
 
   try {
-    // Optionally check order status, user permissions, etc.
     res.redirect(`/checkout?orderId=${orderId}`);
   } catch (err) {
     console.error('Error in retryPayment:', err);
-    res.status(500).send('Something went wrong');
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).send('Something went wrong');
   }
 };
 exports.retryPaymentFromOrder = async (req, res) => {
@@ -155,11 +153,11 @@ exports.retryPaymentFromOrder = async (req, res) => {
     const order = await Order.findOne({ _id: orderId, user: user._id }).populate('products.product');
 
     if (!order) {
-      return res.status(404).send('Order not found');
+      return res.status(HTTP_STATUS.NOT_FOUND).send('Order not found');
     }
 
     if (order.status !== 'Payment Failed' && order.status !== 'Pending') {
-      return res.status(400).send('Payment retry is not allowed for this order');
+      return res.status(HTTP_STATUS.BAD_REQUEST).send('Payment retry is not allowed for this order');
     }
 
     req.session.retryOrder = {
@@ -174,11 +172,10 @@ exports.retryPaymentFromOrder = async (req, res) => {
       paymentMethod: order.paymentMethod
     };
 
-    // ✅ Redirect to checkout
     res.redirect('/user/checkout');
 
   } catch (err) {
     console.error('Error in retryPaymentFromOrder:', err);
-    res.status(500).send('Server error during payment retry');
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).send('Server error during payment retry');
   }
 };

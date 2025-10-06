@@ -1,7 +1,7 @@
 const Wishlist = require('../models/Wishlist');
 const Product = require('../models/Product');
 const User = require('../models/User');
-
+const {HTTP_STATUS}= require('../SM/status');
 // Add product to wishlist
 exports.addToWishlist = async (req, res) => {
   try {
@@ -9,7 +9,7 @@ exports.addToWishlist = async (req, res) => {
     const userId = req.user?._id;
 
     if (!userId) {
-      return res.status(401).json({
+      return res.status(HTTP_STATUS.UNAUTHORIZED).json({
         success: false,
         message: 'Unauthorized access'
       });
@@ -18,15 +18,14 @@ exports.addToWishlist = async (req, res) => {
     const product = await Product.findById(productId);
 
     if (!product || product.isDeleted || product.isBlocked) {
-      return res.status(404).json({
+      return res.status(HTTP_STATUS.NOT_FOUND).json({
         success: false,
         message: 'Product not found or unavailable'
       });
     }
 
-    // 🚨 Block out-of-stock products
     if (product.stock <= 0) {
-      return res.status(400).json({
+      return res.status(HTTP_STATUS.BAD_REQUEST).json({
         success: false,
         message: 'Product is out of stock and cannot be added to wishlist'
       });
@@ -38,7 +37,7 @@ exports.addToWishlist = async (req, res) => {
       const alreadyExists = wishlist.products.includes(productId);
 
       if (alreadyExists) {
-        return res.status(409).json({
+        return res.status(HTTP_STATUS.CONFLICT).json({
           success: false,
           message: 'Already in wishlist',
           wishlist: wishlist.products
@@ -56,14 +55,14 @@ exports.addToWishlist = async (req, res) => {
 
     await wishlist.populate('products');
 
-    return res.status(200).json({
+    return res.status(HTTP_STATUS.OK).json({
       success: true,
       message: 'Product added to wishlist!',
       wishlist: wishlist.products
     });
   } catch (err) {
     console.error('❌ Error adding to wishlist:', err);
-    return res.status(500).json({
+    return res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
       success: false,
       message: 'Server error'
     });
@@ -78,7 +77,7 @@ exports.removeFromWishlist = async (req, res) => {
     const { productId } = req.params;
     const userId = req.user?._id;
 
-    if (!userId) return res.status(401).send({ message: 'Unauthorized access' });
+    if (!userId) return res.status(HTTP_STATUS.UNAUTHORIZED).send({ message: 'Unauthorized access' });
 
     const wishlist = await Wishlist.findOneAndUpdate(
       { user: userId },
@@ -87,13 +86,13 @@ exports.removeFromWishlist = async (req, res) => {
     ).populate('products');
 
     if (!wishlist) {
-      return res.status(404).json({ message: 'Wishlist not found' });
+      return res.status(HTTP_STATUS.NOT_FOUND).json({ message: 'Wishlist not found' });
     }
 
-    res.status(200).json({ message: 'Product removed from wishlist', wishlist: wishlist.products });
+    res.status(HTTP_STATUS.OK).json({ message: 'Product removed from wishlist', wishlist: wishlist.products });
   } catch (err) {
     console.error('Error removing from wishlist:', err);
-    res.status(500).json({ message: 'Server error' });
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ message: 'Server error' });
   }
 };
 
@@ -106,7 +105,7 @@ exports.viewWishlist = async (req, res) => {
     const skip = (page - 1) * limit;
 
     if (!userId) {
-      return res.status(401).send({ message: 'Unauthorized access' });
+      return res.status(HTTP_STATUS.UNAUTHORIZED).send({ message: 'Unauthorized access' });
     }
 
     const wishlist = await Wishlist.findOne({ user: userId }).populate('products');
@@ -130,7 +129,7 @@ exports.viewWishlist = async (req, res) => {
     });
   } catch (err) {
     console.error('Error retrieving wishlist:', err);
-    res.status(500).json({ success:false, message: 'Server error' });
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ success:false, message: 'Server error' });
   }
 };
 
@@ -140,7 +139,7 @@ exports.toggleWishlist = async (req, res) => {
     const { productId } = req.body;
     const userId = req.user?._id;
 
-    if (!userId) return res.status(401).send({ message: 'Unauthorized access' });
+    if (!userId) return res.status(HTTP_STATUS.UNAUTHORIZED).send({ message: 'Unauthorized access' });
 
     const wishlist = await Wishlist.findOne({ user: userId });
     const isInWishlist = wishlist?.products.includes(productId);
@@ -158,10 +157,10 @@ exports.toggleWishlist = async (req, res) => {
       );
     }
 
-    res.status(200).json({ isInWishlist: !isInWishlist });
+    res.status(HTTP_STATUS.OK).json({ isInWishlist: !isInWishlist });
   } catch (err) {
     console.error('Error toggling wishlist:', err);
-    res.status(500).json({ message: 'Server error' });
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ message: 'Server error' });
   }
 };
 

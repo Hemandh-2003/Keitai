@@ -4,8 +4,8 @@ const User = require('../models/User');
 const path = require('path');
 const fs = require('fs');
 const mongoose = require('mongoose');
+const {HTTP_STATUS}= require('../SM/status');
 
-// Add a review (User)
 exports.addReview = async (req, res) => {
   try {
     const { productId, title, comment, rating } = req.body;
@@ -34,9 +34,10 @@ exports.addReview = async (req, res) => {
     });
 
     return res.redirect(`/product/${productId}#reviews`);
+
   } catch (error) {
     console.error('Error adding review:', error.message);
-    res.status(500).json({ error: 'Error submitting review', details: error.message });
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ error: 'Error submitting review', details: error.message });
   }
 };
 
@@ -51,7 +52,6 @@ async function calculateAverageRating(productId) {
 }
 
 
-// Admin reply to a review
 exports.replyToReview = async (req, res) => {
   try {
     const { reply } = req.body;
@@ -60,15 +60,14 @@ exports.replyToReview = async (req, res) => {
       adminReply: { text: reply, date: new Date() } 
     });
 
-    res.json({ message: 'Reply saved successfully' }); // ✅ respond with JSON
+    res.json({ message: 'Reply saved successfully' }); 
   } catch (error) {
     console.error('Error replying to review:', error);
-    res.status(500).json({ error: 'Reply failed' });
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ error: 'Reply failed' });
   }
 };
 
 
-// Fetch reviews for a product
 exports.getReviewsByProduct = async (req, res) => {
   try {
     const { productId } = req.params;
@@ -76,14 +75,12 @@ exports.getReviewsByProduct = async (req, res) => {
     res.json(reviews);
   } catch (err) {
     console.error('Fetching reviews failed:', err);
-    res.status(500).json({ error: 'Internal server error' });
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ error: 'Internal server error' });
   }
 };
 
-// Admin view of all reviews
 exports.listAllReviews = async (req, res) => {
   try {
-
     const { user: userId, product: productId, page = 1, sort = "newest", limit = 4 } = req.query;
     const perPage = parseInt(limit) || 4; 
     const skip = (page - 1) * perPage;
@@ -126,7 +123,7 @@ exports.listAllReviews = async (req, res) => {
     });
   } catch (err) {
     console.error('Error fetching reviews:', err);
-    res.status(500).send('Internal Server Error');
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).send('Internal Server Error');
   }
 };
 
@@ -137,6 +134,6 @@ exports.deleteReview = async (req, res) => {
     res.json({ success: true });
   } catch (error) {
     console.error('Error deleting review:', error);
-    res.status(500).json({ error: 'Failed to delete review.' });
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ error: 'Failed to delete review.' });
   }
 };

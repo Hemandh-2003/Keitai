@@ -2,6 +2,7 @@ const bcrypt = require('bcrypt');
 const User = require('../models/User');
 const otpController = require('./otpController');
 const generateUniqueUserCode = require('../utils/userCode');
+const { HTTP_STATUS }= require('../SM/status');
 
 exports.loadLandingPage = (req, res) => {
   res.render('user/index', {
@@ -9,7 +10,6 @@ exports.loadLandingPage = (req, res) => {
     user: req.session.user || null 
   });
 };
-
 
 exports.loadLogin = (req, res) => {
   res.render('user/login', { error: null });
@@ -25,8 +25,8 @@ exports.register = async (req, res) => {
      // console.log('Validation failed: missing fields');
       return res.render('user/signup', { error: 'All fields are required.' });
     }
-
-     const nameRegex = /^[A-Za-z0-9]+$/;
+    
+    const nameRegex = /^[A-Za-z0-9]+$/;
     if(!nameRegex.test(name)) {
       return res.render('user/signup', {error: 'Name can only contain letter and Numbers'})
     }
@@ -57,7 +57,7 @@ exports.register = async (req, res) => {
     //console.log('New user object created');
     const code = referralCode ? referralCode.trim() : null;
 if (code) {
-  const referrer = await User.findOne({ referralCode: code }); // ✅ use trimmed code
+  const referrer = await User.findOne({ referralCode: code }); 
   if (referrer) {
    // console.log('Referrer found:', referrer.email);
     user.referredBy = code;
@@ -81,6 +81,7 @@ if (code) {
     referrer.referralRewards = (referrer.referralRewards || 0) + 1000;
     //console.log('Referrer rewarded with 1000');
 
+    // Save both users
     await referrer.save();
    // console.log('Referrer saved successfully');
 
@@ -153,7 +154,7 @@ exports.resendOtp = async (req, res) => {
   const { email } = req.query;
 
   if (!email) {
-    return res.status(400).send('Email is required');
+    return res.status(HTTP_STATUS.BAD_REQUEST).send('Email is required');
   }
 
   try {
@@ -161,13 +162,13 @@ exports.resendOtp = async (req, res) => {
     const otpSent = await otpController.sendOtpEmail(email, otp);
 
     if (otpSent) {
-      return res.status(200).send('OTP resent successfully');
+      return res.status(HTTP_STATUS.OK).send('OTP resent successfully');
     } else {
-      return res.status(500).send('Error resending OTP');
+      return res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).send('Error resending OTP');
     }
   } catch (err) {
     console.error('Error resending OTP:', err);
-    return res.status(500).send('Error resending OTP');
+    return res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).send('Error resending OTP');
   }
 };
 

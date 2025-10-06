@@ -1,4 +1,5 @@
 const Order = require('../models/Order');
+const {HTTP_STATUS}= require('../SM/status');
 
 exports.cancelOrder = async (req, res) => {
   try {
@@ -31,7 +32,7 @@ exports.cancelOrder = async (req, res) => {
     res.redirect(`/orders/${orderId}`);
   } catch (err) {
     console.error("Cancel order error:", err);
-    res.status(500).send("Something went wrong");
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).send("Something went wrong");
   }
 };
 
@@ -39,10 +40,9 @@ exports.cancelOrder = async (req, res) => {
 exports.requestReturn = async (req, res) => {
   try {
     const { orderId, reason } = req.body;
-    
     res.redirect(`/orders/${orderId}`);
   } catch (err) {
-    res.status(500).send(err);
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).send(err);
   }
 };
 
@@ -54,12 +54,12 @@ exports.getOrderDetails = async (req, res) => {
     const order = await Order.findOne({ _id: orderId, userId }).populate('products.productId');
 
     if (!order) {
-      return res.status(404).render('404', { message: 'Order not found' });
+      return res.status(HTTP_STATUS.NOT_FOUND).render('404', { message: 'Order not found' });
     }
     //console.log("order console",order);
     res.render('user/orderDetails', { order });
   } catch (err) {
     console.error('Order details error:', err);
-    res.status(500).render('500', { message: 'Internal server error' });
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).render('500', { message: 'Internal server error' });
   }
 };

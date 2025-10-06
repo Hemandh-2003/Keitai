@@ -1,21 +1,24 @@
 const Banner = require('../models/Banner');
 const Category = require('../models/Category');
+const { HTTP_STATUS }= require('../SM/status');
 const path = require('path');
 const fs = require('fs');
 
-//Admin
+
 exports.getBanners = async (req, res) => {
   try {
+
     const banners = await Banner.find()
       .populate({
         path: 'category',
         select: 'name',
       });
 
+ 
     const categories = await Category.find({});
 
-   // console.log('Categories:', categories); 
-    //console.log('Banners:', banners); 
+   // console.log('Categories:', categories); // debug 
+    //console.log('Banners:', banners); // debug 
 
     res.render('admin/banners', { banners, categories });
   } catch (err) {
@@ -25,7 +28,7 @@ exports.getBanners = async (req, res) => {
 };
 
 
-// Add new banner
+
 exports.addBanner = async (req, res) => {
   try {
     const { title, category } = req.body;
@@ -45,11 +48,11 @@ exports.addBanner = async (req, res) => {
   }
 };
 
-// DELETE banner
+
 exports.deleteBanner = async (req, res) => {
   try {
     const banner = await Banner.findById(req.params.bannerId);
-    if (!banner) return res.status(404).json({ error: 'Banner not found' });
+    if (!banner) return res.status(HTTP_STATUS.NOT_FOUND).json({ error: 'Banner not found' });
 
     const imagePath = path.join(__dirname, '../public/uploads/banners', banner.image);
     if (fs.existsSync(imagePath)) fs.unlinkSync(imagePath);
@@ -58,6 +61,6 @@ exports.deleteBanner = async (req, res) => {
     res.json({ success: true });
   } catch (err) {
     console.error('Error deleting banner:', err);
-    res.status(500).json({ error: 'Delete failed' });
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ error: 'Delete failed' });
   }
 };
