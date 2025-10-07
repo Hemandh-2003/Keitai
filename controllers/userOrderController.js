@@ -4,6 +4,7 @@ const Order = require('../models/Order');
 const mongoose = require('mongoose');
 const PDFDocument = require('pdfkit');
 const {HTTP_STATUS}= require('../SM/status');
+const { MESSAGE }= require('../SM/messages');
 
 //Order
 exports.viewOrders = async (req, res) => {
@@ -183,7 +184,7 @@ exports.viewOrderDetails = async (req, res) => {
     const order = await query.exec();
 
     if (!order) {
-      return res.status(HTTP_STATUS.NOT_FOUND).send('Order not found');
+      return res.status(HTTP_STATUS.NOT_FOUND).send(MESSAGE.ORDER_NOT_FOUND);
     }
 
     const selectedAddress = order.user.addresses.find(
@@ -203,7 +204,7 @@ exports.viewOrderDetails = async (req, res) => {
 
   } catch (err) {
     console.error('Error fetching order details:', err.stack || err);
-    res.status(HTTP_STATUS. INTERNAL_SERVER_ERROR).send('Server error');
+    res.status(HTTP_STATUS. INTERNAL_SERVER_ERROR).send(MESSAGE.SERVER_ERROR);
   }
 };
 
@@ -216,7 +217,7 @@ exports.cancelOrder = async (req, res) => {
       .populate("coupon");
 
     if (!order) {
-      req.flash("error", "Order not found");
+      req.flash("error", MESSAGE.ORDER_NOT_FOUND);
       return res.redirect("/user/orders");
     }
 

@@ -1,5 +1,6 @@
 const Category = require('../models/Category');
 const { HTTP_STATUS } = require('../SM/status');
+const { MESSAGE }= require('../SM/messages');
 // Category management
 exports.loadCategories = async (req, res) => {
   try {
@@ -7,7 +8,7 @@ exports.loadCategories = async (req, res) => {
     res.render('admin/categories', { categories, error: null }); 
   } catch (error) {
     console.error('Error loading categories:', error);
-    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).send('Server Error');
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).send(MESSAGE.SERVER_ERROR);
   }
 };
 
@@ -69,7 +70,7 @@ exports.deleteCategory = async (req, res) => {
     res.redirect('/admin/categories');
   } catch (error) {
     console.error('Error deleting category:', error);
-    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).send('Server Error');
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).send(MESSAGE.SERVER_ERROR);
   }
 };
 
@@ -82,7 +83,7 @@ exports.loadEditCategory = async (req, res) => {
     res.status(HTTP_STATUS.OK).render('admin/edit-category', { category });
   } catch (error) {
     console.error('Error loading edit page:', error);
-    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).send('Server Error');
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).send(MESSAGE.SERVER_ERROR);
   }
 };
 

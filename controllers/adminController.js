@@ -12,6 +12,7 @@ const Coupon = require('../models/Coupon');
 const crypto = require('crypto');
 const Razorpay = require('razorpay');
 const { HTTP_STATUS }= require('../SM/status');
+const { MESSAGE } = require('../SM/messages');
 exports.adminDashboard = (req, res) => {
   res.render('admin/dashboard');
 };
@@ -110,7 +111,7 @@ exports.getDashboardStats = async (req, res) => {
     });
   } catch (err) {
     console.error('Dashboard stats error:', err);
-    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ error: 'Server error' });
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ error: MESSAGE.SERVER_ERROR });
   }
 };
 
@@ -120,12 +121,12 @@ exports.viewProductDetails = async (req, res) => {
 
       const product = await Product.findById(req.params.id).populate('category');
       if (!product) {
-          return res.status(HTTP_STATUS.NOT_FOUND).send('Product not found');
+          return res.status(HTTP_STATUS.NOT_FOUND).send(MESSAGE.PRODUCT_NOT_FOUND);
       }
       res.render('user/Product-details', { product });
   } catch (error) {
       console.error(error);
-      res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).send('Error loading product details');
+      res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).send(MESSAGE.ERROR);
   }
 };
 
@@ -139,7 +140,7 @@ exports.initiatePayment = async (req, res) => {
 
     if (!order || isNaN(order.totalAmount)) {
       console.error('❌ Invalid order or total amount:', order?.totalAmount);
-      return res.status(HTTP_STATUS.BAD_REQUEST).send('Invalid order');
+      return res.status(HTTP_STATUS.BAD_REQUEST).send(MESSAGE.INVALID_ORDER);
     }
 
     const amountInPaise = Math.round(parseFloat(order.totalAmount) * 100);
@@ -170,7 +171,7 @@ exports.initiatePayment = async (req, res) => {
 
   } catch (err) {
     console.error('❌ Razorpay creation failed:', err.message || err);
-    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).send('Payment initiation failed');
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).send(MESSAGE.PAYMENT_ERROR);
   }
 };
 
@@ -181,7 +182,7 @@ exports.verifyPayment = async (req, res) => {
     const order = await Order.findOne({ razorpayOrderId: razorpay_order_id });
 
     if (!order) {
-      return res.status(HTTP_STATUS.BAD_REQUEST).send('Invalid Order ID');
+      return res.status(HTTP_STATUS.BAD_REQUEST).send(MESSAGE.INVALID_ORDER_ID);
     }
 
     const generatedSignature = crypto
@@ -190,12 +191,12 @@ exports.verifyPayment = async (req, res) => {
       .digest('hex');
 
     if (generatedSignature !== razorpay_signature) {
-      return res.status(HTTP_STATUS.BAD_REQUEST).send('Payment verification failed');
+      return res.status(HTTP_STATUS.BAD_REQUEST).send(MESSAGE.PAYMENT_VERIFICATION_FAILED);
     }
 
-    order.paymentStatus = 'Paid';
+    order.paymentStatus = MESSAGE.PAYMENT_STATUS;
     order.razorpayPaymentId = razorpay_payment_id;
-    order.status = 'Pending'; 
+    order.status = MESSAGE.ORDER_STATUS1; 
     await order.save();
 
     res.redirect(`/payment/success/${order.orderId}`);
@@ -213,7 +214,7 @@ exports.viewOrderDetails = async (req, res) => {
       .populate('selectedAddress');
 
     if (!order) {
-      return res.status(HTTP_STATUS.NOT_FOUND).send('Order not found');
+      return res.status(HTTP_STATUS.NOT_FOUND).send(MESSAGE.ORDER_NOT_FOUND);
     }
 
     res.render('admin/order-details', { 
@@ -222,7 +223,7 @@ exports.viewOrderDetails = async (req, res) => {
     });
   } catch (error) {
     console.error(error);
-    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).send('Error loading order details');
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).send(MESSAGE.ERROR_LOADING_ORDER_DETAILS);
   }
 };
 
@@ -234,14 +235,14 @@ exports.processUserCancellation = async (req, res) => {
     const order = await Order.findOne({ orderId }).populate('products.product');
     
     if (!order) {
-      return res.status(HTTP_STATUS.NOT_FOUND).send('Order not found');
+      return res.status(HTTP_STATUS.NOT_FOUND).send(MESSAGE.ORDER_NOT_FOUND);
     }
 
     if (!['Pending', 'Shipped'].includes(order.status)) {
-      return res.status(HTTP_STATUS.BAD_REQUEST).send('Order cannot be cancelled at this stage');
+      return res.status(HTTP_STATUS.BAD_REQUEST).send(MESSAGE.CANNOT_CANCEL);
     }
 
-    order.status = 'User Cancelled';
+    order.status = MESSAGE.ORDER_STATUS2;
     order.cancellationReason = reason || 'No reason provided';
     await order.save();
 
@@ -258,7 +259,7 @@ exports.processUserCancellation = async (req, res) => {
     }
   } catch (err) {
     console.error(err);
-    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).send('Cancellation failed');
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).send(MESSAGE.CANCELLATION_FAILED);
   }
 };
 
@@ -268,20 +269,20 @@ exports.processReturnRequest = async (req, res) => {
     const { reason } = req.body;
 
     if (!reason) {
-      return res.status(HTTP_STATUS.BAD_REQUEST).send('Return reason is required');
+      return res.status(HTTP_STATUS.BAD_REQUEST).send(MESSAGE.RETURN_REASON);
     }
 
     const order = await Order.findOne({ orderId });
     
     if (!order) {
-      return res.status(HTTP_STATUS.NOT_FOUND).send('Order not found');
+      return res.status(HTTP_STATUS.NOT_FOUND).send(MESSAGE.ORDER_NOT_FOUND);
     }
 
-    if (order.status !== 'Delivered') {
-      return res.status(HTTP_STATUS.BAD_REQUEST).send('Only delivered orders can be returned');
+    if (order.status !== MESSAGE.ORDER_STATUS3) {
+      return res.status(HTTP_STATUS.BAD_REQUEST).send(MESSAGE.ONLY_DELIVERED_ORDER_CAN_BE_RETURNED);
     }
 
-    order.status = 'Returned';
+    order.status = MESSAGE.ORDER_STATUS4;
     order.returnReason = reason;
     order.returnRequestDate = new Date();
     await order.save();
@@ -293,7 +294,7 @@ exports.processReturnRequest = async (req, res) => {
     }
   } catch (err) {
     console.error(err);
-    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).send('Return request failed');
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).send(MESSAGE.RETURN_REQUEST_FAILED);
   }
 };
 
@@ -343,7 +344,7 @@ exports.listAllPayments = async (req, res) => {
     });
   } catch (err) {
     console.error("Error fetching payments:", err);
-    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).render("admin/500", { message: "Internal Server Error" });
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).render("admin/500", { message: MESSAGE.INTERNAL_SERVER_ERROR });
   }
 };
 
@@ -356,12 +357,12 @@ exports.viewPaymentDetails = async (req, res) => {
       .populate("products.product");
 
     if (!order) {
-      return res.status(HTTP_STATUS.NOT_FOUND).render("admin/404", { message: "Order not found" });
+      return res.status(HTTP_STATUS.NOT_FOUND).render("admin/404", { message: MESSAGE.ORDER_NOT_FOUND });
     }
 
     res.render("admin/payment", { order }); 
   } catch (err) {
     console.error("Error fetching payment details:", err);
-    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).render("admin/500", { message: "Internal Server Error" });
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).render("admin/500", { message: MESSAGE.INTERNAL_SERVER_ERROR });
   }
 };

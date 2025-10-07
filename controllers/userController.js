@@ -6,6 +6,7 @@ const otpController = require('../controllers/otpController');
 const bcrypt = require('bcryptjs');
 const Wishlist = require('../models/Wishlist');
 const {HTTP_STATUS}= require('../SM/status');
+const { MESSAGE }= require('../SM/messages');
 
 // Home Page
 exports.loadHome = async (req, res) => {
@@ -23,7 +24,7 @@ exports.loadHome = async (req, res) => {
 
   } catch (error) {
     console.error("Home Load Error:", error);
-    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).send("Internal Server Error");
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).send(MESSAGE.INTERNAL_SERVER_ERROR);
   }
 };
 
@@ -34,7 +35,7 @@ exports.getProfile = async (req, res) => {
 
     const user = await User.findById(userId);
     if (!user) {
-      return res.status(HTTP_STATUS.NOT_FOUND).send('User not found');
+      return res.status(HTTP_STATUS.NOT_FOUND).send(MESSAGE.USER_NOT_FOUND);
     }
 
     const recentAddress = user.addresses && user.addresses.length > 0 
@@ -52,7 +53,7 @@ exports.getProfile = async (req, res) => {
     });
   } catch (err) {
     console.error('Error fetching user profile:', err);
-    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).send('Internal Server Error');
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).send(MESSAGE.INTERNAL_SERVER_ERROR);
   }
 };
 
@@ -61,7 +62,7 @@ exports.getAddresses = async (req, res) => {
   try {
     const user = await User.findById(req.session.user._id);
     if (!user) {
-      return res.status(HTTP_STATUS.NOT_FOUND).send('User not found');
+      return res.status(HTTP_STATUS.NOT_FOUND).send(MESSAGE.USER_NOT_FOUND);
     }
 
     res.render('user/address', {
@@ -72,7 +73,7 @@ exports.getAddresses = async (req, res) => {
     req.session.alert = null; 
   } catch (err) {
     console.error('Error fetching user addresses:', err);
-    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).send('Internal Server Error');
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).send(MESSAGE.INTERNAL_SERVER_ERROR);
   }
 };
 
@@ -93,7 +94,7 @@ exports.addAddress = async (req, res) => {
     if (!user) {
       req.session.alert = {
         type: 'error',
-        message: 'User not found.'
+        message: MESSAGE.USER_NOT_FOUND
       };
       return res.redirect('/user/address');
     }
@@ -133,7 +134,7 @@ exports.getEditAddress = async (req, res) => {
   try {
     const user = await User.findById(req.session.user._id);
     if (!user) {
-      return res.status(HTTP_STATUS.NOT_FOUND).send('User not found');
+      return res.status(HTTP_STATUS.NOT_FOUND).send(MESSAGE.USER_NOT_FOUND);
     }
 
     const addressId = req.params.addressId;
@@ -146,7 +147,7 @@ exports.getEditAddress = async (req, res) => {
     res.render('user/edit-address', { address });
   } catch (err) {
     console.error('Error fetching address for edit:', err);
-    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).send('Internal Server Error');
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).send(MESSAGE.INTERNAL_SERVER_ERROR);
   }
 };
 
@@ -360,7 +361,7 @@ exports.getProductDetails = async (req, res) => {
     });
   } catch (error) {
     console.error('Error:', error);
-    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).send('Internal Server Error');
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).send(MESSAGE.INTERNAL_SERVER_ERROR);
   }
 };
 
@@ -371,7 +372,7 @@ exports.retryPayment = async (req, res) => {
     if (!orderId) return res.status(HTTP_STATUS.BAD_REQUEST).send("Order ID missing");
 
     const order = await Order.findById(orderId);
-    if (!order) return res.status(HTTP_STATUS.NOT_FOUND).send("Order not found");
+    if (!order) return res.status(HTTP_STATUS.NOT_FOUND).send(MESSAGE.ORDER_NOT_FOUND);
 
     req.session.retryOrderId = order._id;
     req.session.checkout = {
@@ -383,7 +384,7 @@ exports.retryPayment = async (req, res) => {
     return res.redirect('/user/checkout');
   } catch (err) {
     console.error("Retry Payment Error:", err);
-    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).send("Server error");
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).send(MESSAGE.SERVER_ERROR);
   }
 };
 
@@ -392,7 +393,7 @@ exports.paymentFailed = async (req, res) => {
     const { orderId } = req.body;
 
     const order = await Order.findById(orderId);
-    if (!order) return res.status(HTTP_STATUS.NOT_FOUND).send("Order not found");
+    if (!order) return res.status(HTTP_STATUS.NOT_FOUND).send(MESSAGE.ORDER_NOT_FOUND);
 
     order.status = "Pending";
     order.paymentStatus = "failed";
@@ -402,7 +403,7 @@ exports.paymentFailed = async (req, res) => {
     return res.redirect(`/order/${order._id}`); 
   } catch (err) {
     console.error("❌ Error marking order failed:", err.message);
-    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).send("Internal Server Error");
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).send(MESSAGE.INTERNAL_SERVER_ERROR);
   }
 };
 
@@ -475,7 +476,7 @@ exports.handleResetPassword = async (req, res) => {
   try {
     const user = await User.findOne({ email });
     if (!user) {
-      return res.render('user/reset-password', { email, error: 'User not found.' });
+      return res.render('user/reset-password', { email, error: MESSAGE.USER_NOT_FOUND });
     }
 
     const hashedPassword = await bcrypt.hash(newPassword, 10);

@@ -5,6 +5,7 @@ const ExcelJS = require('exceljs');
 const PDFDocument = require('pdfkit');
 const moment = require('moment');
 const {HTTP_STATUS}= require('../SM/status');
+const { MESSAGE }= require('../SM/messages');
 
 //Report
 exports.renderSalesReportPage = async (req, res) => {
@@ -38,7 +39,7 @@ exports.renderSalesReportPage = async (req, res) => {
     });
   } catch (err) {
     console.error('Error loading sales report:', err.message);
-    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).send('Server error');
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).send(MESSAGE.SERVER_ERROR);
   }
 };
 

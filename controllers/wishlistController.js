@@ -2,6 +2,8 @@ const Wishlist = require('../models/Wishlist');
 const Product = require('../models/Product');
 const User = require('../models/User');
 const {HTTP_STATUS}= require('../SM/status');
+const { MESSAGE }= require('../SM/messages');
+
 // Add product to wishlist
 exports.addToWishlist = async (req, res) => {
   try {
@@ -64,7 +66,7 @@ exports.addToWishlist = async (req, res) => {
     console.error('❌ Error adding to wishlist:', err);
     return res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
       success: false,
-      message: 'Server error'
+      message: MESSAGE.SERVER_ERROR
     });
   }
 };
@@ -92,7 +94,7 @@ exports.removeFromWishlist = async (req, res) => {
     res.status(HTTP_STATUS.OK).json({ message: 'Product removed from wishlist', wishlist: wishlist.products });
   } catch (err) {
     console.error('Error removing from wishlist:', err);
-    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ message: 'Server error' });
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ message: MESSAGE.SERVER_ERROR });
   }
 };
 
@@ -129,7 +131,7 @@ exports.viewWishlist = async (req, res) => {
     });
   } catch (err) {
     console.error('Error retrieving wishlist:', err);
-    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ success:false, message: 'Server error' });
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ success:false, message: MESSAGE.SERVER_ERROR });
   }
 };
 
@@ -160,7 +162,7 @@ exports.toggleWishlist = async (req, res) => {
     res.status(HTTP_STATUS.OK).json({ isInWishlist: !isInWishlist });
   } catch (err) {
     console.error('Error toggling wishlist:', err);
-    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ message: 'Server error' });
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ message: MESSAGE.SERVER_ERROR });
   }
 };
 

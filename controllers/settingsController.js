@@ -1,7 +1,7 @@
 const User = require('../models/User');
 const bcrypt = require('bcryptjs');
 const {HTTP_STATUS}= require('../SM/status');
-
+const { MESSAGE }= require('../SM/messages');
 exports.getSettingsPage = (req, res) => {
   //console.log("Navigating to settings page.");
   res.render('user/settings', { user: req.session.user });
@@ -21,7 +21,7 @@ exports.changePassword = async (req, res) => {
 
     const user = await User.findById(req.session.user._id);
     if (!user) {
-      return res.status(HTTP_STATUS.NOT_FOUND).json({ message: "User not found." });
+      return res.status(HTTP_STATUS.NOT_FOUND).json({ message: MESSAGE.USER_NOT_FOUND });
     }
 
     const isMatch = await bcrypt.compare(currentPassword, user.password);
@@ -60,7 +60,7 @@ exports.updateUserName = async (req, res) => {
     );
 
     if (!updatedUser) {
-      return res.status(HTTP_STATUS.NOT_FOUND).json({ message: 'User not found.' });
+      return res.status(HTTP_STATUS.NOT_FOUND).json({ message: MESSAGE.USER_NOT_FOUND });
     }
 
     res.redirect('/user/profile'); 

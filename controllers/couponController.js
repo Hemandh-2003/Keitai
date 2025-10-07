@@ -1,5 +1,6 @@
 const Coupon = require('../models/Coupon');
 const {HTTP_STATUS}= require('../SM/status');
+const { MESSAGE }= require('../SM/messages');
 // Show coupons page
 exports.getCoupons = async (req, res) => {
   try {
@@ -267,7 +268,7 @@ exports.applyCoupon = async (req, res) => {
 
   } catch (err) {
     console.error('❌ Coupon error:', err);
-    return res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ success: false, message: 'Server error' });
+    return res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ success: false, message: MESSAGE.SERVER_ERROR});
   }
 };
 

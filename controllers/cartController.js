@@ -1,7 +1,8 @@
 const Cart = require('../models/Cart');
 const Product = require('../models/Product');
+const { MESSAGE } = require('../SM/messages');
 const { HTTP_STATUS } = require('../SM/status');
-
+const { MESSAGE }= require('../SM/messages');
 exports.addToCart = async (req, res) => {
   try {
     const { productId, quantity } = req.body;
@@ -149,7 +150,7 @@ exports.getCart = async (req, res) => {
 
   } catch (error) {
     console.error("Error fetching cart:", error);
-    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).send("Server error");
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).send(MESSAGE.SERVER_ERROR);
   }
 };
 
@@ -227,7 +228,7 @@ exports.removeFromCart = async (req, res) => {
     res.redirect('/cart');
   } catch (error) {
     console.error(error);
-    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ error: 'Server error' });
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ error: MESSAGE.SERVER_ERROR});
   }
 };
 
@@ -247,7 +248,7 @@ exports.getProductDetails = async (req, res) => {
     });
   } catch (error) {
     console.error('Error fetching product details:', error);
-    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).send('Internal Server Error');
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).send(MESSAGE.INTERNAL_SERVER_ERROR);
   }
 };
 exports.clearCart = async (req, res) => {

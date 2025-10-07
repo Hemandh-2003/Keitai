@@ -2,6 +2,7 @@ const Review = require('../models/review');
 const Category = require('../models/Category');
 const Product = require('../models/Product');
 const {HTTP_STATUS}= require('../SM/status');
+const { MESSAGE }= require('../SM/messages');
 // Product management
 exports.listProducts = async (req, res) => {
   try {
@@ -124,7 +125,7 @@ exports.editProduct = async (req, res) => {
     res.render('admin/editProduct', { product, categories });
   } catch (error) {
     console.error(error);
-    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).send('Internal Server Error');
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).send(MESSAGE.INTERNAL_SERVER_ERROR);
   }
 };
 
@@ -166,7 +167,7 @@ exports.updateProduct = async (req, res) => {
 
   } catch (error) {
     console.error('Update Product Error:', error);
-    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).send('Internal Server Error');
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).send(MESSAGE.INTERNAL_SERVER_ERROR);
   }
 };
 
@@ -225,7 +226,7 @@ exports.blockProduct = async (req, res) => {
     res.redirect('/admin/products');
   } catch (error) {
     console.error('Error blocking product:', error);
-    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).send('Internal Server Error');
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).send(MESSAGE.INTERNAL_SERVER_ERROR);
   }
 };
 
@@ -237,7 +238,7 @@ exports.unblockProduct = async (req, res) => {
     res.redirect('/admin/products');
   } catch (error) {
     console.error('Error unblocking product:', error);
-    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).send('Internal Server Error');
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).send(MESSAGE.INTERNAL_SERVER_ERROR);
   }
 };
 

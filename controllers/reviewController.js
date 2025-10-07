@@ -5,6 +5,7 @@ const path = require('path');
 const fs = require('fs');
 const mongoose = require('mongoose');
 const {HTTP_STATUS}= require('../SM/status');
+const { MESSAGE }= require('../SM/messages');
 
 exports.addReview = async (req, res) => {
   try {
@@ -75,7 +76,7 @@ exports.getReviewsByProduct = async (req, res) => {
     res.json(reviews);
   } catch (err) {
     console.error('Fetching reviews failed:', err);
-    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ error: 'Internal server error' });
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ error: MESSAGE.INTERNAL_SERVER_ERROR });
   }
 };
 
@@ -123,7 +124,7 @@ exports.listAllReviews = async (req, res) => {
     });
   } catch (err) {
     console.error('Error fetching reviews:', err);
-    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).send('Internal Server Error');
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).send(MESSAGE.INTERNAL_SERVER_ERROR);
   }
 };
 

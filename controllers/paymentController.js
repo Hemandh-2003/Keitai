@@ -2,6 +2,7 @@ const razorpay = require('../config/razorpay');
 const Order = require('../models/Order');
 const crypto = require('crypto');
 const {HTTP_STATUS}= require('../SM/status');
+const { MESSAGE }= require('../SM/messages');
 
 exports.initiatePayment = async (req, res) => {
   try {
@@ -56,7 +57,7 @@ exports.verifyPayment = async (req, res) => {
 
     const order = await Order.findOne({ razorpayOrderId: razorpay_order_id }).populate('products.product');
 
-    if (!order) return res.status(HTTP_STATUS.NOT_FOUND).send("Order not found");
+    if (!order) return res.status(HTTP_STATUS.NOT_FOUND).send(MESSAGE.ORDER_NOT_FOUND);
 
     order.paymentStatus = 'Paid';
     order.status = 'Placed';
@@ -138,7 +139,7 @@ exports.retryPayment = async (req, res) => {
     res.redirect(`/checkout?orderId=${orderId}`);
   } catch (err) {
     console.error('Error in retryPayment:', err);
-    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).send('Something went wrong');
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).send(MESSAGE.SOMETHING_WENT_WRONG);
   }
 };
 exports.retryPaymentFromOrder = async (req, res) => {

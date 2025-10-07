@@ -4,7 +4,6 @@ const { HTTP_STATUS }= require('../SM/status');
 const path = require('path');
 const fs = require('fs');
 
-
 exports.getBanners = async (req, res) => {
   try {
 

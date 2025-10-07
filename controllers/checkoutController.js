@@ -4,6 +4,7 @@ const Order = require('../models/Order');
 const Cart = require('../models/Cart');
 const Coupon = require('../models/Coupon');
 const {HTTP_STATUS}= require('../SM/status');
+const { MESSAGE } = require('../SM/messages');
 exports.getCheckout = async (req, res) => {
   try {
     if (!req.session.user) return res.redirect('/login');
@@ -178,7 +179,7 @@ return res.redirect('/user/checkout');
 
   } catch (err) {
     console.error('Checkout POST error:', err);
-    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).send('Internal Server Error');
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).send(MESSAGE.INTERNAL_SERVER_ERROR);
   }
 };
 
@@ -194,7 +195,7 @@ exports.placeOrder = async (req, res) => {
     const { productIds, quantities, offerPrices } = checkoutData;
 
     const user = await User.findById(req.session.user._id);
-    if (!user) return res.status(HTTP_STATUS.NOT_FOUND).send("User not found");
+    if (!user) return res.status(HTTP_STATUS.NOT_FOUND).send(MESSAGE.USER_NOT_FOUND);
 
     const address = user.addresses.id(selectedAddress);
     if (!address) return res.status(HTTP_STATUS.NOT_FOUND).send("Address not found");
@@ -350,7 +351,7 @@ exports.placeOrder = async (req, res) => {
 
   } catch (err) {
     console.error("❌ Error placing order:", err.message);
-    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).send(err.message || "Internal Server Error");
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).send(err.message || MESSAGE.INTERNAL_SERVER_ERROR);
   }
 };
 
@@ -370,7 +371,7 @@ exports.confirmPayment = async (req, res) => {
     const { productIds, quantities, offerPrices } = checkoutData;
 
     const user = await User.findById(req.session.user._id);
-    if (!user) return res.status(HTTP_STATUS.NOT_FOUND).send('User not found');
+    if (!user) return res.status(HTTP_STATUS.NOT_FOUND).send(MESSAGE.USER_NOT_FOUND);
 
     const address = user.addresses.id(selectedAddress);
     if (!address) return res.status(HTTP_STATUS.NOT_FOUND).send('Address not found');
@@ -454,7 +455,7 @@ exports.confirmPayment = async (req, res) => {
     res.redirect('/user/confirm-payment');
   } catch (err) {
     console.error('Error during payment confirmation:', err.message);
-    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).send(err.message || 'Internal Server Error');
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).send(err.message || MESSAGE.INTERNAL_SERVER_ERROR);
   }
 };
 
@@ -497,7 +498,7 @@ exports.renderConfirmPayment = async (req, res) => {
     });
   } catch (err) {
     console.error('Error rendering confirmation page:', err.message);
-    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).send(err.message || 'Internal Server Error');
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).send(err.message || MESSAGE.INTERNAL_SERVER_ERROR);
   }
 };
 
@@ -516,7 +517,7 @@ exports.createInlineAddress = async (req, res) => {
     if (!user) {
       return res.status(HTTP_STATUS.NOT_FOUND).json({
         success: false,
-        message: 'User not found.'
+        message: MESSAGE.USER_NOT_FOUND
       });
     }
 

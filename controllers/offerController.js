@@ -2,6 +2,8 @@ const Category = require('../models/Category');
 const Product = require('../models/Product');
 const Offer = require('../models/Offer');
 const {HTTP_STATUS}= require('../SM/status');
+const { MESSAGE }= require('../SM/messages');
+
 // OFFER MANAGEMENT
 exports.listOffers = async (req, res) => {
   try {
@@ -265,7 +267,7 @@ exports.toggleOfferStatus = async (req, res) => {
     console.error('Error toggling offer status:', error);
     res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ 
       success: false, 
-      message: 'Server error',
+      message: MESSAGE.SERVER_ERROR,
       error: error.message 
     });
   }
