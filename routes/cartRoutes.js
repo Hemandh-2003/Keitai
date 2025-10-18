@@ -12,7 +12,7 @@ router.post('/add', isLoggedIn, cartController.addToCart);
 router.get('/product/:productId', isLoggedIn,cartController.getProductDetails);
 
 // Get cart
-router.get('/', isLoggedIn, checkBlockedUser, cartController.getCart); // Ensure correct use of middleware
+router.get('/', isLoggedIn, checkBlockedUser, cartController.getCart); 
 
 // Update cart item quantity
 router.post('/update', isLoggedIn, cartController.updateCart);

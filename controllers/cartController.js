@@ -2,7 +2,6 @@ const Cart = require('../models/Cart');
 const Product = require('../models/Product');
 const { MESSAGE } = require('../SM/messages');
 const { HTTP_STATUS } = require('../SM/status');
-const { MESSAGE }= require('../SM/messages');
 exports.addToCart = async (req, res) => {
   try {
     const { productId, quantity } = req.body;
