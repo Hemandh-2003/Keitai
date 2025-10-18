@@ -31,7 +31,18 @@ body {
   background-color: var(--light);
   -webkit-font-smoothing: antialiased;
 }
+  .sign-in-button {
+  background-color: #fff;
+  color: #000;
+  padding: 5px 10px;
+  border-radius: 4px;
+  text-decoration: none;
+  font-weight: bold;
+}
 
+.sign-in-button:hover {
+  background-color: #f0f0f0;
+}
 .container {
   width: 100%;
   max-width: 1280px;

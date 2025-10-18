@@ -36,19 +36,21 @@
                   </form>
                 </div-->
         <!-- User Icon -->
-      <div class="user-options">
-  <a href="<%= user ? '/user/profile' : '/login' %>" class="user-icon" style="text-decoration: none;">
-    <img 
-      src="<%= user ? '/images/user.webp' : '/images/user icon.png' %>" 
-      alt="User" 
-    >
-    
-    <% if (user) { %>
+     <div class="user-options">
+  <% if (user) { %>
+    <!-- User is logged in -->
+    <a href="/user/profile" class="user-icon" style="text-decoration: none;">
+      <img src="/images/user.webp" alt="User">
       <span style="margin-left: 5px; font-weight: bold; color: white;">
         <%= user.name %>
       </span>
-    <% } %>
-  </a>
+    </a>
+  <% } else { %>
+    <!-- User not logged in -->
+    <a href="/login" class="sign-in-button">
+      Sign In
+    </a>
+  <% } %>
 </div>
 
       </div>
