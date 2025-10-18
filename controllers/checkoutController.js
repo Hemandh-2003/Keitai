@@ -496,6 +496,13 @@ exports.renderConfirmPayment = async (req, res) => {
       relatedProducts,
       couponDiscount 
     });
+    setTimeout(() => {
+  delete req.session.checkout;
+  delete req.session.retryOrderId;
+  delete req.session.orderItems;
+  delete req.session.totalAmount;
+  delete req.session.couponDiscount;
+}, 1000);
   } catch (err) {
     console.error('Error rendering confirmation page:', err.message);
     res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).send(err.message || MESSAGE.INTERNAL_SERVER_ERROR);
