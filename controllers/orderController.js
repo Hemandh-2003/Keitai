@@ -1,7 +1,6 @@
 const Order = require('../models/Order');
 const { MESSAGE } = require('../SM/messages');
 const {HTTP_STATUS}= require('../SM/status');
-const { MESSAGE }= require('../SM/messages');
 
 exports.cancelOrder = async (req, res) => {
   try {
