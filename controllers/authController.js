@@ -25,8 +25,8 @@ exports.register = async (req, res) => {
      // console.log('Validation failed: missing fields');
       return res.render('user/signup', { error: 'All fields are required.' });
     }
-
-     const nameRegex = /^[A-Za-z0-9]+$/;
+    
+    const nameRegex = /^[A-Za-z0-9]+$/;
     if(!nameRegex.test(name)) {
       return res.render('user/signup', {error: 'Name can only contain letter and Numbers'})
     }
@@ -53,12 +53,11 @@ exports.register = async (req, res) => {
       password: hashedPassword,
       userCode: userCode.toString(),
       wallet: { balance: 0, transactions: [] },
-      error,
     });
     //console.log('New user object created');
     const code = referralCode ? referralCode.trim() : null;
 if (code) {
-  const referrer = await User.findOne({ referralCode: code }); // ✅ use trimmed code
+  const referrer = await User.findOne({ referralCode: code }); 
   if (referrer) {
    // console.log('Referrer found:', referrer.email);
     user.referredBy = code;
@@ -82,6 +81,7 @@ if (code) {
     referrer.referralRewards = (referrer.referralRewards || 0) + 1000;
     //console.log('Referrer rewarded with 1000');
 
+    // Save both users
     await referrer.save();
    // console.log('Referrer saved successfully');
 
