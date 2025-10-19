@@ -181,7 +181,7 @@ exports.checkout = async (req, res) => {
 exports.placeOrder = async (req, res) => {
   try {
     const userId = req.session.user._id;
-    const { addressId, paymentMethod } = req.body;
+    const { selectedAddress, paymentMethod } = req.body; // <-- match your checkout form
 
     const checkoutData = req.session.checkout;
     if (!checkoutData) {
@@ -190,8 +190,17 @@ exports.placeOrder = async (req, res) => {
     }
 
     const user = await User.findById(userId);
-    const selectedAddress = user.addresses.id(addressId);
-    if (!selectedAddress) {
+    if (!user) {
+      console.error("placeOrder: User not found");
+      return res.redirect('/login');
+    }
+
+    // convert to ObjectId for subdocument search
+    const addressId = mongoose.Types.ObjectId(selectedAddress);
+    const addressDoc = user.addresses.id(addressId);
+
+    if (!addressDoc) {
+      console.error("Invalid address selected");
       return res.status(400).send("Invalid address selected");
     }
 
@@ -203,7 +212,6 @@ exports.placeOrder = async (req, res) => {
         const qty = checkoutData.quantities[index];
         if (qty > product.quantity) throw new Error(`${product.name} has only ${product.quantity} in stock`);
 
-        // reduce stock
         product.quantity -= qty;
         await product.save();
 
@@ -221,13 +229,9 @@ exports.placeOrder = async (req, res) => {
 
     let createdOrder;
 
-    // 🔁 Retry flow
     if (checkoutData.isRetry && checkoutData.retryOrderId) {
       createdOrder = await Order.findById(checkoutData.retryOrderId);
-      if (!createdOrder) {
-        console.error("Retry order not found");
-        return res.redirect('/user/orders');
-      }
+      if (!createdOrder) return res.redirect('/user/orders');
 
       createdOrder.products = validItems.map(i => ({
         product: i.product._id,
@@ -238,13 +242,11 @@ exports.placeOrder = async (req, res) => {
       createdOrder.paymentMethod = paymentMethod;
       createdOrder.status = paymentMethod === "COD" ? "Placed" : "Pending";
       createdOrder.paymentStatus = paymentMethod === "COD" ? "paid" : "pending";
-      createdOrder.selectedAddress = addressId;
+      createdOrder.selectedAddress = addressDoc._id;
       createdOrder.estimatedDelivery = estimatedDate;
 
       await createdOrder.save();
-    } 
-    // 🆕 Normal order flow
-    else {
+    } else {
       createdOrder = new Order({
         user: userId,
         products: validItems.map(i => ({
@@ -253,7 +255,7 @@ exports.placeOrder = async (req, res) => {
           unitPrice: i.offerPrice
         })),
         totalAmount,
-        selectedAddress: addressId,
+        selectedAddress: addressDoc._id,
         paymentMethod,
         estimatedDelivery: estimatedDate,
         status: paymentMethod === "COD" ? "Placed" : "Pending",
@@ -263,6 +265,7 @@ exports.placeOrder = async (req, res) => {
       await createdOrder.save();
     }
 
+    // update session
     req.session.checkout.orderId = createdOrder._id;
     req.session.checkout.isRetry = false;
     req.session.checkout.retryOrderId = null;
@@ -270,13 +273,12 @@ exports.placeOrder = async (req, res) => {
     if (paymentMethod === "COD") {
       return res.redirect(`/user/order/${createdOrder._id}`);
     } else {
-      // redirect to confirmation / Razorpay page
       return res.redirect('/user/confirm-payment');
     }
 
   } catch (err) {
     console.error('placeOrder error:', err);
-    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).send(MESSAGE.INTERNAL_SERVER_ERROR);
+    res.status(500).send('Something went wrong. Please try again.');
   }
 };
 
