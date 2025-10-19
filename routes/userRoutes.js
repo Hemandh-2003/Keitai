@@ -46,6 +46,7 @@ router.get('/confirm-payment', ...protect, checkoutController.renderConfirmPayme
 router.post('/address/create-inline', checkoutController.createInlineAddress);
 router.get('/retry-checkout', checkoutController.retryCheckout);
 router.get('/retry-checkout/:orderId', checkoutController.retryCheckoutWithOrderId);
+router.post('/verify-payment', checkoutController.verifyPayment);
 
 // Settings and Password Routes
 router.get('/settings', ...protect, settingsController.getSettingsPage);
