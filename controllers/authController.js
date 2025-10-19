@@ -53,7 +53,6 @@ exports.register = async (req, res) => {
       password: hashedPassword,
       userCode: userCode.toString(),
       wallet: { balance: 0, transactions: [] },
-      error,
     });
     //console.log('New user object created');
     const code = referralCode ? referralCode.trim() : null;
