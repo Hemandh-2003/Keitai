@@ -162,7 +162,7 @@ exports.placeOrder = async (req, res) => {
       return res.status(HTTP_STATUS.BAD_REQUEST).send("Checkout session missing or invalid.");
     }
 
-    const { productIds, quantities, offerPrices } = checkoutData;
+    const { productIds, quantities, offerPrices, totalAmount: sessionTotal } = checkoutData;
     const user = await User.findById(req.session.user._id);
     if (!user) return res.status(HTTP_STATUS.NOT_FOUND).send(MESSAGE.USER_NOT_FOUND);
 
@@ -176,24 +176,42 @@ exports.placeOrder = async (req, res) => {
 
     let totalAmount = 0;
     const orderItems = [];
+
     for (let i = 0; i < products.length; i++) {
       const qty = parseInt(quantities[i]);
       const price = parseFloat(offerPrices[i]);
-      if (qty > products[i].quantity) return res.status(HTTP_STATUS.BAD_REQUEST).send(`Insufficient stock for ${products[i].name}`);
+      if (qty > products[i].quantity) {
+        return res.status(HTTP_STATUS.BAD_REQUEST).send(`Insufficient stock for ${products[i].name}`);
+      }
       totalAmount += price * qty;
       orderItems.push({ product: products[i], quantity: qty, offerPrice: price });
     }
 
+    const discountAmount = calculateDiscountAmount(products, quantities, offerPrices);
     let deliveryCharge = totalAmount < 50000 ? 80 : 0;
     totalAmount += deliveryCharge;
 
     let couponDiscount = 0;
     if (req.session.coupon?.discountAmount) {
-      couponDiscount = parseFloat(req.session.coupon.discountAmount);
-      totalAmount -= couponDiscount;
+      const discount = parseFloat(req.session.coupon.discountAmount);
+      if (!isNaN(discount) && discount > 0 && discount <= totalAmount) {
+        couponDiscount = discount;
+        totalAmount -= discount;
+      }
     }
 
-    // COD/Wallet: create order immediately
+    // Payment restrictions
+    if (paymentMethod === "COD" && totalAmount > 20000) {
+      return res.status(HTTP_STATUS.BAD_REQUEST).send("COD is only available for orders up to ₹20,000.");
+    }
+    if (paymentMethod === "Online" && totalAmount > 450000) {
+      return res.status(HTTP_STATUS.BAD_REQUEST).send("Online payments above ₹4.5 Lakhs not supported.");
+    }
+    if (paymentMethod === "Wallet" && (!user.wallet || user.wallet.balance < totalAmount)) {
+      return res.status(HTTP_STATUS.BAD_REQUEST).send("Insufficient wallet balance.");
+    }
+
+    // COD or Wallet: create order immediately
     if (paymentMethod === "COD" || paymentMethod === "Wallet") {
       const order = await Order.create({
         user: user._id,
@@ -202,48 +220,70 @@ exports.placeOrder = async (req, res) => {
         totalAmount,
         paymentMethod,
         deliveryCharge,
+        estimatedDelivery: new Date(Date.now() + 6 * 24 * 60 * 60 * 1000),
         status: paymentMethod === "COD" ? "Placed" : "Paid",
-        estimatedDelivery: new Date(Date.now() + 6*24*60*60*1000),
-        discountAmount: calculateDiscountAmount(products, quantities, offerPrices),
-        couponDiscount
+        discountAmount,
+        couponDiscount,
       });
 
-      // Wallet deduction
+      // Deduct wallet
       if (paymentMethod === "Wallet") {
         user.wallet.balance -= totalAmount;
-        user.wallet.transactions.push({ type: "Debit", amount: totalAmount, reason: "Order payment", orderId: order._id, date: new Date() });
+        user.wallet.transactions.push({
+          type: "Debit",
+          amount: totalAmount,
+          reason: "Order payment",
+          orderId: order._id.toString(),
+          date: new Date(),
+        });
         await user.save();
       }
 
       // Reduce stock
       for (let i = 0; i < products.length; i++) {
-        await Product.findOneAndUpdate({ _id: products[i]._id, quantity: { $gte: quantities[i] } }, { $inc: { quantity: -quantities[i] } });
+        await Product.findOneAndUpdate(
+          { _id: products[i]._id, quantity: { $gte: quantities[i] } },
+          { $inc: { quantity: -quantities[i] } }
+        );
       }
 
       req.session.orderId = order._id.toString();
       req.session.paymentVerified = paymentMethod === "Wallet";
 
       return res.render("user/order-confirmation", {
-        orderItems, address, paymentMethod, totalAmount, deliveryCharge,
-        estimatedDate: new Date(Date.now() + 6*24*60*60*1000),
-        orderId: order._id, paymentVerified: req.session.paymentVerified,
-        paymentDetails: null, checkoutUrl: "/user/checkout", couponDiscount
+        orderItems,
+        address,
+        paymentMethod,
+        totalAmount,
+        deliveryCharge,
+        estimatedDate: new Date(Date.now() + 6 * 24 * 60 * 60 * 1000),
+        orderId: order._id,
+        paymentVerified: req.session.paymentVerified,
+        paymentDetails: null,
+        checkoutUrl: "/user/checkout",
+        couponDiscount,
       });
     }
 
-    // Online payment: store checkout data for verification
+    // Online: do not create order yet, just store checkout session
     req.session.checkout.orderData = {
-      orderItems, totalAmount, deliveryCharge,
-      discountAmount: calculateDiscountAmount(products, quantities, offerPrices),
-      couponDiscount, selectedAddress: address._id, paymentMethod
+      orderItems,
+      totalAmount,
+      deliveryCharge,
+      discountAmount,
+      couponDiscount,
+      selectedAddress: address._id,
+      paymentMethod
     };
 
     return res.json({ success: true, message: "Proceed to online payment" });
+
   } catch (err) {
-    console.error("❌ placeOrder error:", err);
+    console.error("❌ Error in placeOrder:", err.message);
     res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).send(err.message || MESSAGE.INTERNAL_SERVER_ERROR);
   }
 };
+
 
 
 exports.confirmPayment = async (req, res) => {
@@ -524,9 +564,9 @@ exports.retryCheckoutWithOrderId = async (req, res) => {
 };
 exports.verifyPayment = async (req, res) => {
   try {
-    const { razorpay_payment_id, razorpay_order_id, razorpay_signature } = req.body;
-    const checkoutData = req.session.checkout;
-    if (!checkoutData?.orderData) return res.status(400).send("No order to verify");
+    const { razorpay_payment_id, razorpay_order_id } = req.body;
+    const orderId = req.session.checkout?.orderId;
+    if (!orderId) return res.status(400).send("No order to verify");
 
     const crypto = require('crypto');
     const expectedSignature = crypto
@@ -534,40 +574,23 @@ exports.verifyPayment = async (req, res) => {
       .update(razorpay_order_id + "|" + razorpay_payment_id)
       .digest('hex');
 
-    if (expectedSignature !== razorpay_signature) return res.status(400).send("Payment verification failed");
-
-    const orderInfo = checkoutData.orderData;
-    const user = await User.findById(req.session.user._id);
-
-    // Create order now
-    const order = await Order.create({
-      user: user._id,
-      selectedAddress: orderInfo.selectedAddress,
-      products: orderInfo.orderItems.map(i => ({ product: i.product._id, quantity: i.quantity, unitPrice: i.offerPrice })),
-      totalAmount: orderInfo.totalAmount,
-      paymentMethod: "Online",
-      deliveryCharge: orderInfo.deliveryCharge,
-      estimatedDelivery: new Date(Date.now() + 6*24*60*60*1000),
-      status: "Placed",
-      discountAmount: orderInfo.discountAmount,
-      couponDiscount: orderInfo.couponDiscount,
-      razorpayPaymentId: razorpay_payment_id,
-      paymentStatus: "paid"
-    });
-
-    // Reduce stock
-    for (let i = 0; i < orderInfo.orderItems.length; i++) {
-      const item = orderInfo.orderItems[i];
-      await Product.findOneAndUpdate({ _id: item.product._id, quantity: { $gte: item.quantity } }, { $inc: { quantity: -item.quantity } });
+    if (expectedSignature !== req.body.razorpay_signature) {
+      await Order.findByIdAndUpdate(orderId, { paymentStatus: 'failed', status: 'Failed' });
+      return res.status(400).send("Payment verification failed");
     }
 
-    req.session.orderId = order._id.toString();
-    req.session.paymentVerified = true;
-    delete req.session.checkout.orderData;
+    await Order.findByIdAndUpdate(orderId, {
+      paymentStatus: 'paid',
+      status: 'Placed',
+      razorpayPaymentId: razorpay_payment_id,
+    });
 
-    res.json({ success: true, orderId: order._id });
+    // Mark payment verified in session
+    if (req.session.checkout) req.session.paymentVerified = true;
+
+    res.json({ success: true });
   } catch (err) {
-    console.error("❌ verifyPayment error:", err);
-    res.status(500).send("Payment verification failed");
+    console.error('Payment verification error:', err);
+    res.status(500).send('Error verifying payment');
   }
 };
