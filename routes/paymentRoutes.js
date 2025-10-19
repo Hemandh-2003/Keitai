@@ -14,7 +14,6 @@ router.get('/payment/success/:orderId', paymentController.paymentSuccess);
 router.get('/payment/failed', paymentController.paymentFailed);
 router.get('/failed', isLoggedIn, paymentController.paymentFailed);
 router.post('/retry-payment', paymentController.retryPayment);
-router.post("/verify", paymentController.verifyPayment);
 // Order management routes
 router.post('/orders/:orderId/cancel', orderController.cancelOrder);
 router.post('/orders/:orderId/return', orderController.requestReturn);

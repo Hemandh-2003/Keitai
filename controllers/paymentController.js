@@ -180,29 +180,3 @@ exports.retryPaymentFromOrder = async (req, res) => {
     res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).send('Server error during payment retry');
   }
 };
-
-exports.verifyPayment = async (req, res) => {
-  try {
-    const { razorpay_order_id, razorpay_payment_id, razorpay_signature, orderId } = req.body;
-
-    const body = razorpay_order_id + "|" + razorpay_payment_id;
-    const expectedSignature = crypto
-      .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET)
-      .update(body)
-      .digest("hex");
-
-    if (expectedSignature === razorpay_signature) {
-      await Order.findByIdAndUpdate(orderId, {
-        status: "Paid",
-        paymentMethod: "Online",
-      });
-      return res.json({ success: true });
-    } else {
-      await Order.findByIdAndUpdate(orderId, { status: "Payment Failed" });
-      return res.json({ success: false, error: "Signature mismatch" });
-    }
-  } catch (err) {
-    console.error("Payment verify error:", err);
-    res.json({ success: false, error: err.message });
-  }
-};
