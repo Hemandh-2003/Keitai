@@ -146,30 +146,23 @@ exports.retryPaymentFromOrder = async (req, res) => {
   try {
     const orderId = req.params.orderId;
     const user = req.session.user;
-
-    if (!user) {
-      return res.redirect('/login');
-    }
+    if (!user) return res.redirect('/login');
 
     const order = await Order.findOne({ _id: orderId, user: user._id }).populate('products.product');
-
-    if (!order) {
-      return res.status(HTTP_STATUS.NOT_FOUND).send('Order not found');
-    }
-
+    if (!order) return res.status(HTTP_STATUS.NOT_FOUND).send('Order not found');
     if (order.status !== 'Payment Failed' && order.status !== 'Pending') {
       return res.status(HTTP_STATUS.BAD_REQUEST).send('Payment retry is not allowed for this order');
     }
 
-    req.session.retryOrder = {
-      orderId: order._id,
-      products: order.products.map(p => ({
-        product: p.product._id.toString(),
-        quantity: p.quantity
-      })),
-      addressId: order.selectedAddress,
-      coupon: order.coupon,
+    req.session.checkout = {
+      productIds: order.products.map(p => p.product._id.toString()),
+      quantities: order.products.map(p => p.quantity),
+      offerPrices: order.products.map(p => p.unitPrice),
       totalAmount: order.totalAmount,
+      orderId: order._id.toString(),
+      isRetry: true,
+      addressId: order.selectedAddress?._id || null,
+      couponId: order.coupon?._id || null,
       paymentMethod: order.paymentMethod
     };
 

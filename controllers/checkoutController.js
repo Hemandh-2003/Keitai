@@ -78,12 +78,6 @@ exports.checkout = async (req, res) => {
 
     const { productIds, quantities, productId, quantity } = req.body;
     const user = await User.findById(req.session.user._id);
-    const now = new Date();
-    const coupons = await Coupon.find({
-      isActive: true,
-      startDate: { $lte: now },
-      endDate: { $gte: now }
-    }).sort({ createdAt: -1 });
 
     let sessionCheckout = {
       productIds: [],
@@ -144,38 +138,33 @@ exports.checkout = async (req, res) => {
     } else {
       return res.redirect('/cart');
     }
-if (!user.addresses || user.addresses.length === 0) {
-  req.session.checkout = sessionCheckout;
-  return res.redirect('/user/checkout'); 
-}
 
+    if (!user.addresses || user.addresses.length === 0) {
+      req.session.checkout = sessionCheckout;
+      return res.redirect('/user/checkout');
+    }
 
+    if (!req.session.checkout?.orderId) {
+      const order = new Order({
+        user: user._id,
+        products: sessionCheckout.productIds.map((pid, index) => ({
+          product: pid,
+          quantity: sessionCheckout.quantities[index],
+          unitPrice: sessionCheckout.offerPrices[index]
+        })),
+        totalAmount: sessionCheckout.totalAmount,
+        selectedAddress: user.addresses[0]?._id,
+        paymentMethod: "Online",
+        estimatedDelivery: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+        status: "Pending"
+      });
+      await order.save();
+      req.session.checkout = { ...sessionCheckout, orderId: order._id.toString() };
+    } else {
+      req.session.checkout = { ...sessionCheckout, orderId: req.session.checkout.orderId, isRetry: true };
+    }
 
-//  console.log("Order created with ID:(chekout)", order._id);
-if (!req.session.retryOrderId) {
-  const order = new Order({
-    user: req.session.user._id,
-    products: sessionCheckout.productIds.map((pid, index) => ({
-      product: pid,
-      quantity: sessionCheckout.quantities[index],
-      unitPrice: sessionCheckout.offerPrices[index]
-    })),
-    totalAmount: sessionCheckout.totalAmount,
-    selectedAddress: user.addresses[0]?._id,
-    paymentMethod: "Online",
-    estimatedDelivery: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-    status: "Pending"
-  });
-  await order.save();
-
-  req.session.checkout = { ...sessionCheckout, orderId: order._id.toString() };
-} else {
-  req.session.checkout = { ...sessionCheckout, orderId: req.session.retryOrderId.toString(), isRetry: true };
-}
-
-return res.redirect('/user/checkout');
-
-//return res.redirect('/user/checkout');
+    return res.redirect('/user/checkout');
 
   } catch (err) {
     console.error('Checkout POST error:', err);
