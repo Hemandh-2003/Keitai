@@ -372,7 +372,10 @@ exports.renderConfirmPayment = async (req, res) => {
       totalAmount,
       deliveryCharge,
       arrivalDate,
-      couponDiscount
+      couponDiscount,
+      paymentVerified,
+      paymentDetails,
+      orderId
     } = req.session;
 
     if (!orderItems || !address || !paymentMethod || !totalAmount || !arrivalDate) {
@@ -396,15 +399,20 @@ exports.renderConfirmPayment = async (req, res) => {
       paymentMethod,
       totalAmount: finalTotalAmount,
       deliveryCharge,
-      arrivalDate: new Date(arrivalDate),
+      estimatedDate: new Date(arrivalDate), // fix for EJS
       relatedProducts,
-      couponDiscount 
+      couponDiscount,
+      paymentVerified: paymentVerified || false,
+      paymentDetails: paymentDetails || {},
+      orderId: orderId || null
     });
   } catch (err) {
     console.error('Error rendering confirmation page:', err.message);
     res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).send(err.message || MESSAGE.INTERNAL_SERVER_ERROR);
   }
 };
+
+
 
 exports.createInlineAddress = async (req, res) => {
   try {
