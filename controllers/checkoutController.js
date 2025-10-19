@@ -1,6 +1,7 @@
 const Product = require('../models/Product');
 const User = require('../models/User');
 const Order = require('../models/Order');
+const mongoose = require('mongoose');
 const Cart = require('../models/Cart');
 const Coupon = require('../models/Coupon');
 const {HTTP_STATUS}= require('../SM/status');
@@ -141,15 +142,12 @@ exports.checkout = async (req, res) => {
       return res.redirect('/cart');
     }
 
-    // Save session for next step
     req.session.checkout = sessionCheckout;
 
-    // If user has no addresses, go to address add flow
     if (!user.addresses || user.addresses.length === 0) {
       return res.redirect('/user/checkout');
     }
 
-    // If not already created, create a pending order
     if (!req.session.checkout.orderId) {
       const order = new Order({
         user: user._id,
@@ -181,134 +179,77 @@ exports.checkout = async (req, res) => {
 exports.placeOrder = async (req, res) => {
   try {
     const userId = req.session.user?._id;
-    if (!userId) {
-      console.error("placeOrder: User not logged in");
-      return res.redirect('/login');
-    }
+    if (!userId) return res.redirect('/login');
 
-    const { selectedAddress, paymentMethod, productIds, quantities, offerPrices } = req.body;
+    const { selectedAddress, paymentMethod } = req.body;
 
-    // Validate address
-    if (!selectedAddress || !mongoose.Types.ObjectId.isValid(selectedAddress)) {
-      console.error("placeOrder: Invalid or missing address");
-      return res.status(400).send("Please select a valid shipping address");
+    if (!mongoose.Types.ObjectId.isValid(selectedAddress)) {
+      return res.status(400).send("Please select a valid address");
     }
 
     const user = await User.findById(userId);
-    if (!user) {
-      console.error("placeOrder: User not found");
-      return res.redirect('/login');
-    }
+    if (!user) return res.redirect('/login');
 
     const addressDoc = user.addresses.id(selectedAddress);
-    if (!addressDoc) {
-      console.error("placeOrder: Address not found in user addresses");
-      return res.status(400).send("Invalid address selected");
-    }
+    if (!addressDoc) return res.status(400).send("Invalid address");
 
-    // Validate session checkout
     const checkoutData = req.session.checkout;
-    if (!checkoutData) {
-      console.error("placeOrder: Missing checkout session");
+    if (!checkoutData || !checkoutData.productIds?.length) {
       return res.redirect('/cart');
     }
 
-    if (!productIds || !quantities || !offerPrices || productIds.length === 0) {
-      console.error("placeOrder: Checkout data incomplete", { productIds, quantities, offerPrices });
-      return res.redirect('/cart');
-    }
+    const orderItems = [];
 
-    // Process order items
-    const orderItems = await Promise.all(
-      productIds.map(async (id, index) => {
-        if (!mongoose.Types.ObjectId.isValid(id)) return null;
+    for (let i = 0; i < checkoutData.productIds.length; i++) {
+      const pid = checkoutData.productIds[i];
+      const qty = Number(checkoutData.quantities[i]);
+      const price = Number(checkoutData.offerPrices[i]);
 
-        const product = await Product.findById(id);
-        if (!product || product.isBlocked || product.isDeleted) return null;
+      if (!mongoose.Types.ObjectId.isValid(pid)) continue;
 
-        const qty = Number(quantities[index]);
-        if (qty > product.quantity) {
-          throw new Error(`${product.name} has only ${product.quantity} in stock`);
-        }
+      const product = await Product.findById(pid);
+      if (!product || product.isBlocked || product.isDeleted) continue;
 
-        product.quantity -= qty;
-        await product.save();
-
-        return {
-          product,
-          quantity: qty,
-          unitPrice: Number(offerPrices[index])
-        };
-      })
-    );
-
-    const validItems = orderItems.filter(Boolean);
-    if (validItems.length === 0) {
-      console.error("placeOrder: No valid items to order");
-      return res.status(400).send("No valid items available for order");
-    }
-
-    const totalAmount = Number(checkoutData.totalAmount || 0);
-    const estimatedDate = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
-
-    let createdOrder;
-
-    // Retry order flow
-    if (checkoutData.isRetry && checkoutData.retryOrderId) {
-      createdOrder = await Order.findById(checkoutData.retryOrderId);
-      if (!createdOrder) {
-        console.error("placeOrder: Retry order not found");
-        return res.redirect('/user/orders');
+      if (qty > product.quantity) {
+        return res.status(400).send(`Only ${product.quantity} units available for ${product.name}`);
       }
 
-      createdOrder.products = validItems.map(i => ({
-        product: i.product._id,
-        quantity: i.quantity,
-        unitPrice: i.unitPrice
-      }));
-      createdOrder.totalAmount = totalAmount;
-      createdOrder.paymentMethod = paymentMethod;
-      createdOrder.status = paymentMethod === "COD" ? "Placed" : "Pending";
-      createdOrder.paymentStatus = paymentMethod === "COD" ? "paid" : "pending";
-      createdOrder.selectedAddress = addressDoc._id;
-      createdOrder.estimatedDelivery = estimatedDate;
+      product.quantity -= qty;
+      await product.save();
 
-      await createdOrder.save();
-
-    } else {
-      // New order
-      createdOrder = new Order({
-        user: userId,
-        products: validItems.map(i => ({
-          product: i.product._id,
-          quantity: i.quantity,
-          unitPrice: i.unitPrice
-        })),
-        totalAmount,
-        selectedAddress: addressDoc._id,
-        paymentMethod,
-        estimatedDelivery: estimatedDate,
-        status: paymentMethod === "COD" ? "Placed" : "Pending",
-        paymentStatus: paymentMethod === "COD" ? "paid" : "pending"
+      orderItems.push({
+        product: product._id,
+        quantity: qty,
+        unitPrice: price
       });
-
-      await createdOrder.save();
     }
 
-    // Update session
-    req.session.checkout = {
-      ...req.session.checkout,
-      orderId: createdOrder._id,
-      isRetry: false,
-      retryOrderId: null
-    };
+    if (!orderItems.length) return res.status(400).send("No valid items to order");
 
-    // Redirect based on payment
+    const totalAmount = checkoutData.totalAmount || orderItems.reduce((sum, i) => sum + i.unitPrice * i.quantity, 0);
+    const estimatedDelivery = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+
+    // Create new order
+    const newOrder = new Order({
+      user: userId,
+      products: orderItems,
+      totalAmount,
+      selectedAddress: addressDoc._id,
+      paymentMethod,
+      estimatedDelivery,
+      status: paymentMethod === "COD" || paymentMethod === "Wallet" ? "Placed" : "Pending",
+      paymentStatus: paymentMethod === "COD" || paymentMethod === "Wallet" ? "paid" : "pending"
+    });
+
+    await newOrder.save();
+
+    req.session.checkout.orderId = newOrder._id;
+
     if (paymentMethod === "COD" || paymentMethod === "Wallet") {
-      return res.redirect(`/user/order/${createdOrder._id}`);
+      return res.redirect(`/user/order/${newOrder._id}`);
     } else {
-      // Online payment
-      return res.redirect('/user/confirm-payment');
+      // For Razorpay online payment
+      return res.redirect(`/user/confirm-payment`);
     }
 
   } catch (err) {
