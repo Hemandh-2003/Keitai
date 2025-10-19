@@ -176,151 +176,71 @@ exports.placeOrder = async (req, res) => {
 
     let totalAmount = 0;
     const orderItems = [];
-
     for (let i = 0; i < products.length; i++) {
-      const quantity = parseInt(quantities[i]);
+      const qty = parseInt(quantities[i]);
       const price = parseFloat(offerPrices[i]);
-      totalAmount += price * quantity;
-      orderItems.push({ product: products[i], quantity, offerPrice: price });
+      if (qty > products[i].quantity) return res.status(HTTP_STATUS.BAD_REQUEST).send(`Insufficient stock for ${products[i].name}`);
+      totalAmount += price * qty;
+      orderItems.push({ product: products[i], quantity: qty, offerPrice: price });
     }
 
-    const discountAmount = calculateDiscountAmount(products, quantities, offerPrices);
     let deliveryCharge = totalAmount < 50000 ? 80 : 0;
     totalAmount += deliveryCharge;
 
     let couponDiscount = 0;
     if (req.session.coupon?.discountAmount) {
-      const discount = parseFloat(req.session.coupon.discountAmount);
-      if (!isNaN(discount) && discount > 0 && discount <= totalAmount) {
-        couponDiscount = discount;
-        totalAmount -= discount;
-      }
+      couponDiscount = parseFloat(req.session.coupon.discountAmount);
+      totalAmount -= couponDiscount;
     }
 
-    // Payment restrictions
-    if (paymentMethod === "COD" && totalAmount > 20000) {
-      return res.status(HTTP_STATUS.BAD_REQUEST).send("COD is only available for orders up to ₹20,000.");
-    }
-    if (paymentMethod === "Online" && totalAmount > 450000) {
-      return res.status(HTTP_STATUS.BAD_REQUEST).send("Online payments above ₹4.5 Lakhs not supported.");
-    }
-    if (paymentMethod === "Wallet" && (!user.wallet || user.wallet.balance < totalAmount)) {
-      return res.status(HTTP_STATUS.BAD_REQUEST).send("Insufficient wallet balance.");
-    }
-
-    const estimatedDate = new Date();
-    estimatedDate.setDate(estimatedDate.getDate() + 6);
-
-    let createdOrder;
-
-    if (checkoutData.orderId) {
-      // Update existing order (retry or already created)
-      createdOrder = await Order.findById(checkoutData.orderId);
-      if (!createdOrder) throw new Error("Order not found");
-
-      createdOrder.paymentMethod = paymentMethod;
-      createdOrder.status =
-        paymentMethod === "COD"
-          ? "Placed"
-          : paymentMethod === "Wallet"
-          ? "Paid"
-          : "Pending";
-      createdOrder.totalAmount = totalAmount;
-      createdOrder.deliveryCharge = deliveryCharge;
-      createdOrder.discountAmount = discountAmount;
-      createdOrder.couponDiscount = couponDiscount;
-      createdOrder.estimatedDelivery = estimatedDate;
-      createdOrder.products = orderItems.map(item => ({
-        product: item.product._id,
-        quantity: item.quantity,
-        unitPrice: item.offerPrice,
-      }));
-
-      await createdOrder.save();
-    } else {
-      // Create new order
-      createdOrder = await Order.create({
+    // COD/Wallet: create order immediately
+    if (paymentMethod === "COD" || paymentMethod === "Wallet") {
+      const order = await Order.create({
         user: user._id,
         selectedAddress: address._id,
-        products: orderItems.map(item => ({
-          product: item.product._id,
-          quantity: item.quantity,
-          unitPrice: item.offerPrice,
-        })),
+        products: orderItems.map(i => ({ product: i.product._id, quantity: i.quantity, unitPrice: i.offerPrice })),
         totalAmount,
         paymentMethod,
         deliveryCharge,
-        estimatedDelivery: estimatedDate,
-        status:
-          paymentMethod === "COD"
-            ? "Placed"
-            : paymentMethod === "Wallet"
-            ? "Paid"
-            : "Pending",
-        discountAmount,
-        couponDiscount,
+        status: paymentMethod === "COD" ? "Placed" : "Paid",
+        estimatedDelivery: new Date(Date.now() + 6*24*60*60*1000),
+        discountAmount: calculateDiscountAmount(products, quantities, offerPrices),
+        couponDiscount
       });
 
-      // Attach orderId to session
-      req.session.checkout.orderId = createdOrder._id.toString();
-
-      // Deduct wallet if used
+      // Wallet deduction
       if (paymentMethod === "Wallet") {
         user.wallet.balance -= totalAmount;
-        user.wallet.transactions.push({
-          type: "Debit",
-          amount: totalAmount,
-          reason: "Order payment",
-          orderId: createdOrder._id.toString(),
-          date: new Date(),
-        });
+        user.wallet.transactions.push({ type: "Debit", amount: totalAmount, reason: "Order payment", orderId: order._id, date: new Date() });
         await user.save();
       }
 
       // Reduce stock
       for (let i = 0; i < products.length; i++) {
-        const quantityOrder = parseInt(quantities[i]);
-        const updatedProduct = await Product.findOneAndUpdate(
-          { _id: products[i]._id, quantity: { $gte: quantityOrder } },
-          { $inc: { quantity: -quantityOrder } },
-          { new: true }
-        );
-        if (!updatedProduct) throw new Error(`Insufficient stock for product ${products[i].name}`);
+        await Product.findOneAndUpdate({ _id: products[i]._id, quantity: { $gte: quantities[i] } }, { $inc: { quantity: -quantities[i] } });
       }
 
-      // Remove items from cart
-      await Cart.updateOne(
-        { user: req.session.user._id },
-        { $pull: { items: { product: { $in: productIds } } } }
-      );
+      req.session.orderId = order._id.toString();
+      req.session.paymentVerified = paymentMethod === "Wallet";
+
+      return res.render("user/order-confirmation", {
+        orderItems, address, paymentMethod, totalAmount, deliveryCharge,
+        estimatedDate: new Date(Date.now() + 6*24*60*60*1000),
+        orderId: order._id, paymentVerified: req.session.paymentVerified,
+        paymentDetails: null, checkoutUrl: "/user/checkout", couponDiscount
+      });
     }
 
-    // Store order details in session
-    req.session.orderItems = orderItems;
-    req.session.address = address;
-    req.session.paymentMethod = paymentMethod;
-    req.session.totalAmount = totalAmount;
-    req.session.deliveryCharge = deliveryCharge;
-    req.session.arrivalDate = estimatedDate;
-    req.session.couponDiscount = couponDiscount;
-    req.session.paymentVerified = paymentMethod === "Wallet";
+    // Online payment: store checkout data for verification
+    req.session.checkout.orderData = {
+      orderItems, totalAmount, deliveryCharge,
+      discountAmount: calculateDiscountAmount(products, quantities, offerPrices),
+      couponDiscount, selectedAddress: address._id, paymentMethod
+    };
 
-    res.render("user/order-confirmation", {
-      orderItems,
-      address,
-      paymentMethod,
-      totalAmount,
-      deliveryCharge,
-      estimatedDate,
-      orderId: createdOrder._id,
-      paymentVerified: req.session.paymentVerified,
-      paymentDetails: null,
-      checkoutUrl: "/user/checkout",
-      couponDiscount,
-    });
-
+    return res.json({ success: true, message: "Proceed to online payment" });
   } catch (err) {
-    console.error("❌ Error placing order:", err.message);
+    console.error("❌ placeOrder error:", err);
     res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).send(err.message || MESSAGE.INTERNAL_SERVER_ERROR);
   }
 };
@@ -604,9 +524,9 @@ exports.retryCheckoutWithOrderId = async (req, res) => {
 };
 exports.verifyPayment = async (req, res) => {
   try {
-    const { razorpay_payment_id, razorpay_order_id } = req.body;
-    const orderId = req.session.checkout?.orderId;
-    if (!orderId) return res.status(400).send("No order to verify");
+    const { razorpay_payment_id, razorpay_order_id, razorpay_signature } = req.body;
+    const checkoutData = req.session.checkout;
+    if (!checkoutData?.orderData) return res.status(400).send("No order to verify");
 
     const crypto = require('crypto');
     const expectedSignature = crypto
@@ -614,23 +534,40 @@ exports.verifyPayment = async (req, res) => {
       .update(razorpay_order_id + "|" + razorpay_payment_id)
       .digest('hex');
 
-    if (expectedSignature !== req.body.razorpay_signature) {
-      await Order.findByIdAndUpdate(orderId, { paymentStatus: 'failed', status: 'Failed' });
-      return res.status(400).send("Payment verification failed");
-    }
+    if (expectedSignature !== razorpay_signature) return res.status(400).send("Payment verification failed");
 
-    await Order.findByIdAndUpdate(orderId, {
-      paymentStatus: 'paid',
-      status: 'Placed',
+    const orderInfo = checkoutData.orderData;
+    const user = await User.findById(req.session.user._id);
+
+    // Create order now
+    const order = await Order.create({
+      user: user._id,
+      selectedAddress: orderInfo.selectedAddress,
+      products: orderInfo.orderItems.map(i => ({ product: i.product._id, quantity: i.quantity, unitPrice: i.offerPrice })),
+      totalAmount: orderInfo.totalAmount,
+      paymentMethod: "Online",
+      deliveryCharge: orderInfo.deliveryCharge,
+      estimatedDelivery: new Date(Date.now() + 6*24*60*60*1000),
+      status: "Placed",
+      discountAmount: orderInfo.discountAmount,
+      couponDiscount: orderInfo.couponDiscount,
       razorpayPaymentId: razorpay_payment_id,
+      paymentStatus: "paid"
     });
 
-    // Mark payment verified in session
-    if (req.session.checkout) req.session.paymentVerified = true;
+    // Reduce stock
+    for (let i = 0; i < orderInfo.orderItems.length; i++) {
+      const item = orderInfo.orderItems[i];
+      await Product.findOneAndUpdate({ _id: item.product._id, quantity: { $gte: item.quantity } }, { $inc: { quantity: -item.quantity } });
+    }
 
-    res.json({ success: true });
+    req.session.orderId = order._id.toString();
+    req.session.paymentVerified = true;
+    delete req.session.checkout.orderData;
+
+    res.json({ success: true, orderId: order._id });
   } catch (err) {
-    console.error('Payment verification error:', err);
-    res.status(500).send('Error verifying payment');
+    console.error("❌ verifyPayment error:", err);
+    res.status(500).send("Payment verification failed");
   }
 };
