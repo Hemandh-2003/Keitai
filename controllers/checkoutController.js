@@ -257,7 +257,6 @@ if (checkoutData.isRetry && checkoutData.retryOrderId) {
 
   await createdOrder.save();
 
-  // Clear retry session after saving
   checkoutData.isRetry = false;
   checkoutData.retryOrderId = null;
 
@@ -621,5 +620,31 @@ exports.retryCheckoutWithOrderId = async (req, res) => {
   } catch (err) {
     console.error('Error retrying checkout with orderId:', err);
     return res.redirect('/user/orders');
+  }
+};
+exports.verifyPayment = async (req, res) => {
+  try {
+    const { razorpay_payment_id, razorpay_order_id, razorpay_signature, orderId } = req.body;
+    const crypto = require('crypto');
+    const expectedSignature = crypto
+      .createHmac('sha256', process.env.RAZORPAY_KEY_SECRET)
+      .update(razorpay_order_id + "|" + razorpay_payment_id)
+      .digest('hex');
+
+    if (expectedSignature !== razorpay_signature) {
+      await Order.findByIdAndUpdate(orderId, { paymentStatus: 'failed', status: 'Failed' });
+      return res.status(400).send("Payment verification failed");
+    }
+
+    await Order.findByIdAndUpdate(orderId, {
+      paymentStatus: 'paid',
+      status: 'Placed',
+      razorpayPaymentId: razorpay_payment_id,
+    });
+
+    res.json({ success: true });
+  } catch (err) {
+    console.error('Payment verification error:', err);
+    res.status(500).send('Error verifying payment');
   }
 };
