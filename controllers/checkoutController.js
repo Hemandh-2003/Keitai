@@ -276,8 +276,6 @@ exports.placeOrder = async (req, res) => {
       paymentMethod
     };
 
-    return res.json({ success: true, message: "Proceed to online payment" });
-
   } catch (err) {
     console.error("❌ Error in placeOrder:", err.message);
     res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).send(err.message || MESSAGE.INTERNAL_SERVER_ERROR);
