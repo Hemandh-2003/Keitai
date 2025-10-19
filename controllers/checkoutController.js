@@ -259,6 +259,7 @@ exports.placeOrder = async (req, res) => {
 };
 
 
+
 exports.confirmPayment = async (req, res) => {
   try {
     const checkoutData = req.session.checkout;
@@ -284,9 +285,11 @@ exports.confirmPayment = async (req, res) => {
     if (products.length !== productIds.length) {
       return res.status(HTTP_STATUS.NOT_FOUND).send('One or more products not found');
     }
+
     if (req.session.orderId) {
-  return res.redirect('/user/confirm-payment'); 
-}
+      return res.redirect('/user/confirm-payment'); // prevent duplicate order creation
+    }
+
     let totalAmount = 0;
     const orderItems = [];
 
@@ -295,7 +298,7 @@ exports.confirmPayment = async (req, res) => {
       const quantity = parseInt(quantities[i], 10);
 
       if (quantity > product.quantity) {
-       throw new Error(`Insufficient stock for product: ${product.name}`);
+        throw new Error(`Insufficient stock for product: ${product.name}`);
       }
 
       const price = offerPrices ? parseFloat(offerPrices[i]) : (product.salesPrice || product.regularPrice);
@@ -307,6 +310,7 @@ exports.confirmPayment = async (req, res) => {
           name: product.name,
           brand: product.brand,
           images: product.images,
+          category: product.category
         },
         quantity,
         offerPrice: price
@@ -334,7 +338,7 @@ exports.confirmPayment = async (req, res) => {
       products: orderItems.map(item => ({
         product: item.product._id,
         quantity: item.quantity,
-        unitPrice: item.offerPrice 
+        unitPrice: item.offerPrice
       })),
       totalAmount,
       selectedAddress: address._id,
@@ -348,6 +352,8 @@ exports.confirmPayment = async (req, res) => {
 
     await newOrder.save();
 
+    // Save necessary details in session for confirmation page
+    req.session.orderId = newOrder._id;
     req.session.orderItems = orderItems;
     req.session.address = address;
     req.session.paymentMethod = paymentMethod;
@@ -355,6 +361,8 @@ exports.confirmPayment = async (req, res) => {
     req.session.deliveryCharge = deliveryCharge;
     req.session.arrivalDate = estimatedDate;
     req.session.couponDiscount = couponDiscount;
+    req.session.paymentVerified = false;
+    req.session.paymentDetails = {};
 
     res.redirect('/user/confirm-payment');
   } catch (err) {
@@ -379,10 +387,8 @@ exports.renderConfirmPayment = async (req, res) => {
     } = req.session;
 
     if (!orderItems || !address || !paymentMethod || !totalAmount || !arrivalDate) {
-      return res.status(HTTP_STATUS.BAD_REQUEST).send('Missing order details.');
+      return res.redirect('/user/checkout'); // redirect if session missing
     }
-
-    const finalTotalAmount = totalAmount;
 
     let relatedProducts = [];
     if (orderItems.length > 0) {
@@ -397,9 +403,9 @@ exports.renderConfirmPayment = async (req, res) => {
       orderItems,
       address,
       paymentMethod,
-      totalAmount: finalTotalAmount,
+      totalAmount,
       deliveryCharge,
-      estimatedDate: new Date(arrivalDate), // fix for EJS
+      estimatedDate: new Date(arrivalDate),
       relatedProducts,
       couponDiscount,
       paymentVerified: paymentVerified || false,
@@ -411,8 +417,6 @@ exports.renderConfirmPayment = async (req, res) => {
     res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).send(err.message || MESSAGE.INTERNAL_SERVER_ERROR);
   }
 };
-
-
 
 exports.createInlineAddress = async (req, res) => {
   try {
