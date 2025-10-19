@@ -232,31 +232,33 @@ exports.placeOrder = async (req, res) => {
 
     let createdOrder;
 
-    if (req.session.retryOrderId) {
-      createdOrder = await Order.findById(req.session.retryOrderId);
-      if (!createdOrder) return res.status(HTTP_STATUS.NOT_FOUND).send("Order not found for retry");
+if (checkoutData.isRetry && checkoutData.retryOrderId) {
+  createdOrder = await Order.findById(checkoutData.retryOrderId);
+  if (!createdOrder) return res.status(HTTP_STATUS.NOT_FOUND).send("Order not found for retry");
 
-      createdOrder.paymentMethod = paymentMethod;
-      createdOrder.status =
-        paymentMethod === "COD"
-          ? "Placed"
-          : paymentMethod === "Wallet"
-          ? "Paid"
-          : "Pending";
-      createdOrder.totalAmount = totalAmount;
-      createdOrder.deliveryCharge = deliveryCharge;
-      createdOrder.discountAmount = discountAmount;
-      createdOrder.couponDiscount = couponDiscount;
-      createdOrder.estimatedDelivery = estimatedDate;
-      createdOrder.products = orderItems.map(item => ({
-        product: item.product._id,
-        quantity: item.quantity,
-        unitPrice: item.offerPrice,
-      }));
+  // update order totals and status
+  createdOrder.paymentMethod = paymentMethod;
+  createdOrder.status =
+    paymentMethod === "COD"
+      ? "Placed"
+      : paymentMethod === "Wallet"
+      ? "Paid"
+      : "Pending";
+  createdOrder.totalAmount = totalAmount;
+  createdOrder.deliveryCharge = deliveryCharge;
+  createdOrder.discountAmount = discountAmount;
+  createdOrder.couponDiscount = couponDiscount;
+  createdOrder.estimatedDelivery = estimatedDate;
+  createdOrder.products = orderItems.map(item => ({
+    product: item.product._id,
+    quantity: item.quantity,
+    unitPrice: item.offerPrice,
+  }));
 
-      await createdOrder.save();
+  await createdOrder.save();
 
-      req.session.retryOrderId = null;
+  checkoutData.isRetry = false;
+  checkoutData.retryOrderId = null;
 
     } else {
       createdOrder = await Order.create({

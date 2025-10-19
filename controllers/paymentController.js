@@ -154,17 +154,19 @@ exports.retryPaymentFromOrder = async (req, res) => {
       return res.status(HTTP_STATUS.BAD_REQUEST).send('Payment retry is not allowed for this order');
     }
 
-    req.session.checkout = {
-      productIds: order.products.map(p => p.product._id.toString()),
-      quantities: order.products.map(p => p.quantity),
-      offerPrices: order.products.map(p => p.unitPrice),
-      totalAmount: order.totalAmount,
-      orderId: order._id.toString(),
-      isRetry: true,
-      addressId: order.selectedAddress?._id || null,
-      couponId: order.coupon?._id || null,
-      paymentMethod: order.paymentMethod
-    };
+ req.session.checkout = {
+  productIds: order.products.map(p => p.product._id.toString()),
+  quantities: order.products.map(p => p.quantity),
+  offerPrices: order.products.map(p => p.unitPrice),
+  totalAmount: order.totalAmount,
+  orderId: order._id.toString(),
+  isRetry: true,
+  retryOrderId: order._id.toString(), // <--- THIS IS THE KEY
+  addressId: order.selectedAddress?._id || null,
+  couponId: order.coupon?._id || null,
+  paymentMethod: order.paymentMethod
+};
+
 
     res.redirect('/user/checkout');
 
