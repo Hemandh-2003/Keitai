@@ -87,6 +87,7 @@ exports.checkout = async (req, res) => {
       isFromCart: false
     };
 
+    // Multiple products from cart
     if (productIds && quantities && Array.isArray(productIds) && Array.isArray(quantities)) {
       let total = 0;
       let offers = [];
@@ -139,31 +140,10 @@ exports.checkout = async (req, res) => {
       return res.redirect('/cart');
     }
 
-    if (!user.addresses || user.addresses.length === 0) {
-      req.session.checkout = sessionCheckout;
-      return res.redirect('/user/checkout');
-    }
+    // Store session only
+    req.session.checkout = sessionCheckout;
 
-    if (!req.session.checkout?.orderId) {
-      const order = new Order({
-        user: user._id,
-        products: sessionCheckout.productIds.map((pid, index) => ({
-          product: pid,
-          quantity: sessionCheckout.quantities[index],
-          unitPrice: sessionCheckout.offerPrices[index]
-        })),
-        totalAmount: sessionCheckout.totalAmount,
-        selectedAddress: user.addresses[0]?._id,
-        paymentMethod: "Online",
-        estimatedDelivery: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-        status: "Pending"
-      });
-      await order.save();
-      req.session.checkout = { ...sessionCheckout, orderId: order._id.toString() };
-    } else {
-      req.session.checkout = { ...sessionCheckout, orderId: req.session.checkout.orderId, isRetry: true };
-    }
-
+    // Redirect to checkout page (user selects address/payment)
     return res.redirect('/user/checkout');
 
   } catch (err) {
@@ -171,6 +151,7 @@ exports.checkout = async (req, res) => {
     res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).send(MESSAGE.INTERNAL_SERVER_ERROR);
   }
 };
+
 
 exports.placeOrder = async (req, res) => {
   try {
@@ -182,7 +163,6 @@ exports.placeOrder = async (req, res) => {
     }
 
     const { productIds, quantities, offerPrices } = checkoutData;
-
     const user = await User.findById(req.session.user._id);
     if (!user) return res.status(HTTP_STATUS.NOT_FOUND).send(MESSAGE.USER_NOT_FOUND);
 
@@ -217,6 +197,7 @@ exports.placeOrder = async (req, res) => {
       }
     }
 
+    // Payment restrictions
     if (paymentMethod === "COD" && totalAmount > 20000) {
       return res.status(HTTP_STATUS.BAD_REQUEST).send("COD is only available for orders up to ₹20,000.");
     }
@@ -232,35 +213,32 @@ exports.placeOrder = async (req, res) => {
 
     let createdOrder;
 
-if (checkoutData.isRetry && checkoutData.retryOrderId) {
-  createdOrder = await Order.findById(checkoutData.retryOrderId);
-  if (!createdOrder) return res.status(HTTP_STATUS.NOT_FOUND).send("Order not found for retry");
+    if (checkoutData.orderId) {
+      // Update existing order (retry or already created)
+      createdOrder = await Order.findById(checkoutData.orderId);
+      if (!createdOrder) throw new Error("Order not found");
 
-  // update order totals and status
-  createdOrder.paymentMethod = paymentMethod;
-  createdOrder.status =
-    paymentMethod === "COD"
-      ? "Placed"
-      : paymentMethod === "Wallet"
-      ? "Paid"
-      : "Pending";
-  createdOrder.totalAmount = totalAmount;
-  createdOrder.deliveryCharge = deliveryCharge;
-  createdOrder.discountAmount = discountAmount;
-  createdOrder.couponDiscount = couponDiscount;
-  createdOrder.estimatedDelivery = estimatedDate;
-  createdOrder.products = orderItems.map(item => ({
-    product: item.product._id,
-    quantity: item.quantity,
-    unitPrice: item.offerPrice,
-  }));
+      createdOrder.paymentMethod = paymentMethod;
+      createdOrder.status =
+        paymentMethod === "COD"
+          ? "Placed"
+          : paymentMethod === "Wallet"
+          ? "Paid"
+          : "Pending";
+      createdOrder.totalAmount = totalAmount;
+      createdOrder.deliveryCharge = deliveryCharge;
+      createdOrder.discountAmount = discountAmount;
+      createdOrder.couponDiscount = couponDiscount;
+      createdOrder.estimatedDelivery = estimatedDate;
+      createdOrder.products = orderItems.map(item => ({
+        product: item.product._id,
+        quantity: item.quantity,
+        unitPrice: item.offerPrice,
+      }));
 
-  await createdOrder.save();
-
-  checkoutData.isRetry = false;
-  checkoutData.retryOrderId = null;
-
+      await createdOrder.save();
     } else {
+      // Create new order
       createdOrder = await Order.create({
         user: user._id,
         selectedAddress: address._id,
@@ -283,6 +261,10 @@ if (checkoutData.isRetry && checkoutData.retryOrderId) {
         couponDiscount,
       });
 
+      // Attach orderId to session
+      req.session.checkout.orderId = createdOrder._id.toString();
+
+      // Deduct wallet if used
       if (paymentMethod === "Wallet") {
         user.wallet.balance -= totalAmount;
         user.wallet.transactions.push({
@@ -295,27 +277,25 @@ if (checkoutData.isRetry && checkoutData.retryOrderId) {
         await user.save();
       }
 
+      // Reduce stock
       for (let i = 0; i < products.length; i++) {
-  const quantityOrder = parseInt(quantities[i]);
+        const quantityOrder = parseInt(quantities[i]);
+        const updatedProduct = await Product.findOneAndUpdate(
+          { _id: products[i]._id, quantity: { $gte: quantityOrder } },
+          { $inc: { quantity: -quantityOrder } },
+          { new: true }
+        );
+        if (!updatedProduct) throw new Error(`Insufficient stock for product ${products[i].name}`);
+      }
 
-  const updatedProduct = await Product.findOneAndUpdate(
-    { _id: products[i]._id, quantity: { $gte: quantityOrder } },
-    { $inc: { quantity: -quantityOrder } },
-    { new: true }
-  );
-
-  if (!updatedProduct) {
-    throw new Error(`Insufficient stock for product ${products[i].name}`);
-  }
-}
-
-
+      // Remove items from cart
       await Cart.updateOne(
         { user: req.session.user._id },
         { $pull: { items: { product: { $in: productIds } } } }
       );
     }
 
+    // Store order details in session
     req.session.orderItems = orderItems;
     req.session.address = address;
     req.session.paymentMethod = paymentMethod;
@@ -323,7 +303,6 @@ if (checkoutData.isRetry && checkoutData.retryOrderId) {
     req.session.deliveryCharge = deliveryCharge;
     req.session.arrivalDate = estimatedDate;
     req.session.couponDiscount = couponDiscount;
-    req.session.orderId = createdOrder._id;
     req.session.paymentVerified = paymentMethod === "Wallet";
 
     res.render("user/order-confirmation", {
@@ -345,6 +324,7 @@ if (checkoutData.isRetry && checkoutData.retryOrderId) {
     res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).send(err.message || MESSAGE.INTERNAL_SERVER_ERROR);
   }
 };
+
 
 exports.confirmPayment = async (req, res) => {
   try {
@@ -624,14 +604,17 @@ exports.retryCheckoutWithOrderId = async (req, res) => {
 };
 exports.verifyPayment = async (req, res) => {
   try {
-    const { razorpay_payment_id, razorpay_order_id, razorpay_signature, orderId } = req.body;
+    const { razorpay_payment_id, razorpay_order_id } = req.body;
+    const orderId = req.session.checkout?.orderId;
+    if (!orderId) return res.status(400).send("No order to verify");
+
     const crypto = require('crypto');
     const expectedSignature = crypto
       .createHmac('sha256', process.env.RAZORPAY_KEY_SECRET)
       .update(razorpay_order_id + "|" + razorpay_payment_id)
       .digest('hex');
 
-    if (expectedSignature !== razorpay_signature) {
+    if (expectedSignature !== req.body.razorpay_signature) {
       await Order.findByIdAndUpdate(orderId, { paymentStatus: 'failed', status: 'Failed' });
       return res.status(400).send("Payment verification failed");
     }
@@ -641,6 +624,9 @@ exports.verifyPayment = async (req, res) => {
       status: 'Placed',
       razorpayPaymentId: razorpay_payment_id,
     });
+
+    // Mark payment verified in session
+    if (req.session.checkout) req.session.paymentVerified = true;
 
     res.json({ success: true });
   } catch (err) {
