@@ -17,6 +17,8 @@ exports.getCheckout = async (req, res) => {
       return res.redirect('/cart');
     }
 
+    const walletBalance = user.walletBalance || 0;
+
     const products = await Promise.all(
       checkoutData.productIds.map(async (id, index) => {
         const product = await Product.findById(id);
@@ -41,13 +43,18 @@ exports.getCheckout = async (req, res) => {
       products,
       totalAmount,
       coupons,
-      checkoutData
+      checkoutData,
+      walletBalance,
+      session: req.session
     });
   } catch (err) {
     console.error('getCheckout error:', err);
-    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).render('500', { message: MESSAGE.INTERNAL_SERVER_ERROR });
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).render('500', {
+      message: MESSAGE.INTERNAL_SERVER_ERROR
+    });
   }
 };
+
 
 exports.checkout = async (req, res) => {
   try {
@@ -64,7 +71,7 @@ exports.checkout = async (req, res) => {
       isFromCart: false
     };
 
-    if (productIds && quantities && Array.isArray(productIds) && Array.isArray(quantities)) {
+    if (Array.isArray(productIds) && Array.isArray(quantities)) {
       let total = 0;
       let offers = [];
 
@@ -116,12 +123,16 @@ exports.checkout = async (req, res) => {
       return res.redirect('/cart');
     }
 
+    // Save session for next step
+    req.session.checkout = sessionCheckout;
+
+    // If user has no addresses, go to address add flow
     if (!user.addresses || user.addresses.length === 0) {
-      req.session.checkout = sessionCheckout;
       return res.redirect('/user/checkout');
     }
 
-    if (!req.session.checkout?.orderId) {
+    // If not already created, create a pending order
+    if (!req.session.checkout.orderId) {
       const order = new Order({
         user: user._id,
         products: sessionCheckout.productIds.map((pid, index) => ({
@@ -499,36 +510,53 @@ exports.retryCheckout = async (req, res) => {
 
 exports.retryCheckoutWithOrderId = async (req, res) => {
   try {
-    const orderId = req.params.orderId;
+    const { orderId } = req.params;
+    if (!req.session.user) return res.redirect('/login');
+
     const userId = req.session.user._id;
-
     const order = await Order.findOne({ _id: orderId, user: userId }).populate('products.product');
+    if (!order) return res.redirect('/user/orders');
 
-    if (!order) {
-      console.error("Retry checkout: Order not found");
-      return res.redirect('/user/orders');
-    }
+    const user = await User.findById(userId).populate('addresses');
+    const coupons = await Coupon.find({
+      isActive: true,
+      startDate: { $lte: new Date() },
+      endDate: { $gte: new Date() }
+    }).sort({ createdAt: -1 });
 
-    // Build a session checkout for retry
-    req.session.checkout = {
+    const walletBalance = user.walletBalance || 0;
+
+    const checkoutData = {
+      orderId: order._id.toString(),
       productIds: order.products.map(p => p.product._id.toString()),
       quantities: order.products.map(p => p.quantity),
       offerPrices: order.products.map(p => p.unitPrice),
       totalAmount: order.totalAmount,
-      orderId: order._id.toString(),
-      retryOrderId: order._id.toString(),
-      isRetry: true,
-      isFromCart: false
+      isRetry: true
     };
 
-    console.log("Retry checkout session set:", req.session.checkout);
-    return res.redirect('/user/checkout');
+    req.session.checkout = checkoutData;
 
+    res.render('user/checkout', {
+      user,
+      addresses: user.addresses || [],
+      products: order.products.map(p => ({
+        product: p.product,
+        quantity: p.quantity,
+        offerPrice: p.unitPrice
+      })),
+      totalAmount: order.totalAmount,
+      coupons,
+      walletBalance,
+      checkoutData,
+      session: req.session
+    });
   } catch (err) {
     console.error('retryCheckoutWithOrderId error:', err);
-    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).send('Error during payment retry setup');
+    res.redirect('/user/orders');
   }
 };
+
 
 exports.verifyPayment = async (req, res) => {
   try {
