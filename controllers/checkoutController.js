@@ -3,7 +3,6 @@ const User = require('../models/User');
 const Order = require('../models/Order');
 const Cart = require('../models/Cart');
 const Coupon = require('../models/Coupon');
-const Razorpay = require("razorpay");
 const {HTTP_STATUS}= require('../SM/status');
 const { MESSAGE } = require('../SM/messages');
 exports.getCheckout = async (req, res) => {
@@ -183,11 +182,6 @@ return res.redirect('/user/checkout');
     res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).send(MESSAGE.INTERNAL_SERVER_ERROR);
   }
 };
-
-const razorpayInstance = new Razorpay({
-  key_id: process.env.RAZORPAY_KEY_ID,
-  key_secret: process.env.RAZORPAY_KEY_SECRET,
-});
 
 exports.placeOrder = async (req, res) => {
   try {
