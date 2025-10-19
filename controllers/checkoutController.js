@@ -78,12 +78,6 @@ exports.checkout = async (req, res) => {
 
     const { productIds, quantities, productId, quantity } = req.body;
     const user = await User.findById(req.session.user._id);
-    const now = new Date();
-    const coupons = await Coupon.find({
-      isActive: true,
-      startDate: { $lte: now },
-      endDate: { $gte: now }
-    }).sort({ createdAt: -1 });
 
     let sessionCheckout = {
       productIds: [],
@@ -144,38 +138,33 @@ exports.checkout = async (req, res) => {
     } else {
       return res.redirect('/cart');
     }
-if (!user.addresses || user.addresses.length === 0) {
-  req.session.checkout = sessionCheckout;
-  return res.redirect('/user/checkout'); 
-}
 
+    if (!user.addresses || user.addresses.length === 0) {
+      req.session.checkout = sessionCheckout;
+      return res.redirect('/user/checkout');
+    }
 
+    if (!req.session.checkout?.orderId) {
+      const order = new Order({
+        user: user._id,
+        products: sessionCheckout.productIds.map((pid, index) => ({
+          product: pid,
+          quantity: sessionCheckout.quantities[index],
+          unitPrice: sessionCheckout.offerPrices[index]
+        })),
+        totalAmount: sessionCheckout.totalAmount,
+        selectedAddress: user.addresses[0]?._id,
+        paymentMethod: "Online",
+        estimatedDelivery: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+        status: "Pending"
+      });
+      await order.save();
+      req.session.checkout = { ...sessionCheckout, orderId: order._id.toString() };
+    } else {
+      req.session.checkout = { ...sessionCheckout, orderId: req.session.checkout.orderId, isRetry: true };
+    }
 
-//  console.log("Order created with ID:(chekout)", order._id);
-if (!req.session.retryOrderId) {
-  const order = new Order({
-    user: req.session.user._id,
-    products: sessionCheckout.productIds.map((pid, index) => ({
-      product: pid,
-      quantity: sessionCheckout.quantities[index],
-      unitPrice: sessionCheckout.offerPrices[index]
-    })),
-    totalAmount: sessionCheckout.totalAmount,
-    selectedAddress: user.addresses[0]?._id,
-    paymentMethod: "Online",
-    estimatedDelivery: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-    status: "Pending"
-  });
-  await order.save();
-
-  req.session.checkout = { ...sessionCheckout, orderId: order._id.toString() };
-} else {
-  req.session.checkout = { ...sessionCheckout, orderId: req.session.retryOrderId.toString(), isRetry: true };
-}
-
-return res.redirect('/user/checkout');
-
-//return res.redirect('/user/checkout');
+    return res.redirect('/user/checkout');
 
   } catch (err) {
     console.error('Checkout POST error:', err);
@@ -243,31 +232,34 @@ exports.placeOrder = async (req, res) => {
 
     let createdOrder;
 
-    if (req.session.retryOrderId) {
-      createdOrder = await Order.findById(req.session.retryOrderId);
-      if (!createdOrder) return res.status(HTTP_STATUS.NOT_FOUND).send("Order not found for retry");
+if (checkoutData.isRetry && checkoutData.retryOrderId) {
+  createdOrder = await Order.findById(checkoutData.retryOrderId);
+  if (!createdOrder) return res.status(HTTP_STATUS.NOT_FOUND).send("Order not found for retry");
 
-      createdOrder.paymentMethod = paymentMethod;
-      createdOrder.status =
-        paymentMethod === "COD"
-          ? "Placed"
-          : paymentMethod === "Wallet"
-          ? "Paid"
-          : "Pending";
-      createdOrder.totalAmount = totalAmount;
-      createdOrder.deliveryCharge = deliveryCharge;
-      createdOrder.discountAmount = discountAmount;
-      createdOrder.couponDiscount = couponDiscount;
-      createdOrder.estimatedDelivery = estimatedDate;
-      createdOrder.products = orderItems.map(item => ({
-        product: item.product._id,
-        quantity: item.quantity,
-        unitPrice: item.offerPrice,
-      }));
+  // update order totals and status
+  createdOrder.paymentMethod = paymentMethod;
+  createdOrder.status =
+    paymentMethod === "COD"
+      ? "Placed"
+      : paymentMethod === "Wallet"
+      ? "Paid"
+      : "Pending";
+  createdOrder.totalAmount = totalAmount;
+  createdOrder.deliveryCharge = deliveryCharge;
+  createdOrder.discountAmount = discountAmount;
+  createdOrder.couponDiscount = couponDiscount;
+  createdOrder.estimatedDelivery = estimatedDate;
+  createdOrder.products = orderItems.map(item => ({
+    product: item.product._id,
+    quantity: item.quantity,
+    unitPrice: item.offerPrice,
+  }));
 
-      await createdOrder.save();
+  await createdOrder.save();
 
-      req.session.retryOrderId = null;
+  // Clear retry session after saving
+  checkoutData.isRetry = false;
+  checkoutData.retryOrderId = null;
 
     } else {
       createdOrder = await Order.create({
