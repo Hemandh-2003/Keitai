@@ -275,6 +275,7 @@ exports.placeOrder = async (req, res) => {
       selectedAddress: address._id,
       paymentMethod
     };
+ return res.redirect('/user/checkout');
 
   } catch (err) {
     console.error("❌ Error in placeOrder:", err.message);
@@ -562,9 +563,9 @@ exports.retryCheckoutWithOrderId = async (req, res) => {
 };
 exports.verifyPayment = async (req, res) => {
   try {
-    const { razorpay_payment_id, razorpay_order_id } = req.body;
-    const orderId = req.session.checkout?.orderId;
-    if (!orderId) return res.status(400).send("No order to verify");
+    const { razorpay_payment_id, razorpay_order_id, razorpay_signature } = req.body;
+    const checkoutData = req.session.checkout;
+    if (!checkoutData?.orderData) return res.status(400).send("No order to verify");
 
     const crypto = require('crypto');
     const expectedSignature = crypto
@@ -572,23 +573,49 @@ exports.verifyPayment = async (req, res) => {
       .update(razorpay_order_id + "|" + razorpay_payment_id)
       .digest('hex');
 
-    if (expectedSignature !== req.body.razorpay_signature) {
-      await Order.findByIdAndUpdate(orderId, { paymentStatus: 'failed', status: 'Failed' });
+    if (expectedSignature !== razorpay_signature) {
       return res.status(400).send("Payment verification failed");
     }
 
-    await Order.findByIdAndUpdate(orderId, {
-      paymentStatus: 'paid',
-      status: 'Placed',
+    const orderInfo = checkoutData.orderData;
+    const user = await User.findById(req.session.user._id);
+
+    // Create order now
+    const order = await Order.create({
+      user: user._id,
+      selectedAddress: orderInfo.selectedAddress,
+      products: orderInfo.orderItems.map(i => ({ product: i.product._id, quantity: i.quantity, unitPrice: i.offerPrice })),
+      totalAmount: orderInfo.totalAmount,
+      paymentMethod: "Online",
+      deliveryCharge: orderInfo.deliveryCharge,
+      estimatedDelivery: new Date(Date.now() + 6 * 24 * 60 * 60 * 1000),
+      status: "Placed",
+      discountAmount: orderInfo.discountAmount,
+      couponDiscount: orderInfo.couponDiscount,
       razorpayPaymentId: razorpay_payment_id,
+      paymentStatus: "paid"
     });
 
-    // Mark payment verified in session
-    if (req.session.checkout) req.session.paymentVerified = true;
+    // Reduce stock
+    for (let i = 0; i < orderInfo.orderItems.length; i++) {
+      const item = orderInfo.orderItems[i];
+      await Product.findOneAndUpdate(
+        { _id: item.product._id, quantity: { $gte: item.quantity } },
+        { $inc: { quantity: -item.quantity } }
+      );
+    }
 
-    res.json({ success: true });
+    req.session.orderId = order._id.toString();
+    req.session.paymentVerified = true;
+
+    // Clear orderData from session
+    delete req.session.checkout.orderData;
+
+    // ✅ Redirect to order confirmation page instead of returning JSON
+    return res.redirect('/user/order-confirmation');
+
   } catch (err) {
-    console.error('Payment verification error:', err);
-    res.status(500).send('Error verifying payment');
+    console.error("❌ Error verifying payment:", err);
+    res.status(500).send("Payment verification failed");
   }
 };
