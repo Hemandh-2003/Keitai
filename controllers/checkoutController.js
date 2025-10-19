@@ -180,13 +180,18 @@ exports.checkout = async (req, res) => {
 
 exports.placeOrder = async (req, res) => {
   try {
-    const userId = req.session.user._id;
-    const { selectedAddress, paymentMethod } = req.body; // <-- match your checkout form
+    const userId = req.session.user?._id;
+    if (!userId) {
+      console.error("placeOrder: User not logged in");
+      return res.redirect('/login');
+    }
 
-    const checkoutData = req.session.checkout;
-    if (!checkoutData) {
-      console.error("placeOrder: Missing checkout session");
-      return res.redirect('/cart');
+    const { selectedAddress, paymentMethod, productIds, quantities, offerPrices } = req.body;
+
+    // Validate address
+    if (!selectedAddress || !mongoose.Types.ObjectId.isValid(selectedAddress)) {
+      console.error("placeOrder: Invalid or missing address");
+      return res.status(400).send("Please select a valid shipping address");
     }
 
     const user = await User.findById(userId);
@@ -195,22 +200,36 @@ exports.placeOrder = async (req, res) => {
       return res.redirect('/login');
     }
 
-    // convert to ObjectId for subdocument search
-    const addressId = mongoose.Types.ObjectId(selectedAddress);
-    const addressDoc = user.addresses.id(addressId);
-
+    const addressDoc = user.addresses.id(selectedAddress);
     if (!addressDoc) {
-      console.error("Invalid address selected");
+      console.error("placeOrder: Address not found in user addresses");
       return res.status(400).send("Invalid address selected");
     }
 
+    // Validate session checkout
+    const checkoutData = req.session.checkout;
+    if (!checkoutData) {
+      console.error("placeOrder: Missing checkout session");
+      return res.redirect('/cart');
+    }
+
+    if (!productIds || !quantities || !offerPrices || productIds.length === 0) {
+      console.error("placeOrder: Checkout data incomplete", { productIds, quantities, offerPrices });
+      return res.redirect('/cart');
+    }
+
+    // Process order items
     const orderItems = await Promise.all(
-      checkoutData.productIds.map(async (id, index) => {
+      productIds.map(async (id, index) => {
+        if (!mongoose.Types.ObjectId.isValid(id)) return null;
+
         const product = await Product.findById(id);
         if (!product || product.isBlocked || product.isDeleted) return null;
 
-        const qty = checkoutData.quantities[index];
-        if (qty > product.quantity) throw new Error(`${product.name} has only ${product.quantity} in stock`);
+        const qty = Number(quantities[index]);
+        if (qty > product.quantity) {
+          throw new Error(`${product.name} has only ${product.quantity} in stock`);
+        }
 
         product.quantity -= qty;
         await product.save();
@@ -218,25 +237,34 @@ exports.placeOrder = async (req, res) => {
         return {
           product,
           quantity: qty,
-          offerPrice: checkoutData.offerPrices[index]
+          unitPrice: Number(offerPrices[index])
         };
       })
     );
 
     const validItems = orderItems.filter(Boolean);
-    const totalAmount = checkoutData.totalAmount;
+    if (validItems.length === 0) {
+      console.error("placeOrder: No valid items to order");
+      return res.status(400).send("No valid items available for order");
+    }
+
+    const totalAmount = Number(checkoutData.totalAmount || 0);
     const estimatedDate = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
 
     let createdOrder;
 
+    // Retry order flow
     if (checkoutData.isRetry && checkoutData.retryOrderId) {
       createdOrder = await Order.findById(checkoutData.retryOrderId);
-      if (!createdOrder) return res.redirect('/user/orders');
+      if (!createdOrder) {
+        console.error("placeOrder: Retry order not found");
+        return res.redirect('/user/orders');
+      }
 
       createdOrder.products = validItems.map(i => ({
         product: i.product._id,
         quantity: i.quantity,
-        unitPrice: i.offerPrice
+        unitPrice: i.unitPrice
       }));
       createdOrder.totalAmount = totalAmount;
       createdOrder.paymentMethod = paymentMethod;
@@ -246,13 +274,15 @@ exports.placeOrder = async (req, res) => {
       createdOrder.estimatedDelivery = estimatedDate;
 
       await createdOrder.save();
+
     } else {
+      // New order
       createdOrder = new Order({
         user: userId,
         products: validItems.map(i => ({
           product: i.product._id,
           quantity: i.quantity,
-          unitPrice: i.offerPrice
+          unitPrice: i.unitPrice
         })),
         totalAmount,
         selectedAddress: addressDoc._id,
@@ -265,14 +295,19 @@ exports.placeOrder = async (req, res) => {
       await createdOrder.save();
     }
 
-    // update session
-    req.session.checkout.orderId = createdOrder._id;
-    req.session.checkout.isRetry = false;
-    req.session.checkout.retryOrderId = null;
+    // Update session
+    req.session.checkout = {
+      ...req.session.checkout,
+      orderId: createdOrder._id,
+      isRetry: false,
+      retryOrderId: null
+    };
 
-    if (paymentMethod === "COD") {
+    // Redirect based on payment
+    if (paymentMethod === "COD" || paymentMethod === "Wallet") {
       return res.redirect(`/user/order/${createdOrder._id}`);
     } else {
+      // Online payment
       return res.redirect('/user/confirm-payment');
     }
 
