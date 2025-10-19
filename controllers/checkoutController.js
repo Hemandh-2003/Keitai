@@ -9,52 +9,70 @@ exports.getCheckout = async (req, res) => {
   try {
     if (!req.session.user) return res.redirect('/login');
 
-    const user = await User.findById(req.session.user._id).populate('addresses');
-    if (!user) return res.redirect('/login');
+    const user = await User.findById(req.session.user._id);
+    let checkout = req.session.checkout;
 
-    const checkoutData = req.session.checkout;
-    if (!checkoutData || !checkoutData.productIds?.length) {
+    // Handle retry order
+    if ((!checkout || !checkout.productIds?.length) && req.session.retryOrderId) {
+      const retryOrder = await Order.findById(req.session.retryOrderId).populate('products.product');
+      if (retryOrder) {
+        checkout = {
+          productIds: retryOrder.products.map(p => p.product._id.toString()),
+          quantities: retryOrder.products.map(p => p.quantity),
+          offerPrices: retryOrder.products.map(p => p.unitPrice),
+          totalAmount: retryOrder.totalAmount,
+          orderId: retryOrder._id.toString(),
+          isRetry: true
+        };
+        req.session.checkout = checkout;
+      }
+    }
+
+    if (!checkout || !checkout.productIds?.length) {
       return res.redirect('/cart');
     }
 
-    const walletBalance = user.walletBalance || 0;
+    const cart = [];
 
-    const products = await Promise.all(
-      checkoutData.productIds.map(async (id, index) => {
-        const product = await Product.findById(id);
-        return {
-          product,
-          quantity: checkoutData.quantities[index],
-          offerPrice: checkoutData.offerPrices[index]
-        };
-      })
-    );
+    for (let i = 0; i < checkout.productIds.length; i++) {
+      const product = await Product.findById(checkout.productIds[i]);
+      if (!product) continue;
+      // Assume getBestOfferPrice() returns { price, originalPrice }
+      const offerDetails = await product.getBestOfferPrice();
+      cart.push({
+        product,
+        quantity: checkout.quantities[i],
+        offerDetails
+      });
+    }
 
-    const totalAmount = checkoutData.totalAmount;
-    const coupons = await Coupon.find({
-      isActive: true,
-      startDate: { $lte: new Date() },
-      endDate: { $gte: new Date() }
-    }).sort({ createdAt: -1 });
+    // Ensure cart is always an array
+    const totalAmount = checkout.totalAmount || cart.reduce((sum, item) => {
+      const price = item.offerDetails?.price || item.product.salesPrice || item.product.regularPrice;
+      return sum + price * item.quantity;
+    }, 0);
+
+    const now = new Date();
+    const coupons = await Coupon.find({ isActive: true, startDate: { $lte: now }, endDate: { $gte: now } }).sort({ createdAt: -1 });
+
+    const validCoupons = coupons.filter(c => totalAmount >= c.minPurchase && (c.maxDiscount === 0 || totalAmount <= c.maxDiscount));
 
     res.render('user/checkout', {
       user,
+      cart,
       addresses: user.addresses || [],
-      products,
       totalAmount,
-      coupons,
-      checkoutData,
-      walletBalance,
-      session: req.session
+      coupons: validCoupons,
+      session: req.session,
+      razorpayKeyId: process.env.RAZORPAY_KEY_ID,
+      walletBalance: user.wallet?.balance || 0
     });
-  } catch (err) {
-    console.error('getCheckout error:', err);
-    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).render('500', {
-      message: MESSAGE.INTERNAL_SERVER_ERROR
-    });
+
+  } catch (error) {
+    console.error('Checkout GET error:', error);
+    res.status(500).render('user/error', { message: 'Failed to load checkout' });
   }
 };
-
 
 exports.checkout = async (req, res) => {
   try {
