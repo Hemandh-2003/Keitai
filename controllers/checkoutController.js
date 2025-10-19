@@ -275,7 +275,7 @@ exports.placeOrder = async (req, res) => {
       selectedAddress: address._id,
       paymentMethod
     };
- return res.redirect('/user/checkout');
+return res.redirect('/user/online-payment');
 
   } catch (err) {
     console.error("❌ Error in placeOrder:", err.message);
