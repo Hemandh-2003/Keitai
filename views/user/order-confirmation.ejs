@@ -544,37 +544,36 @@
       });
     }
 
-    <% if (paymentMethod === 'Online' && !paymentVerified) { %>
-      console.log('Starting payment verification...');
-      setTimeout(async function() {
-        try {
-          const verificationData = {
-            razorpay_payment_id: '<%= paymentDetails?.razorpay_payment_id %>',
-            razorpay_order_id: '<%= paymentDetails?.razorpay_order_id %>',
-            razorpay_signature: '<%= paymentDetails?.razorpay_signature %>'
-          };
+   <% if (paymentMethod === 'Online' && !paymentVerified) { %>
+  console.log('Starting payment verification...');
+  setTimeout(async function() {
+    try {
+      const verificationData = {
+        razorpay_payment_id: '<%= paymentDetails?.razorpay_payment_id %>',
+        razorpay_order_id: '<%= paymentDetails?.razorpay_order_id %>',
+        razorpay_signature: '<%= paymentDetails?.razorpay_signature %>'
+      };
 
-          const response = await fetch('/payment/verify', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(verificationData)
-          });
+      const response = await fetch('/verify-payment', {  // <-- correct endpoint
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(verificationData)
+      });
 
-          const result = await response.json();
-          
-          if (result.success) {
-            window.location.href = `/order/success/<%= orderId %>`;
-          } else {
-            window.location.href = `/payment/failed?orderId=<%= orderId %>&error=${encodeURIComponent(result.error || 'Verification failed')}`;
-          }
-        } catch (error) {
-          console.error('Payment verification error:', error);
-          window.location.href = `/payment/failed?orderId=<%= orderId %>&error=${encodeURIComponent('Network error during verification')}`;
-        }
-      }, 2000);
-    <% } %>
+      const result = await response.json();
+
+      if (result.success && result.orderId) {
+        // Redirect only after server confirms and returns orderId
+        window.location.href = `/user/order/${result.orderId}`;
+      } else {
+        window.location.href = `/payment/failed?error=${encodeURIComponent(result.error || 'Verification failed')}`;
+      }
+    } catch (error) {
+      console.error('Payment verification error:', error);
+      window.location.href = `/payment/failed?error=${encodeURIComponent('Network error during verification')}`;
+    }
+  }, 2000);
+<% } %>
   });
 </script>
 </body>
