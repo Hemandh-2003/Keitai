@@ -275,7 +275,7 @@ exports.placeOrder = async (req, res) => {
       selectedAddress: address._id,
       paymentMethod
     };
-return res.redirect('/user/order-confirmation');
+return res.redirect(`/user/order-confirmation/${req.session.id}`);
 
   } catch (err) {
     console.error("❌ Error in placeOrder:", err.message);
@@ -284,6 +284,30 @@ return res.redirect('/user/order-confirmation');
 };
 
 
+exports.renderOrderConfirmation = async (req, res) => {
+  try {
+    const checkoutData = req.session.checkout;
+    if (!checkoutData) {
+      return res.redirect('/user/checkout');
+    }
+
+    const user = await User.findById(req.session.user._id);
+    const address = user.addresses.id(checkoutData.selectedAddress);
+
+    res.render('user/order-confirmation', {
+      orderItems: checkoutData.orderData?.orderItems || [],
+      totalAmount: checkoutData.orderData?.totalAmount || 0,
+      deliveryCharge: checkoutData.orderData?.deliveryCharge || 0,
+      couponDiscount: checkoutData.orderData?.couponDiscount || 0,
+      paymentMethod: checkoutData.orderData?.paymentMethod || "Online",
+      address,
+      estimatedDate: new Date(Date.now() + 6 * 24 * 60 * 60 * 1000)
+    });
+  } catch (err) {
+    console.error("Error rendering order confirmation:", err);
+    res.status(500).send("Error loading order confirmation page.");
+  }
+};
 
 exports.confirmPayment = async (req, res) => {
   try {
@@ -564,8 +588,10 @@ exports.retryCheckoutWithOrderId = async (req, res) => {
 exports.verifyPayment = async (req, res) => {
   try {
     const { razorpay_payment_id, razorpay_order_id, razorpay_signature } = req.body;
-    const orderId = req.session.checkout?.orderId;
-    if (!orderId) return res.status(400).send("No order to verify");
+    const checkoutData = req.session.checkout;
+    if (!checkoutData?.orderData) {
+      return res.status(400).send("No checkout data to verify");
+    }
 
     const crypto = require("crypto");
     const expectedSignature = crypto
@@ -574,25 +600,39 @@ exports.verifyPayment = async (req, res) => {
       .digest("hex");
 
     if (expectedSignature !== razorpay_signature) {
-      await Order.findByIdAndUpdate(orderId, {
-        paymentStatus: "failed",
-        status: "Failed",
-      });
-      return res.redirect(`/payment/failed?orderId=${orderId}`);
+      return res.redirect(`/payment/failed?reason=signature_mismatch`);
     }
 
-    await Order.findByIdAndUpdate(orderId, {
-      paymentStatus: "paid",
+    const user = await User.findById(req.session.user._id);
+    const address = user.addresses.id(checkoutData.orderData.selectedAddress);
+
+    // ✅ Create order now after successful verification
+    const newOrder = await Order.create({
+      user: user._id,
+      selectedAddress: address._id,
+      products: checkoutData.orderData.orderItems.map(i => ({
+        product: i.product._id,
+        quantity: i.quantity,
+        unitPrice: i.offerPrice,
+      })),
+      totalAmount: checkoutData.orderData.totalAmount,
+      paymentMethod: "Online",
+      deliveryCharge: checkoutData.orderData.deliveryCharge,
+      discountAmount: checkoutData.orderData.discountAmount,
+      couponDiscount: checkoutData.orderData.couponDiscount,
       status: "Placed",
+      paymentStatus: "Paid",
       razorpayPaymentId: razorpay_payment_id,
+      estimatedDelivery: new Date(Date.now() + 6 * 24 * 60 * 60 * 1000)
     });
 
+    req.session.orderId = newOrder._id;
     req.session.paymentVerified = true;
 
-    // ✅ Redirect to order confirmation page
-    res.redirect(`/user/order-confirmation/${orderId}`);
+    // ✅ Redirect to confirm-payment page
+    return res.redirect(`/user/confirm-payment`);
   } catch (err) {
-    console.error("Payment verification error:", err);
+    console.error("❌ Payment verification error:", err);
     res.status(500).send("Error verifying payment");
   }
 };
