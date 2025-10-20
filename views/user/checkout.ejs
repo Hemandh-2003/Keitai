@@ -598,15 +598,39 @@
             name: "Keitai",
             description: "Order Payment",
             order_id: paymentData.id,
-            handler: function (response) {
-              const form = document.querySelector('.checkout-form');
-              const paymentInput = document.createElement('input');
-              paymentInput.type = 'hidden';
-              paymentInput.name = 'paymentDetails';
-              paymentInput.value = JSON.stringify(response);
-              form.appendChild(paymentInput);
-              form.submit();
-            },
+           handler: async function (response) {
+  try {
+    const verifyRes = await fetch('/user/verify-payment', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(response)
+    });
+
+    if (verifyRes.redirected) {
+      // ✅ Automatically follow backend redirect to /user/order-confirmation
+      window.location.href = verifyRes.url;
+    } else {
+      const data = await verifyRes.json().catch(() => ({}));
+      if (data.success && data.redirectUrl) {
+        window.location.href = data.redirectUrl;
+      } else {
+        Swal.fire({
+          icon: 'error',
+          title: 'Verification Failed',
+          text: data.message || 'Payment verification failed. Please try again.'
+        });
+      }
+    }
+  } catch (err) {
+    console.error('Payment verification error:', err);
+    Swal.fire({
+      icon: 'error',
+      title: 'Payment Error',
+      text: 'Something went wrong verifying your payment.'
+    });
+  }
+},
+
             prefill: {
               name: '<%= user.name %>',
               email: '<%= user.email %>',
