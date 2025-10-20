@@ -511,7 +511,7 @@
                 <input type="hidden" name="quantities[]" value="<%= item.quantity %>">
                 <input type="hidden" name="offerPrices[]" value="<%= item.offerPrice %>">
                 <% }); %>
-                 <input type="hidden" name="selectedAddress" value="<%= address?._id || '' %>">
+                <input type="hidden" name="selectedAddress" value="<%= address?._id || '' %>">
                   <input type="hidden" name="totalAmount" value="<%= totalAmount %>">
                   <input type="hidden" name="paymentMethod" value="<%= paymentMethod %>">
                   <button type="submit" class="place-order-btn" id="submitOrder">

@@ -266,16 +266,19 @@ exports.placeOrder = async (req, res) => {
     }
 
     // Online: do not create order yet, just store checkout session
-    req.session.checkout.orderData = {
-      orderItems,
-      totalAmount,
-      deliveryCharge,
-      discountAmount,
-      couponDiscount,
-      selectedAddress: address._id,
-      paymentMethod
-    };
-return res.redirect(`/user/order-confirmation/${req.session.id}`);
+  req.session.checkout = {
+  ...req.session.checkout,
+  selectedAddress: address._id,
+  orderData: {
+    orderItems,
+    totalAmount,
+    deliveryCharge,
+    discountAmount,
+    couponDiscount,
+    paymentMethod
+  }
+};
+return res.redirect('/user/order-confirmation');
 
   } catch (err) {
     console.error("❌ Error in placeOrder:", err.message);
@@ -287,7 +290,7 @@ return res.redirect(`/user/order-confirmation/${req.session.id}`);
 exports.renderOrderConfirmation = async (req, res) => {
   try {
     const checkoutData = req.session.checkout;
-    if (!checkoutData) return res.redirect('/user/checkout');
+    if (!checkoutData || !checkoutData.orderData) return res.redirect('/user/checkout');
 
     const user = await User.findById(req.session.user._id);
     if (!user) return res.redirect('/user/checkout');
@@ -296,14 +299,14 @@ exports.renderOrderConfirmation = async (req, res) => {
     const address = addressId ? user.addresses.id(addressId) : null;
 
     res.render('user/order-confirmation', {
-      orderItems: checkoutData.orderData?.orderItems || [],
-      totalAmount: checkoutData.orderData?.totalAmount || 0,
-      deliveryCharge: checkoutData.orderData?.deliveryCharge || 0,
-      couponDiscount: checkoutData.orderData?.couponDiscount || 0,
-      paymentMethod: checkoutData.orderData?.paymentMethod || "Online",
-      address, // could be null, handle in EJS
+      orderItems: checkoutData.orderData.orderItems || [],
+      totalAmount: checkoutData.orderData.totalAmount || 0,
+      deliveryCharge: checkoutData.orderData.deliveryCharge || 0,
+      couponDiscount: checkoutData.orderData.couponDiscount || 0,
+      paymentMethod: checkoutData.orderData.paymentMethod || "Online",
+      address, // can be null, EJS should handle
       estimatedDate: new Date(Date.now() + 6 * 24 * 60 * 60 * 1000),
-      orderId: checkoutData.orderData?.orderId || null,
+      orderId: checkoutData.orderData.orderId || null,
       paymentVerified: checkoutData.paymentVerified || false,
       paymentDetails: checkoutData.paymentDetails || null
     });
@@ -312,6 +315,7 @@ exports.renderOrderConfirmation = async (req, res) => {
     res.status(500).send("Error loading order confirmation page.");
   }
 };
+
 
 exports.confirmPayment = async (req, res) => {
   try {
