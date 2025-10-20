@@ -275,7 +275,7 @@ exports.placeOrder = async (req, res) => {
       selectedAddress: address._id,
       paymentMethod
     };
-return res.redirect('/user/online-payment');
+return res.redirect('/user/order-confirmation');
 
   } catch (err) {
     console.error("❌ Error in placeOrder:", err.message);
@@ -612,7 +612,7 @@ exports.verifyPayment = async (req, res) => {
     delete req.session.checkout.orderData;
 
     // ✅ Redirect to order confirmation page instead of returning JSON
-    return res.redirect('/user/order-confirmation');
+res.redirect('/user/order-confirmation');
 
   } catch (err) {
     console.error("❌ Error verifying payment:", err);
