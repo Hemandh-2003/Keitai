@@ -41,7 +41,7 @@ router.get('/product/:productId', productController.getProductDetailsWithRelated
 router.get('/checkout', ...protect, checkoutController.getCheckout);
 router.post('/checkout', ...protect, checkoutController.checkout);
 router.post('/place-order', ...protect, checkoutController.placeOrder);
-router.get('/order-confirmation/:sessionId', protect, checkoutController.renderOrderConfirmation);
+router.get('/order-confirmation', protect, checkoutController.renderOrderConfirmation);
 router.post('/confirm-payment', ...protect, checkoutController.confirmPayment);
 router.get('/confirm-payment', ...protect, checkoutController.renderConfirmPayment);
 router.post('/address/create-inline', checkoutController.createInlineAddress);
