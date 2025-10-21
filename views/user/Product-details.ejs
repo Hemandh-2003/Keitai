@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 
@@ -15,53 +14,898 @@
     <link rel="icon" href="/images/favicon.jpg">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <script src="/js/product-slider.js" defer></script>
+    <style>
+        :root {
+            --primary-black: #000000;
+            --primary-blue: #0018f0ba;
+            --accent-yellow: #f3a808;
+            --light-gray: #f5f5f5;
+            --medium-gray: #e0e0e0;
+            --dark-gray: #333333;
+            --success-green: #28a745;
+            --danger-red: #e63946;
+            --warning-orange: #ff9800;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: var(--dark-gray);
+            background-color: #ffffff;
+        }
+        
+        /* Enhanced Header */
+        header {
+            background: var(--primary-black);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            box-shadow: 0 2px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        .navbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.8rem 2rem;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        .logo img {
+            height: 50px;
+            transition: transform 0.3s ease;
+        }
+        
+        .logo img:hover {
+            transform: scale(1.05);
+        }
+        
+        .nav-links {
+            display: flex;
+            list-style: none;
+            gap: 1.8rem;
+        }
+        
+        .nav-links li a {
+            text-decoration: none;
+            color: #fff;
+            font-weight: 600;
+            font-size: 0.95rem;
+            padding: 0.5rem 0;
+            position: relative;
+            transition: color 0.3s ease;
+        }
+        
+        .nav-links li a::after {
+            content: '';
+            position: absolute;
+            width: 0;
+            height: 2px;
+            bottom: 0;
+            left: 0;
+            background-color: var(--primary-blue);
+            transition: width 0.3s ease;
+        }
+        
+        .nav-links li a:hover::after,
+        .nav-links li a.active::after {
+            width: 100%;
+        }
+        
+        .nav-links li a:hover,
+        .nav-links li a.active {
+            color: var(--primary-blue);
+        }
+        
+        .nav-icons {
+            display: flex;
+            align-items: center;
+            gap: 1.2rem;
+        }
+        
+        .nav-icons a {
+            color: #fff;
+            font-size: 1.2rem;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+        
+        .nav-icons a:hover {
+            color: var(--primary-blue);
+            transform: translateY(-2px);
+        }
+        
+        
+        .cart-icon-wrapper {
+            position: relative;
+        }
+        
+        .cart-count-badge {
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            background: var(--danger-red);
+            color: white;
+            border-radius: 50%;
+            width: 18px;
+            height: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7rem;
+            font-weight: bold;
+            display: none;
+        }
+        
+        /* Enhanced Breadcrumb */
+        .breadcrumb {
+            display: flex;
+            padding: 1rem 2rem;
+            margin: 0;
+            background-color: #f8f9fa;
+            border-bottom: 1px solid var(--medium-gray);
+            font-size: 0.9rem;
+        }
+        
+        .breadcrumb-item {
+            display: flex;
+            align-items: center;
+        }
+        
+        .breadcrumb-item a {
+            text-decoration: none;
+            color: var(--primary-blue);
+            transition: color 0.2s ease;
+        }
+        
+        .breadcrumb-item a:hover {
+            color: #0000cc;
+        }
+        
+        .breadcrumb-item::after {
+            content: '/';
+            margin: 0 10px;
+            color: var(--medium-gray);
+        }
+        
+        .breadcrumb-item:last-child::after {
+            content: '';
+        }
+        
+        .breadcrumb-item.active {
+            color: var(--dark-gray);
+            font-weight: 500;
+        }
+        
+        /* Enhanced Product Section */
+        .product-main {
+            display: flex;
+            max-width: 1400px;
+            margin: 2rem auto;
+            padding: 0 2rem;
+            gap: 4rem;
+        }
+        
+        .product-gallery {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        .main-image-container {
+            position: relative;
+            width: 100%;
+            max-width: 500px;
+            height: 450px;
+            overflow: hidden;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            margin-bottom: 1.5rem;
+        }
+        
+        .main-image-container img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            transition: transform 0.5s ease;
+        }
+        
+        .main-image-container:hover img {
+            transform: scale(1.03);
+        }
+        
+        .thumbnails {
+            display: flex;
+            gap: 0.8rem;
+            justify-content: center;
+        }
+        
+        .thumbnails img {
+            width: 70px;
+            height: 70px;
+            object-fit: cover;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+        }
+        
+        .thumbnails img:hover,
+        .thumbnails img.active {
+            border-color: var(--primary-blue);
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        .product-info {
+            flex: 1;
+            padding: 1rem 0;
+        }
+        
+        .wishlist-container {
+            display: flex;
+            justify-content: flex-end;
+            margin-bottom: 1rem;
+        }
+        
+        .wishlist-icon {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            color: #ccc;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            padding: 0.5rem;
+            border-radius: 50%;
+        }
+        
+        .wishlist-icon:hover {
+            color: var(--danger-red);
+            background-color: rgba(230, 57, 70, 0.1);
+        }
+        
+        .wishlist-icon.active {
+            color: var(--danger-red);
+        }
+        
+        .product-info h1 {
+            font-size: 1.8rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            line-height: 1.3;
+        }
+        
+        .rating-summary {
+            display: flex;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+        
+        .stars {
+            display: flex;
+            margin-right: 0.5rem;
+        }
+        
+        .star {
+            color: #ffc107;
+            font-size: 1.1rem;
+        }
+        
+        .star.half {
+            background: linear-gradient(90deg, #ffc107 50%, #e0e0e0 50%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .review-count {
+            color: var(--dark-gray);
+            font-size: 0.9rem;
+        }
+        
+        /* Enhanced Price Section */
+        .price-container {
+            margin: 1.5rem 0;
+            padding: 1rem;
+            background-color: #f8f9fa;
+            border-radius: 8px;
+        }
+        
+        .current-price {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--danger-red);
+            margin-right: 0.8rem;
+        }
+        
+        .original-price {
+            text-decoration: line-through;
+            color: #6c757d;
+            font-size: 1.3rem;
+            margin-right: 0.8rem;
+        }
+        
+        .discount-percentage {
+            display: inline-block;
+            background-color: var(--danger-red);
+            color: white;
+            padding: 0.3rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+        
+        .offer-badge {
+            display: inline-flex;
+            align-items: center;
+            background-color: #fff3cd;
+            color: #856404;
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            margin-top: 0.8rem;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+        
+        .offer-badge i {
+            margin-right: 0.5rem;
+        }
+        
+        .offer-timer {
+            display: inline-flex;
+            align-items: center;
+            background-color: #e9f7fe;
+            color: #0c5460;
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            margin-top: 0.8rem;
+            font-size: 0.9rem;
+        }
+        
+        .offer-timer i {
+            margin-right: 0.5rem;
+        }
+        
+        .stock-status {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-weight: 600;
+            margin: 1rem 0;
+        }
+        
+        .stock-status.in-stock {
+            background-color: rgba(40, 167, 69, 0.1);
+            color: var(--success-green);
+        }
+        
+        .stock-status.limited {
+            background-color: rgba(255, 193, 7, 0.1);
+            color: var(--warning-orange);
+        }
+        
+        .stock-status.out {
+            background-color: rgba(220, 53, 69, 0.1);
+            color: var(--danger-red);
+        }
+        
+        /* Enhanced Quantity and Action Buttons */
+        .quantity-section {
+            margin: 1.5rem 0;
+        }
+        
+        .quantity-label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+        }
+        
+        .quantity-control {
+            display: inline-flex;
+            align-items: center;
+            border: 1px solid var(--medium-gray);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        .btn-quantity {
+            width: 40px;
+            height: 40px;
+            background-color: #f8f9fa;
+            border: none;
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        
+        .btn-quantity:hover:not(:disabled) {
+            background-color: var(--medium-gray);
+        }
+        
+        .btn-quantity:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .quantity-input {
+            width: 60px;
+            height: 40px;
+            border: none;
+            text-align: center;
+            font-size: 1rem;
+            font-weight: 600;
+        }
+        
+        .button-container {
+            display: flex;
+            gap: 1rem;
+            margin: 2rem 0;
+        }
+        
+        .btn-buy {
+            flex: 1;
+            padding: 1rem 1.5rem;
+            background-color: var(--primary-black);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+        
+        .btn-buy:hover:not(:disabled) {
+            background-color: #333;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        .btn-buy:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        
+        .btn-cart {
+            flex: 1;
+            padding: 1rem 1.5rem;
+            background-color: var(--accent-yellow);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+        
+        .btn-cart:hover:not(:disabled) {
+            background-color: #e09907;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        .btn-cart:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        
+        /* Enhanced Product Description */
+        .product-description {
+            margin: 3rem 0;
+            padding: 2rem;
+            background-color: #f8f9fa;
+            border-radius: 12px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+        }
+        
+        .product-description h3 {
+            font-size: 1.4rem;
+            margin-bottom: 1rem;
+            color: var(--dark-gray);
+            position: relative;
+            padding-bottom: 0.5rem;
+        }
+        
+        .product-description h3::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 50px;
+            height: 3px;
+            background-color: var(--primary-blue);
+        }
+        
+        .product-description p {
+            margin-bottom: 1rem;
+            line-height: 1.7;
+            color: #555;
+        }
+        
+        .offer-list {
+            list-style: none;
+            padding: 0;
+        }
+        
+        .offer-list li {
+            padding: 0.8rem 1rem;
+            margin-bottom: 0.5rem;
+            background-color: white;
+            border-radius: 6px;
+            border-left: 4px solid var(--success-green);
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+        }
+        
+        /* Enhanced Product Variants */
+        .product-variants {
+            margin: 3rem 0;
+            padding: 2rem;
+            background-color: white;
+            border-radius: 12px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+        }
+        
+        .product-variants h2 {
+            font-size: 1.5rem;
+            margin-bottom: 1.5rem;
+            color: var(--dark-gray);
+            position: relative;
+            padding-bottom: 0.5rem;
+        }
+        
+        .product-variants h2::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 50px;
+            height: 3px;
+            background-color: var(--primary-blue);
+        }
+        
+        .variant-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 1.5rem;
+        }
+        
+        .variant-item {
+            border: 1px solid var(--medium-gray);
+            border-radius: 10px;
+            overflow: hidden;
+            transition: all 0.3s ease;
+            background-color: white;
+        }
+        
+        .variant-item:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+            border-color: var(--primary-blue);
+        }
+        
+        .variant-item a {
+            display: block;
+            text-decoration: none;
+            color: inherit;
+            padding: 1rem;
+        }
+        
+        .variant-item img {
+            width: 100%;
+            height: 150px;
+            object-fit: contain;
+            margin-bottom: 1rem;
+        }
+        
+        .variant-item h3 {
+            font-size: 1rem;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+        }
+        
+        .variant-item p {
+            font-weight: 700;
+            color: var(--danger-red);
+        }
+        
+        /* Enhanced Highlights Section */
+        .highlights {
+            margin: 3rem 0;
+            padding: 2rem;
+            background-color: white;
+            border-radius: 12px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+        }
+        
+        .highlights h2 {
+            font-size: 1.5rem;
+            margin-bottom: 1.5rem;
+            color: var(--dark-gray);
+            position: relative;
+            padding-bottom: 0.5rem;
+        }
+        
+        .highlights h2::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 50px;
+            height: 3px;
+            background-color: var(--primary-blue);
+        }
+        
+        .highlight-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 1.5rem;
+        }
+        
+        .highlight {
+            text-align: center;
+        }
+        
+        .highlight img {
+            width: 100%;
+            height: 200px;
+            object-fit: contain;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            transition: transform 0.3s ease;
+        }
+        
+        .highlight:hover img {
+            transform: scale(1.05);
+        }
+        
+        /* Enhanced Related Products */
+        .related-products {
+            margin: 3rem 0;
+            padding: 2rem;
+            background-color: white;
+            border-radius: 12px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+        }
+        
+        .related-products h2 {
+            font-size: 1.5rem;
+            margin-bottom: 1.5rem;
+            color: var(--dark-gray);
+            position: relative;
+            padding-bottom: 0.5rem;
+        }
+        
+        .related-products h2::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 50px;
+            height: 3px;
+            background-color: var(--primary-blue);
+        }
+        
+        .product-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 1.5rem;
+        }
+        
+        .product-item {
+            border: 1px solid var(--medium-gray);
+            border-radius: 10px;
+            overflow: hidden;
+            transition: all 0.3s ease;
+            background-color: white;
+        }
+        
+        .product-item:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+            border-color: var(--primary-blue);
+        }
+        
+        .product-item a {
+            display: block;
+            text-decoration: none;
+            color: inherit;
+            padding: 1rem;
+        }
+        
+        .product-item img {
+            width: 100%;
+            height: 180px;
+            object-fit: contain;
+            margin-bottom: 1rem;
+        }
+        
+        .product-item h3 {
+            font-size: 1rem;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            line-height: 1.4;
+        }
+        
+        .related-price {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .related-price .current-price {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: var(--danger-red);
+        }
+        
+        .related-price .original-price {
+            font-size: 1rem;
+            text-decoration: line-through;
+            color: #6c757d;
+        }
+        
+        /* Enhanced Footer */
+        footer {
+            background-color: var(--primary-black);
+            padding: 2rem 0;
+            text-align: center;
+            color: white;
+            margin-top: 3rem;
+        }
+        
+        footer .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 2rem;
+        }
+        
+        /* Responsive Design */
+        @media (max-width: 1024px) {
+            .product-main {
+                gap: 2rem;
+            }
+            
+            .variant-row,
+            .highlight-row,
+            .product-row {
+                grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .navbar {
+                padding: 0.8rem 1rem;
+            }
+            
+            .nav-links {
+                display: none;
+            }
+            
+            .menu-toggle {
+                display: block;
+                background: none;
+                border: none;
+                color: white;
+                font-size: 1.5rem;
+                cursor: pointer;
+            }
+            
+            .product-main {
+                flex-direction: column;
+                padding: 0 1rem;
+            }
+            
+            .main-image-container {
+                height: 350px;
+            }
+            
+            .button-container {
+                flex-direction: column;
+            }
+            
+            .variant-row,
+            .highlight-row,
+            .product-row {
+                grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .navbar {
+                padding: 0.6rem 1rem;
+            }
+            
+            .logo img {
+                height: 40px;
+            }
+            
+            .search-container input {
+                width: 150px;
+            }
+            
+            .search-container input:focus {
+                width: 180px;
+            }
+            
+            .breadcrumb {
+                padding: 0.8rem 1rem;
+            }
+            
+            .product-main {
+                margin: 1rem auto;
+            }
+            
+            .main-image-container {
+                height: 280px;
+            }
+            
+            .thumbnails img {
+                width: 50px;
+                height: 50px;
+            }
+            
+            .product-info h1 {
+                font-size: 1.5rem;
+            }
+            
+            .current-price {
+                font-size: 1.6rem;
+            }
+            
+            .original-price {
+                font-size: 1.1rem;
+            }
+            
+            .variant-row,
+            .highlight-row,
+            .product-row {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+    </style>
 </head>
 
 <body>
-  <div id="loader" class="loader"></div>
+    <div id="loader" class="loader"></div>
+    
     <!-- Header -->
     <header>
         <nav class="navbar">
-          <button class="menu-toggle" id="menu-toggle">
-  <i class="fas fa-bars"></i>
-</button>
+            <button class="menu-toggle" id="menu-toggle">
+                <i class="fas fa-bars"></i>
+            </button>
             <div class="logo">
                 <a href="/"><img src="/images/logo1.png" alt="Keitai Logo"></a>
             </div>
             <ul class="nav-links">
-                <li><a href="/home"
-                        class="<%= product.category && product.category.name === 'Store' ? 'active' : '' %>">Store</a>
-                </li>
-                <li><a href="/laptop"
-                        class="<%= product.category && product.category.name === 'Laptop' ? 'active' : '' %>">Laptop</a>
-                </li>
-                <li><a href="/tablet"
-                        class="<%= product.category && product.category.name === 'Tablet' ? 'active' : '' %>">Tablet</a>
-                </li>
-                <li><a href="/phone"
-                        class="<%= product.category && product.category.name === 'Phone' ? 'active' : '' %>">Phone</a>
-                </li>
-                <li><a href="/watch"
-                        class="<%= product.category && product.category.name === 'Watch' ? 'active' : '' %>">Watch</a>
-                </li>
-                <li><a href="/earpods"
-                        class="<%= product.category && product.category.name === 'EarPods' ? 'active' : '' %>">EarPods</a>
-                </li>
-                <li><a href="/accessories"
-                        class="<%= product.category && product.category.name === 'Accessories' ? 'active' : '' %>">Accessories</a>
-                </li>
+                <li><a href="/home" class="<%= product.category && product.category.name === 'Store' ? 'active' : '' %>">Store</a></li>
+                <li><a href="/laptop" class="<%= product.category && product.category.name === 'Laptop' ? 'active' : '' %>">Laptop</a></li>
+                <li><a href="/tablet" class="<%= product.category && product.category.name === 'Tablet' ? 'active' : '' %>">Tablet</a></li>
+                <li><a href="/phone" class="<%= product.category && product.category.name === 'Phone' ? 'active' : '' %>">Phone</a></li>
+                <li><a href="/watch" class="<%= product.category && product.category.name === 'Watch' ? 'active' : '' %>">Watch</a></li>
+                <li><a href="/earpods" class="<%= product.category && product.category.name === 'EarPods' ? 'active' : '' %>">EarPods</a></li>
+                <li><a href="/accessories" class="<%= product.category && product.category.name === 'Accessories' ? 'active' : '' %>">Accessories</a></li>
             </ul>
             <div class="nav-icons">
                 <div class="search-container">
                     <input type="text" id="search-input" placeholder="Search for products...">
-                    
                     <div id="search-results"></div>
                 </div>
                 <a href="/cart" class="cart-icon-wrapper position-relative">
-  <i class="fas fa-shopping-cart"></i>
-  <span class="cart-count-badge" id="cart-count">0</span>
-</a>
-
+                    <i class="fas fa-shopping-cart"></i>
+                    <span class="cart-count-badge" id="cart-count">0</span>
+                </a>
                 <a href="/user/profile"><i class="fas fa-user"></i></a>
             </div>
         </nav>
@@ -83,170 +927,170 @@
 
     <!-- Main Product Section -->
     <section class="product-main">
-        <div class="container">
+        <div class="product-gallery">
             <div class="main-image-container">
-                <img src="/uploads/<%= product.images && product.images[0] %>" alt="<%= product.name %>"
-                    id="main-product-image">
+                <img src="/uploads/<%= product.images && product.images[0] %>" alt="<%= product.name %>" id="main-product-image">
                 <div class="zoom-lens" id="zoom-lens"></div>
             </div>
             <div class="thumbnails">
                 <% if (product.images) { %>
                     <% product.images.slice(0, 4).forEach((image)=> { %>
                         <img src="/uploads/<%= image %>" alt="Thumbnail" onclick="changeImage(this)">
-                        <% }); %>
-                            <% } %>
+                    <% }); %>
+                <% } %>
             </div>
         </div>
 
         <div class="zoom-result" id="zoom-result"></div>
+        
         <div class="product-info">
             <div class="wishlist-container">
-  <button class="wishlist-icon" onclick="addToWishlist('<%= product._id %>', this, event)"
-      style="background: none; border: none; cursor: pointer;">
-    <i class="fas fa-heart"></i>
-  </button>
-</div>
+                <button class="wishlist-icon" onclick="addToWishlist('<%= product._id %>', this, event)">
+                    <i class="fas fa-heart"></i>
+                </button>
+            </div>
 
-            <h1>
-                <%= product.name %>
-            </h1>
-            <p>
-  <% let avg = product.averageRating || 0; %>
-  <% for (let i = 1; i <= 5; i++) { %>
-    <% if (i <= Math.floor(avg)) { %>
-      <span class="star filled">★</span>
-    <% } else if (i - avg <= 0.5) { %>
-      <span class="star half">★</span>
-    <% } else { %>
-      <span class="star">☆</span>
-    <% } %>
-  <% } %>
-  (<%= product.reviewCount || 0 %> Reviews)
-</p>
+            <h1><%= product.name %></h1>
+            
+            <div class="rating-summary">
+                <div class="stars">
+                    <% let avg = product.averageRating || 0; %>
+                    <% for (let i = 1; i <= 5; i++) { %>
+                        <% if (i <= Math.floor(avg)) { %>
+                            <span class="star filled">★</span>
+                        <% } else if (i - avg <= 0.5) { %>
+                            <span class="star half">★</span>
+                        <% } else { %>
+                            <span class="star">☆</span>
+                        <% } %>
+                    <% } %>
+                </div>
+                <span class="review-count">(<%= product.reviewCount || 0 %> Reviews)</span>
+            </div>
 
             <!-- Updated Price Display Section -->
-       <div class="price-container">
-  <% 
-  // Safely handle offerDetails with defaults
-  const offer = typeof offerDetails !== 'undefined' ? offerDetails : {
-    price: product.salesPrice || product.regularPrice,
-    originalPrice: product.regularPrice,
-    discount: 0,
-    hasOffer: false
-  };
-  
-  const finalPrice = offer.price;
-  const originalPrice = offer.originalPrice;
-  const showDiscount = offer.hasOffer || product.salesPrice;
-  const discountPercent = showDiscount ? 
-    Math.round((originalPrice - finalPrice) / originalPrice * 100) : 0;
-  %>
+            <div class="price-container">
+                <% 
+                // Safely handle offerDetails with defaults
+                const offer = typeof offerDetails !== 'undefined' ? offerDetails : {
+                    price: product.salesPrice || product.regularPrice,
+                    originalPrice: product.regularPrice,
+                    discount: 0,
+                    hasOffer: false
+                };
+                
+                const finalPrice = offer.price;
+                const originalPrice = offer.originalPrice;
+                const showDiscount = offer.hasOffer || product.salesPrice;
+                const discountPercent = showDiscount ? 
+                    Math.round((originalPrice - finalPrice) / originalPrice * 100) : 0;
+                %>
 
-  <!-- Current Price -->
-  <span class="current-price">₹<%= finalPrice.toFixed(2) %></span>
+                <!-- Current Price -->
+                <span class="current-price">₹<%= finalPrice.toFixed(2) %></span>
 
-  <!-- Original Price (shown when discounted) -->
-  <% if (showDiscount && discountPercent > 0) { %>
-    <span class="original-price">₹<%= originalPrice.toFixed(2) %></span>
-    <span class="discount-percentage">
-      <%= discountPercent %>% OFF
-    </span>
-  <% } %>
+                <!-- Original Price (shown when discounted) -->
+                <% if (showDiscount && discountPercent > 0) { %>
+                    <span class="original-price">₹<%= originalPrice.toFixed(2) %></span>
+                    <span class="discount-percentage">
+                        <%= discountPercent %>% OFF
+                    </span>
+                <% } %>
 
-  <!-- Offer Badges -->
-  <% if (offer.hasOffer) { %>
-    <div class="offer-badge">
-      <i class="fas fa-tag"></i> Special Offer Applied!
-    </div>
-    <% if (offer.endDate) { %>
-      <div class="offer-timer">
-        <i class="fas fa-clock"></i> Offer ends in:
-        <span id="offer-countdown"></span>
-      </div>
-    <% } %>
-  <% } else if (product.productOffer) { %>
-    <p class="offer-badge">
-      <i class="fas fa-bolt"></i>
-      <%= product.productOffer %>
-    </p>
-  <% } %>
-</div>
+                <!-- Offer Badges -->
+                <% if (offer.hasOffer) { %>
+                    <div class="offer-badge">
+                        <i class="fas fa-tag"></i> Special Offer Applied!
+                    </div>
+                    <% if (offer.endDate) { %>
+                        <div class="offer-timer">
+                            <i class="fas fa-clock"></i> Offer ends in:
+                            <span id="offer-countdown"></span>
+                        </div>
+                    <% } %>
+                <% } else if (product.productOffer) { %>
+                    <p class="offer-badge">
+                        <i class="fas fa-bolt"></i>
+                        <%= product.productOffer %>
+                    </p>
+                <% } %>
+            </div>
             
-            <p class="stock-status" style="
-                color: <%= product.quantity > 10 ? 'green' : product.quantity > 0 ? 'orange' : 'red' %>;
-                font-weight: bold;">
+            <div class="stock-status <%= product.quantity > 10 ? 'in-stock' : product.quantity > 0 ? 'limited' : 'out' %>">
                 <% if (product.quantity> 10) { %>
-                    In Stock
-                    <% } else if (product.quantity> 0) { %>
-                        Limited Stock: Only <%= product.quantity %> left
-                            <% } else { %>
-                                Out of Stock
-                                <% } %>
-            </p>
+                    <i class="fas fa-check-circle"></i> In Stock
+                <% } else if (product.quantity> 0) { %>
+                    <i class="fas fa-exclamation-triangle"></i> Limited Stock: Only <%= product.quantity %> left
+                <% } else { %>
+                    <i class="fas fa-times-circle"></i> Out of Stock
+                <% } %>
+            </div>
 
             <form action="/user/checkout" method="POST" id="action-form">
                 <input type="hidden" name="productId" value="<%= product._id %>">
                 <input type="hidden" name="productUrl" value="/product/<%= product._id %>">
-                <label for="quantity">Quantity:</label>
-                <div class="quantity-control">
-                    <button type="button" class="btn-quantity" id="decrease-qty" <%=product.quantity===0 ? 'disabled'
-                        : '' %>>-</button>
-                    <input type="number" name="quantity" class="quantity-input" value="1" min="1"
-                max="<%= Math.min(5, product.quantity) %>" id="quantity" oninput="validateQuantity(this)"
-                <%= product.quantity === 0 ? 'disabled' : '' %>>
-
-                    <button type="button" class="btn-quantity" id="increase-qty" <%=product.quantity===0 ? 'disabled'
-                        : '' %>>+</button>
+                
+                <div class="quantity-section">
+                    <label for="quantity" class="quantity-label">Quantity:</label>
+                    <div class="quantity-control">
+                        <button type="button" class="btn-quantity" id="decrease-qty" <%=product.quantity===0 ? 'disabled' : '' %>>-</button>
+                        <input type="number" name="quantity" class="quantity-input" value="1" min="1"
+                            max="<%= Math.min(5, product.quantity) %>" id="quantity" oninput="validateQuantity(this)"
+                            <%= product.quantity === 0 ? 'disabled' : '' %>>
+                        <button type="button" class="btn-quantity" id="increase-qty" <%=product.quantity===0 ? 'disabled' : '' %>>+</button>
+                    </div>
                 </div>
+                
                 <div class="button-container">
-                    <button type="submit" class="btn-buy" id="buy-now-btn" <%=product.quantity===0 ? 'disabled' : ''
-                        %>>Buy
-                        Now</button>
-                    <button type="button" class="btn-cart" id="add-to-cart-btn" <%=product.quantity===0 ? 'disabled'
-                        : '' %>>Add to Cart</button>
+                    <button type="submit" class="btn-buy" id="buy-now-btn" <%=product.quantity===0 ? 'disabled' : '' %>>
+                        <i class="fas fa-bolt"></i> Buy Now
+                    </button>
+                    <button type="button" class="btn-cart" id="add-to-cart-btn" <%=product.quantity===0 ? 'disabled' : '' %>>
+                        <i class="fas fa-shopping-cart"></i> Add to Cart
+                    </button>
                 </div>
             </form>
+            
             <!-- Add to Cart Form -->
             <form id="add-to-cart-form">
                 <input type="hidden" name="productId" value="<%= product._id %>">
             </form>
         </div>
     </section>
-<% if (variants.length > 0) { %>
-  <section class="product-variants">
-    <div class="container">
-      <h2>Available Variants</h2>
-      <div class="variant-row">
-        <% variants.forEach(variant => { %>
-          <div class="variant-item">
-            <a href="/product/<%= variant._id %>">
-              <% if (variant.images && variant.images.length > 0) { %>
-                <img src="/uploads/<%= variant.images[0] %>" alt="<%= variant.name %>">
-              <% } else { %>
-                <img src="/images/default-product.jpg" alt="<%= variant.name %>">
-              <% } %>
-              <h3><%= variant.name %></h3>
-              <p>₹<%= variant.offerDetails ? variant.offerDetails.price : variant.price %></p>
-            </a>
-          </div>
-        <% }) %>
-      </div>
-    </div>
-  </section>
-<% } %>
 
+    <!-- Product Variants -->
+    <% if (variants.length > 0) { %>
+        <section class="product-variants">
+            <div class="container">
+                <h2>Available Variants</h2>
+                <div class="variant-row">
+                    <% variants.forEach(variant => { %>
+                        <div class="variant-item">
+                            <a href="/product/<%= variant._id %>">
+                                <% if (variant.images && variant.images.length > 0) { %>
+                                    <img src="/uploads/<%= variant.images[0] %>" alt="<%= variant.name %>">
+                                <% } else { %>
+                                    <img src="/images/default-product.jpg" alt="<%= variant.name %>">
+                                <% } %>
+                                <h3><%= variant.name %></h3>
+                                <p>₹<%= variant.offerDetails ? variant.offerDetails.price : variant.price %></p>
+                            </a>
+                        </div>
+                    <% }) %>
+                </div>
+            </div>
+        </section>
+    <% } %>
+
+    <!-- Product Description -->
     <div class="product-description">
         <h3>Description</h3>
-        <p>
-            <%= product.description %>
-        </p>
+        <p><%= product.description %></p>
+        
         <h3>About the Product</h3>
-        <p>Brand: <%= product.brand %>
-        </p>
-        <p>Category: <%= product.category && product.category.name %>
-        </p>
-        <p>Available Quantity: <%= product.quantity %>
-        </p>
+        <p>Brand: <%= product.brand %></p>
+        <p>Category: <%= product.category && product.category.name %></p>
+        <p>Available Quantity: <%= product.quantity %></p>
 
         <% if (typeof offerDetails !='undefined' && offerDetails && offerDetails.hasOffer) { %>
             <h3>Active Offers</h3>
@@ -254,20 +1098,17 @@
                 <% if (product.offers && product.offers.length> 0) { %>
                     <% product.offers.forEach(offer=> { %>
                         <li>
-                            <strong>
-                                <%= offer.name %>
-                            </strong>:
-                            <%= offer.discountType==='percentage' ? `${offer.discountValue}% off` :
-                                `₹${offer.discountValue} off` %>
-                                (Valid until <%= new Date(offer.endDate).toLocaleDateString() %>)
+                            <strong><%= offer.name %></strong>:
+                            <%= offer.discountType==='percentage' ? `${offer.discountValue}% off` : `₹${offer.discountValue} off` %>
+                            (Valid until <%= new Date(offer.endDate).toLocaleDateString() %>)
                         </li>
-                        <% }); %>
-                            <% } %>
+                    <% }); %>
+                <% } %>
             </ul>
-            <% } %>
+        <% } %>
     </div>
 
-
+    <!-- Product Highlights -->
     <section class="highlights">
         <div class="container">
             <h2>Product Highlights</h2>
@@ -277,220 +1118,219 @@
                         <div class="highlight">
                             <img src="/uploads/<%= highlight %>" alt="Highlight">
                         </div>
-                        <% }); %>
+                    <% }); %>
                 </div>
-                <% } else { %>
-                    <p>No highlights available for this product.</p>
-                    <% } %>
+            <% } else { %>
+                <p>No highlights available for this product.</p>
+            <% } %>
         </div>
     </section>
+
+   <!-- Reviews Section -->
 <section id="reviews" class="reviews-section">
-  <div class="container">
-    <h2 class="section-title">Customer Reviews</h2>
+    <div class="container">
+        <h2 class="section-title">Customer Reviews</h2>
 
-    <!-- Overall Rating Summary -->
-    <div class="rating-summary">
-      <div class="average-rating">
-        <div class="rating-number"><%= product.averageRating ? product.averageRating.toFixed(1) : "0.0" %></div>
-        <div class="stars">
-          <% for (let i = 1; i <= 5; i++) { %>
-            <span class="star <%= i <= Math.round(product.averageRating || 0) ? 'filled' : '' %>">★</span>
-          <% } %>
-        </div>
-        <p class="review-count">Based on <%= product.reviewCount || 0 %> reviews</p>
-      </div>
-      
-      <!-- Rating Breakdown -->
-      <div class="rating-breakdown">
-        <% for (let i = 5; i >= 1; i--) { %>
-          <div class="rating-bar">
-            <span class="star-count"><%= i %> ★</span>
-            <div class="bar-container">
-              <div class="bar" style="width: <%= (product.ratingDistribution && product.ratingDistribution[i] || 0) / (product.reviewCount || 1) * 100 %>%;"></div>
-            </div>
-            <span class="percentage"><%= Math.round((product.ratingDistribution && product.ratingDistribution[i] || 0) / (product.reviewCount || 1) * 100) || 0 %>%</span>
-          </div>
-        <% } %>
-      </div>
-    </div>
-
-    <!-- Review Form -->
-    <% if (user) { %>
-      <div class="review-form-container">
-        <h3>Write a Review</h3>
-        <form action="/review/submit" method="POST" enctype="multipart/form-data" class="review-form">
-          <input type="hidden" name="productId" value="<%= product._id %>">
-          
-          <div class="form-group">
-            <label for="rating">Your Rating</label>
-            <div class="star-rating-input">
-              <% for (let i = 1; i <= 5; i++) { %>
-                <span class="star" data-value="<%= i %>">★</span>
-              <% } %>
-              <input type="hidden" name="rating" id="rating" required>
-            </div>
-          </div>
-          
-          <div class="form-group">
-            <label for="title">Review Title</label>
-            <input type="text" name="title" id="title" placeholder="Summarize your experience" required>
-          </div>
-          
-          <div class="form-group">
-            <label for="comment">Your Review</label>
-            <textarea name="comment" id="comment" rows="4" placeholder="Share details of your experience with this product" required></textarea>
-          </div>
-          
-          <div class="form-group">
-            <label for="images">Upload Images (optional)</label>
-            <div class="image-upload-container">
-              <div class="image-preview"></div>
-              <label for="images" class="upload-btn">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M11 15H13V9H16L12 4L8 9H11V15Z" fill="currentColor"/>
-                  <path d="M20 18H4V11H2V18C2 19.103 2.897 20 4 20H20C21.103 20 22 19.103 22 18V11H20V18Z" fill="currentColor"/>
-                </svg>
-                <span>Add Photos</span>
-              </label>
-              <input type="file" name="images" id="images" multiple accept="image/*" style="display: none;">
-            </div>
-          </div>
-          
-          <button type="submit" class="btn-submit">Submit Review</button>
-        </form>
-      </div>
-    <% } else { %>
-      <div class="login-prompt">
-        <p><a href="/login">Login</a> to write a review and share your experience.</p>
-      </div>
-    <% } %>
-
-    <!-- Reviews Filter and Sort -->
-    <div class="reviews-header">
-      <h3>Customer Reviews</h3>
-      <div class="filter-sort">
-        <select class="sort-select">
-          <option value="newest">Newest First</option>
-          <option value="highest">Highest Rated</option>
-          <option value="lowest">Lowest Rated</option>
-        </select>
-      </div>
-    </div>
-
-    <!-- Display Reviews -->
-    <div class="review-list">
-      <% if (reviews && reviews.length > 0) { %>
-        <% reviews.forEach(r => { %>
-          <div class="review-item">
-            <div class="review-header">
-              <div class="user-info">
-                <div class="avatar">
-                  <%= r.user.name.charAt(0).toUpperCase() %>
+        <!-- Overall Rating Summary -->
+        <div class="rating-summary">
+            <div class="average-rating">
+                <div class="rating-number"><%= product.averageRating ? product.averageRating.toFixed(1) : "0.0" %></div>
+                <div class="stars">
+                    <% for (let i = 1; i <= 5; i++) { %>
+                        <span class="star <%= i <= Math.round(product.averageRating || 0) ? 'filled' : '' %>">★</span>
+                    <% } %>
                 </div>
-                <div class="user-details">
-                  <h4 class="user-name"><%= r.user.name %></h4>
-                  <div class="review-meta">
-                    <div class="stars">
-                      <% for (let i = 1; i <= 5; i++) { %>
-                        <span class="star <%= i <= r.rating ? 'filled' : '' %>">★</span>
-                      <% } %>
-                    </div>
-                    <span class="review-date"><%= new Date(r.createdAt).toLocaleDateString() %></span>
-                  </div>
-                </div>
-              </div>
+                <p class="review-count">Based on <%= product.reviewCount || 0 %> reviews</p>
             </div>
             
-            <h4 class="review-title"><%= r.title %></h4>
-            <p class="review-comment"><%= r.comment %></p>
-
-            <% if (r.images && r.images.length > 0) { %>
-              <div class="review-images">
-                <% r.images.forEach(img => { %>
-                  <div class="review-image">
-                    <img src="/uploads/<%= img %>" alt="Review Image" loading="lazy">
-                  </div>
-                <% }) %>
-              </div>
-            <% } %>
-
-            <% if (r.adminReply && r.adminReply.text) { %>
-              <div class="admin-reply">
-                <div class="admin-badge">Admin Response</div>
-                <p><%= r.adminReply.text %></p>
-                <% if (r.adminReply.date) { %>
-                  <span class="reply-date"><%= new Date(r.adminReply.date).toLocaleDateString() %></span>
+            <!-- Rating Breakdown -->
+            <div class="rating-breakdown">
+                <% for (let i = 5; i >= 1; i--) { %>
+                    <div class="rating-bar">
+                        <span class="star-count"><%= i %> ★</span>
+                        <div class="bar-container">
+                            <div class="bar" style="width: <%= (product.ratingDistribution && product.ratingDistribution[i] || 0) / (product.reviewCount || 1) * 100 %>%;"></div>
+                        </div>
+                        <span class="percentage"><%= Math.round((product.ratingDistribution && product.ratingDistribution[i] || 0) / (product.reviewCount || 1) * 100) || 0 %>%</span>
+                    </div>
                 <% } %>
-              </div>
-            <% } %>
-
-            <div class="review-actions">
-              <button class="helpful-btn" data-review-id="<%= r._id %>">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M14 6H20C21.1 6 22 6.9 22 8V19C22 20.1 21.1 21 20 21H14C12.9 21 12 20.1 12 19V8C12 6.9 12.9 6 14 6Z" stroke="currentColor" stroke-width="2"/>
-                  <path d="M2 15H6V21H2V15Z" stroke="currentColor" stroke-width="2"/>
-                  <path d="M6 15V5C6 3.9 6.9 3 8 3H9C10.1 3 11 3.9 11 5V15H6Z" stroke="currentColor" stroke-width="2"/>
-                </svg>
-                Helpful (<span class="helpful-count"><%= r.helpfulCount || 0 %></span>)
-              </button>
             </div>
-          </div>
-        <% }) %>
-      <% } else { %>
-        <div class="no-reviews">
-          <svg width="64" height="64" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M20 2H4C2.9 2 2 2.9 2 4V22L6 18H20C21.1 18 22 17.1 22 16V4C22 2.9 21.1 2 20 2Z" stroke="currentColor" stroke-width="2"/>
-            <path d="M12 8V12M12 16H12.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-          </svg>
-          <h4>No reviews yet</h4>
-          <p>Be the first to share your thoughts about this product!</p>
         </div>
-      <% } %>
-    </div>
 
-    <!-- Pagination -->
-   <% if (reviews && reviews.length > 0 && totalPages > 1) { %>
-  <div class="pagination">
-    
-    <!-- Prev button -->
-    <button 
-      class="pagination-btn prev" 
-      onclick="window.location.href='?page=<%= currentPage - 1 %>'" 
-      <%= currentPage === 1 ? 'disabled' : '' %>>
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path d="M15 18L9 12L15 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-      </svg>
-      Previous
-    </button>
-
-    <!-- Page numbers -->
-    <div class="page-numbers">
-      <% for (let i = 1; i <= totalPages; i++) { %>
-        <% if (i === currentPage) { %>
-          <span class="page-active"><%= i %></span>
+        <!-- Review Form -->
+        <% if (user) { %>
+            <div class="review-form-container">
+                <h3>Write a Review</h3>
+                <form action="/review/submit" method="POST" enctype="multipart/form-data" class="review-form">
+                    <input type="hidden" name="productId" value="<%= product._id %>">
+                    
+                    <div class="form-group">
+                        <label for="rating">Your Rating</label>
+                        <div class="star-rating-input">
+                            <% for (let i = 1; i <= 5; i++) { %>
+                                <span class="star" data-value="<%= i %>">★</span>
+                            <% } %>
+                            <input type="hidden" name="rating" id="rating" required>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="title">Review Title</label>
+                        <input type="text" name="title" id="title" placeholder="Summarize your experience" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="comment">Your Review</label>
+                        <textarea name="comment" id="comment" rows="4" placeholder="Share details of your experience with this product" required></textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="images">Upload Images (optional)</label>
+                        <div class="image-upload-container">
+                            <div class="image-preview"></div>
+                            <label for="images" class="upload-btn">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M11 15H13V9H16L12 4L8 9H11V15Z" fill="currentColor"/>
+                                    <path d="M20 18H4V11H2V18C2 19.103 2.897 20 4 20H20C21.103 20 22 19.103 22 18V11H20V18Z" fill="currentColor"/>
+                                </svg>
+                                <span>Add Photos</span>
+                            </label>
+                            <input type="file" name="images" id="images" multiple accept="image/*" style="display: none;">
+                        </div>
+                    </div>
+                    
+                    <button type="submit" class="btn-submit">Submit Review</button>
+                </form>
+            </div>
         <% } else { %>
-          <span onclick="window.location.href='?page=<%= i %>'"><%= i %></span>
+            <div class="login-prompt">
+                <p><a href="/login">Login</a> to write a review and share your experience.</p>
+            </div>
         <% } %>
-      <% } %>
+
+        <!-- Reviews Filter and Sort -->
+        <div class="reviews-header">
+            <h3>Customer Reviews</h3>
+            <div class="filter-sort">
+                <select class="sort-select">
+                    <option value="newest">Newest First</option>
+                    <option value="highest">Highest Rated</option>
+                    <option value="lowest">Lowest Rated</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- Display Reviews -->
+        <div class="review-list">
+            <% if (reviews && reviews.length > 0) { %>
+                <% reviews.forEach(r => { %>
+                    <div class="review-item">
+                        <div class="review-header">
+                            <div class="user-info">
+                                <div class="avatar">
+                                    <%= r.user.name.charAt(0).toUpperCase() %>
+                                </div>
+                                <div class="user-details">
+                                    <h4 class="user-name"><%= r.user.name %></h4>
+                                    <div class="review-meta">
+                                        <div class="stars">
+                                            <% for (let i = 1; i <= 5; i++) { %>
+                                                <span class="star <%= i <= r.rating ? 'filled' : '' %>">★</span>
+                                            <% } %>
+                                        </div>
+                                        <span class="review-date"><%= new Date(r.createdAt).toLocaleDateString() %></span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <h4 class="review-title"><%= r.title %></h4>
+                        <p class="review-comment"><%= r.comment %></p>
+
+                        <% if (r.images && r.images.length > 0) { %>
+                            <div class="review-images">
+                                <% r.images.forEach(img => { %>
+                                    <div class="review-image">
+                                        <img src="/uploads/<%= img %>" alt="Review Image" loading="lazy">
+                                    </div>
+                                <% }) %>
+                            </div>
+                        <% } %>
+
+                        <% if (r.adminReply && r.adminReply.text) { %>
+                            <div class="admin-reply">
+                                <div class="admin-badge">Admin Response</div>
+                                <p><%= r.adminReply.text %></p>
+                                <% if (r.adminReply.date) { %>
+                                    <span class="reply-date"><%= new Date(r.adminReply.date).toLocaleDateString() %></span>
+                                <% } %>
+                            </div>
+                        <% } %>
+
+                        <div class="review-actions">
+                            <button class="helpful-btn" data-review-id="<%= r._id %>">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M14 6H20C21.1 6 22 6.9 22 8V19C22 20.1 21.1 21 20 21H14C12.9 21 12 20.1 12 19V8C12 6.9 12.9 6 14 6Z" stroke="currentColor" stroke-width="2"/>
+                                    <path d="M2 15H6V21H2V15Z" stroke="currentColor" stroke-width="2"/>
+                                    <path d="M6 15V5C6 3.9 6.9 3 8 3H9C10.1 3 11 3.9 11 5V15H6Z" stroke="currentColor" stroke-width="2"/>
+                                </svg>
+                                Helpful (<span class="helpful-count"><%= r.helpfulCount || 0 %></span>)
+                            </button>
+                        </div>
+                    </div>
+                <% }) %>
+            <% } else { %>
+                <div class="no-reviews">
+                    <svg width="64" height="64" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M20 2H4C2.9 2 2 2.9 2 4V22L6 18H20C21.1 18 22 17.1 22 16V4C22 2.9 21.1 2 20 2Z" stroke="currentColor" stroke-width="2"/>
+                        <path d="M12 8V12M12 16H12.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                    </svg>
+                    <h4>No reviews yet</h4>
+                    <p>Be the first to share your thoughts about this product!</p>
+                </div>
+            <% } %>
+        </div>
+
+        <!-- Pagination -->
+        <% if (reviews && reviews.length > 0 && totalPages > 1) { %>
+            <div class="pagination">
+                
+                <!-- Prev button -->
+                <button 
+                    class="pagination-btn prev" 
+                    onclick="window.location.href='?page=<%= currentPage - 1 %>'" 
+                    <%= currentPage === 1 ? 'disabled' : '' %>>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M15 18L9 12L15 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                    Previous
+                </button>
+
+                <!-- Page numbers -->
+                <div class="page-numbers">
+                    <% for (let i = 1; i <= totalPages; i++) { %>
+                        <% if (i === currentPage) { %>
+                            <span class="page-active"><%= i %></span>
+                        <% } else { %>
+                            <span onclick="window.location.href='?page=<%= i %>'"><%= i %></span>
+                        <% } %>
+                    <% } %>
+                </div>
+
+                <!-- Next button -->
+                <button 
+                    class="pagination-btn next" 
+                    onclick="window.location.href='?page=<%= currentPage + 1 %>'" 
+                    <%= currentPage === totalPages ? 'disabled' : '' %>>
+                    Next
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M9 18L15 12L9 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </button>
+            </div>
+        <% } %>
     </div>
-
-    <!-- Next button -->
-    <button 
-      class="pagination-btn next" 
-      onclick="window.location.href='?page=<%= currentPage + 1 %>'" 
-      <%= currentPage === totalPages ? 'disabled' : '' %>>
-      Next
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path d="M9 18L15 12L9 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-      </svg>
-    </button>
-
-  </div>
-<% } %>
-
-  </div>
 </section>
-
 
     <!-- Related Products Section -->
     <section class="related-products">
@@ -502,38 +1342,29 @@
                         <div class="product-item">
                             <a href="/product/<%= relatedProduct._id %>">
                                 <% if (relatedProduct.images && relatedProduct.images.length> 0) { %>
-                                    <img src="/uploads/<%= relatedProduct.images[0] %>"
-                                        alt="<%= relatedProduct.name %>">
+                                    <img src="/uploads/<%= relatedProduct.images[0] %>" alt="<%= relatedProduct.name %>">
+                                <% } else { %>
+                                    <img src="/images/default-product.jpg" alt="<%= relatedProduct.name %>">
+                                <% } %>
+                                <h3><%= relatedProduct.name %></h3>
+                                <div class="related-price">
+                                    <% if (relatedProduct.offerDetails && relatedProduct.offerDetails.hasOffer) { %>
+                                        <span class="current-price">₹<%= relatedProduct.offerDetails.price.toFixed(2) %></span>
+                                        <span class="original-price">₹<%= relatedProduct.offerDetails.originalPrice.toFixed(2) %></span>
                                     <% } else { %>
-                                        <img src="/images/default-product.jpg" alt="<%= relatedProduct.name %>">
+                                        <span class="current-price">₹<%= (relatedProduct.salesPrice || relatedProduct.regularPrice).toFixed(2) %></span>
+                                        <% if (relatedProduct.salesPrice) { %>
+                                            <span class="original-price">₹<%= relatedProduct.regularPrice.toFixed(2) %></span>
                                         <% } %>
-                                            <h3>
-                                                <%= relatedProduct.name %>
-                                            </h3>
-                                            <div class="related-price">
-                                                <% if (relatedProduct.offerDetails &&
-                                                    relatedProduct.offerDetails.hasOffer) { %>
-                                                    <span class="current-price">₹<%=
-                                                            relatedProduct.offerDetails.price.toFixed(2) %></span>
-                                                    <span class="original-price">₹<%=
-                                                            relatedProduct.offerDetails.originalPrice.toFixed(2) %>
-                                                    </span>
-                                                    <% } else { %>
-                                                        <span class="current-price">₹<%= (relatedProduct.salesPrice ||
-                                                                relatedProduct.regularPrice).toFixed(2) %></span>
-                                                        <% if (relatedProduct.salesPrice) { %>
-                                                            <span class="original-price">₹<%=
-                                                                    relatedProduct.regularPrice.toFixed(2) %></span>
-                                                            <% } %>
-                                                                <% } %>
-                                            </div>
+                                    <% } %>
+                                </div>
                             </a>
                         </div>
-                        <% }); %>
+                    <% }); %>
                 </div>
-                <% } else { %>
-                    <p>No related products found.</p>
-                    <% } %>
+            <% } else { %>
+                <p>No related products found.</p>
+            <% } %>
         </div>
     </section>
 
@@ -618,212 +1449,215 @@
             setInterval(updateCountdown, 1000);
         }
 
-    // Initialize if we have an offer with end date
-    <% if (typeof offerDetails !== 'undefined' && offerDetails && offerDetails.endDate) { %>
+        // Initialize if we have an offer with end date
+        <% if (typeof offerDetails !== 'undefined' && offerDetails && offerDetails.endDate) { %>
             initializeCountdown('<%= offerDetails.endDate %>', 'offer-countdown');
-    <% } %>
+        <% } %>
     </script>
+    
     <script>
-document.getElementById("add-to-cart-btn").addEventListener("click", async function () {
-    const productId = "<%= product._id %>";
-    const quantity = document.getElementById("quantity").value;
+        document.getElementById("add-to-cart-btn").addEventListener("click", async function () {
+            const productId = "<%= product._id %>";
+            const quantity = document.getElementById("quantity").value;
 
-    try {
-        const res = await fetch("/cart/add", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({ productId, quantity })
+            try {
+                const res = await fetch("/cart/add", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({ productId, quantity })
+                });
+
+                if (res.ok) {
+                    const data = await res.json(); // assuming backend sends updated cart count
+                    const badge = document.getElementById("cart-count");
+                    if (badge) {
+                        badge.style.display = "inline-block";
+                        badge.textContent = data.cartCount || parseInt(badge.textContent) + parseInt(quantity);
+                    }
+
+                    Swal.fire({
+                        icon: "success",
+                        title: "Added to cart",
+                        showConfirmButton: false,
+                        timer: 1500
+                    });
+                } else {
+                    const data = await res.json();
+                    Swal.fire({
+                        icon: "error",
+                        title: "Failed to add",
+                        text: data.message || "Something went wrong"
+                    });
+                }
+            } catch (err) {
+                console.error(err);
+                Swal.fire({
+                    icon: "error",
+                    title: "Error",
+                    text: "Could not add to cart"
+                });
+            }
         });
+    </script>
+    
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            const decreaseBtn = document.getElementById("decrease-qty");
+            const increaseBtn = document.getElementById("increase-qty");
+            const quantityInput = document.getElementById("quantity");
 
-        if (res.ok) {
-    const data = await res.json(); // assuming backend sends updated cart count
-    const badge = document.getElementById("cart-count");
-    if (badge) {
-        badge.style.display = "inline-block";
-        badge.textContent = data.cartCount || parseInt(badge.textContent) + parseInt(quantity);
-    }
+            const min = parseInt(quantityInput.min) || 1;
+            const max = parseInt(quantityInput.max) || 99;
 
-    Swal.fire({
-        icon: "success",
-        title: "Added to cart",
-        showConfirmButton: false,
-        timer: 1500
-    });
-        } else {
-            const data = await res.json();
-            Swal.fire({
-                icon: "error",
-                title: "Failed to add",
-                text: data.message || "Something went wrong"
+            decreaseBtn.addEventListener("click", () => {
+                let qty = parseInt(quantityInput.value);
+
+                if (qty > min) {
+                    quantityInput.value = qty - 1;
+                    increaseBtn.disabled = false;
+                }
+
+                if (qty - 1 <= min) {
+                    decreaseBtn.disabled = true;
+                }
+            });
+
+            increaseBtn.addEventListener("click", () => {
+                let qty = parseInt(quantityInput.value);
+
+                if (qty < max && qty < 5) {
+                    quantityInput.value = qty + 1;
+                    decreaseBtn.disabled = false;
+
+                    if (qty + 1 >= 5) {
+                        increaseBtn.disabled = true;
+                        Swal.fire({
+                            icon: "warning",
+                            title: "Limit Reached",
+                            text: "You can only purchase up to 5 units of this product."
+                        });
+                    }
+                }
+            });
+        });
+        
+        document.getElementById("quantity").addEventListener("keypress", function (e) {
+            const charCode = e.which ? e.which : e.keyCode;
+            const currentValue = parseInt(this.value + e.key);
+
+            if (currentValue > 5) {
+                e.preventDefault();
+            }
+        });
+    </script>
+    
+    <script>
+        async function addToWishlist(productId, buttonElement, event) {
+            event.preventDefault();
+
+            try {
+                const response = await fetch('/wishlist/add', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ productId }),
+                });
+
+                const result = await response.json();
+
+                if (response.ok && result.success) {
+                    buttonElement.classList.add('active');
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Added to Wishlist',
+                        showConfirmButton: false,
+                        timer: 1200,
+                    });
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Failed To Add',
+                        text: result.message || 'Could not add to wishlist.',
+                    });
+                }
+            } catch (err) {
+                console.error('Wishlist error:', err);
+                Swal.fire('Error', 'Could not add to wishlist.', 'error');
+            }
+        }
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            fetch('/cart/count')
+                .then(res => res.json())
+                .then(data => {
+                    const badge = document.getElementById('cart-count');
+                    if (data.count > 0) {
+                        badge.style.display = 'inline-block';
+                        badge.textContent = data.count;
+                    } else {
+                        badge.style.display = 'none';
+                    }
+                })
+                .catch(err => console.error('Error fetching cart count:', err));
+        });
+    </script>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const stars = document.querySelectorAll('.star-rating-input .star');
+            const ratingInput = document.getElementById('rating');
+
+            stars.forEach(star => {
+                star.addEventListener('mouseover', () => {
+                    const val = parseInt(star.dataset.value);
+                    stars.forEach(s => s.classList.toggle('filled', s.dataset.value <= val));
+                });
+
+                star.addEventListener('mouseout', () => {
+                    const val = ratingInput.value || 0;
+                    stars.forEach(s => s.classList.toggle('filled', s.dataset.value <= val));
+                });
+
+                star.addEventListener('click', () => {
+                    ratingInput.value = star.dataset.value;
+                    stars.forEach(s => s.classList.toggle('filled', s.dataset.value <= ratingInput.value));
+                });
+            });
+        });
+    </script>
+    
+    <script>
+        const imageInput = document.getElementById('images');
+        const previewContainer = document.querySelector('.image-preview');
+
+        imageInput.addEventListener('change', () => {
+            previewContainer.innerHTML = '';
+            Array.from(imageInput.files).forEach(file => {
+                const reader = new FileReader();
+                reader.onload = e => {
+                    const img = document.createElement('img');
+                    img.src = e.target.result;
+                    img.classList.add('preview-img');
+                    previewContainer.appendChild(img);
+                };
+                reader.readAsDataURL(file);
+            });
+        });
+    </script>
+    
+    <script>
+        const menuToggle = document.getElementById("menu-toggle");
+        const navLinks = document.querySelector(".nav-links");
+
+        if (menuToggle && navLinks) {
+            menuToggle.addEventListener("click", () => {
+                navLinks.classList.toggle("show");
             });
         }
-    } catch (err) {
-        console.error(err);
-        Swal.fire({
-            icon: "error",
-            title: "Error",
-            text: "Could not add to cart"
-        });
-    }
-});
-</script>
-<script>
-document.addEventListener("DOMContentLoaded", () => {
-    const decreaseBtn = document.getElementById("decrease-qty");
-    const increaseBtn = document.getElementById("increase-qty");
-    const quantityInput = document.getElementById("quantity");
-
-    const min = parseInt(quantityInput.min) || 1;
-    const max = parseInt(quantityInput.max) || 99;
-
-   decreaseBtn.addEventListener("click", () => {
-    let qty = parseInt(quantityInput.value);
-
-    if (qty > min) {
-        quantityInput.value = qty - 1;
-        increaseBtn.disabled = false;
-    }
-
-    if (qty - 1 <= min) {
-        decreaseBtn.disabled = true;
-    }
-});
-
-
-    increaseBtn.addEventListener("click", () => {
-    let qty = parseInt(quantityInput.value);
-
-    if (qty < max && qty < 5) {
-        quantityInput.value = qty + 1;
-        decreaseBtn.disabled = false;
-
-        if (qty + 1 >= 5) {
-            increaseBtn.disabled = true;
-            Swal.fire({
-                icon: "warning",
-                title: "Limit Reached",
-                text: "You can only purchase up to 5 units of this product."
-            });
-        }
-    }
-});
-
-
-});
-document.getElementById("quantity").addEventListener("keypress", function (e) {
-    const charCode = e.which ? e.which : e.keyCode;
-    const currentValue = parseInt(this.value + e.key);
-
-    if (currentValue > 5) {
-        e.preventDefault();
-    }
-});
-
-</script>
-<script>
-  async function addToWishlist(productId, buttonElement, event) {
-    event.preventDefault();
-
-    try {
-      const response = await fetch('/wishlist/add', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ productId }),
-      });
-
-      const result = await response.json();
-
-      if (response.ok && result.success) {
-        Swal.fire({
-          icon: 'success',
-          title: 'Added to Wishlist',
-          showConfirmButton: false,
-          timer: 1200,
-        });
-      } else {
-        Swal.fire({
-          icon: 'error',
-          title: 'Failed To Add',
-          text: result.message || 'Could not add to wishlist.',
-        });
-      }
-    } catch (err) {
-      console.error('Wishlist error:', err);
-      Swal.fire('Error', 'Could not add to wishlist.', 'error');
-    }
-  }
-  document.addEventListener('DOMContentLoaded', () => {
-  fetch('/cart/count')
-    .then(res => res.json())
-    .then(data => {
-      const badge = document.getElementById('cart-count');
-      if (data.count > 0) {
-        badge.style.display = 'inline-block';
-        badge.textContent = data.count;
-      } else {
-        badge.style.display = 'none';
-      }
-    })
-    .catch(err => console.error('Error fetching cart count:', err));
-});
-
-</script>
-<script>
-  document.addEventListener('DOMContentLoaded', () => {
-    const stars = document.querySelectorAll('.star-rating-input .star');
-    const ratingInput = document.getElementById('rating');
-
-    stars.forEach(star => {
-      star.addEventListener('mouseover', () => {
-        const val = parseInt(star.dataset.value);
-        stars.forEach(s => s.classList.toggle('filled', s.dataset.value <= val));
-      });
-
-      star.addEventListener('mouseout', () => {
-        const val = ratingInput.value || 0;
-        stars.forEach(s => s.classList.toggle('filled', s.dataset.value <= val));
-      });
-
-      star.addEventListener('click', () => {
-        ratingInput.value = star.dataset.value;
-        stars.forEach(s => s.classList.toggle('filled', s.dataset.value <= ratingInput.value));
-      });
-    });
-  });
-</script>
-<script>
-  const imageInput = document.getElementById('images');
-  const previewContainer = document.querySelector('.image-preview');
-
-  imageInput.addEventListener('change', () => {
-    previewContainer.innerHTML = '';
-    Array.from(imageInput.files).forEach(file => {
-      const reader = new FileReader();
-      reader.onload = e => {
-        const img = document.createElement('img');
-        img.src = e.target.result;
-        img.classList.add('preview-img');
-        previewContainer.appendChild(img);
-      };
-      reader.readAsDataURL(file);
-    });
-  });
-  
-</script>
-<script>
-  const menuToggle = document.getElementById("menu-toggle");
-  const navLinks = document.querySelector(".nav-links");
-
-  if (menuToggle && navLinks) {
-    menuToggle.addEventListener("click", () => {
-      navLinks.classList.toggle("show");
-    });
-  }
-</script>
+    </script>
 
 </body>
 
