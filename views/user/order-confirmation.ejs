@@ -504,30 +504,6 @@
             </div>
           </div>
 
-          <section class="section confirm-order">
-  <% if (paymentMethod === 'Online') { %>
-    <!-- For Online Payments - just show the button -->
-    <button type="button" class="place-order-btn" id="submitOrder">
-      <i class="fas fa-credit-card"></i> Proceed to Payment
-    </button>
-  <% } else { %>
-    <!-- For COD/Wallet - keep the form -->
-    <form action="/user/confirm-payment" method="POST" id="checkoutForm">
-      <% orderItems.forEach((item)=> { %>
-        <input type="hidden" name="productIds[]" value="<%= item.product._id %>">
-        <input type="hidden" name="quantities[]" value="<%= item.quantity %>">
-        <input type="hidden" name="offerPrices[]" value="<%= item.offerPrice %>">
-      <% }); %>
-      <input type="hidden" name="selectedAddress" value="<%= address?._id || '' %>">
-      <input type="hidden" name="totalAmount" value="<%= totalAmount %>">
-      <input type="hidden" name="paymentMethod" value="<%= paymentMethod %>">
-      <button type="submit" class="place-order-btn" id="submitOrder">
-        <i class="fas fa-check-circle"></i> Confirm & Place Order
-      </button>
-    </form>
-  <% } %>
-</section>
-
           <div class="footer-links">
             <a href="/privacy-policy">Privacy Policy</a>
             <a href="/terms-of-service">Terms of Service</a>
