@@ -539,112 +539,160 @@
       }
     });
 
-    document.querySelector('.submit-btn').addEventListener('click', async (e) => {
-      e.preventDefault();
+document.querySelector('.submit-btn').addEventListener('click', async (e) => {
+  e.preventDefault(); // Always prevent default first
 
-      if (!validateAddress()) return;
+  if (!validateAddress()) return;
 
-      const paymentMethod = document.querySelector('input[name="paymentMethod"]:checked')?.value;
-      const grandTotal = Number(`<%= grandTotal %>`);
-      const walletBalance = Number(`<%= walletBalance %>`);
+  const paymentMethod = document.querySelector('input[name="paymentMethod"]:checked')?.value;
+  const grandTotal = Number(`<%= grandTotal %>`);
+  const walletBalance = Number(`<%= walletBalance %>`);
 
-      if (paymentMethod === 'COD') {
-        if (grandTotal > 20000) {
-          return Swal.fire({
-            icon: 'warning',
-            title: 'COD Not Allowed',
-            text: 'Cash on Delivery is only available for orders up to ₹20,000. Please choose Online Payment.'
-          });
-        }
-        document.querySelector('.checkout-form').submit();
-
-      } else if (paymentMethod === 'Wallet') {
-        if (walletBalance < grandTotal) {
-          return Swal.fire({
-            icon: 'error',
-            title: 'Insufficient Wallet Balance',
-            text: 'You dont have enough wallet balance to place this order.'
-          });
-        }
-        document.querySelector('.checkout-form').submit();
-
-      } else if (paymentMethod === 'Online') {
-        if (grandTotal > 450000) {
-          return Swal.fire({
-            icon: 'error',
-            title: 'Payment Limit Exceeded',
-            text: 'Online payment is only allowed for orders up to ₹4.5 lakhs. Please reduce your cart total.'
-          });
-        }
-
-        try {
-  const response = await fetch('/user/create-razorpay-order', {  // ✅ CORRECT ENDPOINT
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      totalAmount: grandTotal  // ✅ Use the correct parameter name
-    })
-  });
-          console.log('🔥 Razorpay order creation response:', response);
-
-          const paymentData = await response.json();
-
-          const options = {
-            key: '<%= process.env.RAZORPAY_KEY_ID %>',
-            amount: paymentData.amount,
-            currency: paymentData.currency,
-            name: "Keitai",
-            description: "Order Payment",
-            order_id: paymentData.id,
-            handler: async function (response) {
-  try {
-    // Verify payment immediately after Razorpay success
-    const verifyRes = await fetch('/user/verify-payment', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        razorpay_payment_id: response.razorpay_payment_id,
-        razorpay_order_id: response.razorpay_order_id,
-        razorpay_signature: response.razorpay_signature
-      })
-    });
-    
-    const verifyData = await verifyRes.json();
-
-    if (verifyData.success) {
-      // Redirect to confirmation page
-      window.location.href = verifyData.redirectUrl || '/user/confirm-payment';
-    } else {
-      Swal.fire('Payment Failed', verifyData.error || 'Payment verification failed', 'error');
+  if (paymentMethod === 'COD') {
+    if (grandTotal > 20000) {
+      return Swal.fire({
+        icon: 'warning',
+        title: 'COD Not Allowed',
+        text: 'Cash on Delivery is only available for orders up to ₹20,000. Please choose Online Payment.'
+      });
     }
-  } catch (err) {
-    console.error('Payment verification error:', err);
-    Swal.fire('Error', 'Unable to verify payment. Please contact support.', 'error');
-  }
-},
-            prefill: {
-              name: '<%= user.name %>',
-              email: '<%= user.email %>',
-              contact: '<%= user.phone || "9999999999" %>'
-            },
-            theme: { color: "#3399cc" }
-          };
+    // For COD - submit the form normally
+    document.querySelector('.checkout-form').submit();
 
-          const rzp = new Razorpay(options);
-          rzp.on('payment.failed', function (response) {
-            window.location.href = `/payment/failed?error=${encodeURIComponent(response.error.description)}`;
-          });
-          rzp.open();
+  } else if (paymentMethod === 'Wallet') {
+    if (walletBalance < grandTotal) {
+      return Swal.fire({
+        icon: 'error',
+        title: 'Insufficient Wallet Balance',
+        text: 'You dont have enough wallet balance to place this order.'
+      });
+    }
+    // For Wallet - submit the form normally
+    document.querySelector('.checkout-form').submit();
 
-        } catch (err) {
-          Swal.fire({
-            icon: 'error',
-            title: 'Payment Error',
-            text: 'Something went wrong while initiating payment. Please try again.'
-          });
-        }
+  } else if (paymentMethod === 'Online') {
+    if (grandTotal > 450000) {
+      return Swal.fire({
+        icon: 'error',
+        title: 'Payment Limit Exceeded',
+        text: 'Online payment is only allowed for orders up to ₹4.5 lakhs. Please reduce your cart total.'
+      });
+    }
+
+    try {
+      console.log('Starting online payment process...');
+      
+      // First, store the order data by submitting the form silently
+      const formData = new FormData(document.querySelector('.checkout-form'));
+      
+      const placeOrderResponse = await fetch('/user/place-order', {
+        method: 'POST',
+        body: formData
+      });
+
+      if (!placeOrderResponse.ok) {
+        throw new Error('Failed to create order session');
       }
-    });
+
+      console.log('Order session created, creating Razorpay order...');
+
+      // Now create Razorpay order
+      const razorpayResponse = await fetch('/user/create-razorpay-order', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          totalAmount: grandTotal
+        })
+      });
+
+      if (!razorpayResponse.ok) {
+        throw new Error('Failed to create Razorpay order');
+      }
+
+      const paymentData = await razorpayResponse.json();
+      console.log('Razorpay order created:', paymentData);
+
+      const options = {
+        key: '<%= razorpayKeyId %>',
+        amount: paymentData.amount,
+        currency: 'INR',
+        name: "Keitai",
+        description: "Order Payment",
+        order_id: paymentData.id,
+        handler: async function (response) {
+          console.log('Razorpay payment successful:', response);
+          
+          try {
+            // Verify payment
+            const verifyRes = await fetch('/user/verify-payment', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_signature: response.razorpay_signature
+              })
+            });
+            
+            const verifyData = await verifyRes.json();
+            console.log('Payment verification result:', verifyData);
+
+            if (verifyData.success) {
+              // Redirect to confirmation page
+              console.log('Payment verified, redirecting to:', verifyData.redirectUrl);
+              window.location.href = verifyData.redirectUrl || '/user/confirm-payment';
+            } else {
+              console.error('Payment verification failed:', verifyData.error);
+              Swal.fire({
+                icon: 'error',
+                title: 'Payment Failed',
+                text: verifyData.error || 'Payment verification failed. Please contact support.',
+                confirmButtonText: 'OK'
+              });
+            }
+          } catch (err) {
+            console.error('Payment verification error:', err);
+            Swal.fire({
+              icon: 'error',
+              title: 'Verification Error',
+              text: 'Unable to verify payment. Please contact support.',
+              confirmButtonText: 'OK'
+            });
+          }
+        },
+        prefill: {
+          name: '<%= user.name %>',
+          email: '<%= user.email %>',
+          contact: '<%= user.phone || "9999999999" %>'
+        },
+        theme: { color: "#3399cc" }
+      };
+
+      const rzp = new Razorpay(options);
+      
+      rzp.on('payment.failed', function (response) {
+        console.error('Razorpay payment failed:', response.error);
+        Swal.fire({
+          icon: 'error',
+          title: 'Payment Failed',
+          text: response.error.description || 'Payment could not be completed.',
+          confirmButtonText: 'OK'
+        });
+      });
+      
+      rzp.open();
+
+    } catch (err) {
+      console.error('Online payment error:', err);
+      Swal.fire({
+        icon: 'error',
+        title: 'Payment Error',
+        text: 'Something went wrong while initiating payment. Please try again.',
+        confirmButtonText: 'OK'
+      });
+    }
+  }
+});
 
     function validateAddress() {
       const selectedAddress = document.querySelector('input[name="selectedAddress"]:checked');

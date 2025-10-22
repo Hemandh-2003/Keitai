@@ -629,11 +629,17 @@ exports.retryCheckoutWithOrderId = async (req, res) => {
 };
 exports.verifyPayment = async (req, res) => {
   try {
+    console.log('🔐 verifyPayment called with:', req.body);
+    
     const { razorpay_payment_id, razorpay_order_id, razorpay_signature } = req.body;
     const checkoutData = req.session.checkout?.orderData;
     const user = await User.findById(req.session.user._id);
 
+    console.log('Session checkout data:', checkoutData);
+    console.log('User:', user?._id);
+
     if (!checkoutData || !user) {
+      console.error('❌ Session expired or checkout data missing');
       return res.json({ success: false, error: "Session expired. Please try again." });
     }
 
@@ -645,8 +651,11 @@ exports.verifyPayment = async (req, res) => {
       .digest("hex");
 
     if (expectedSignature !== razorpay_signature) {
+      console.error('❌ Invalid Razorpay signature');
       return res.json({ success: false, error: "Invalid payment signature" });
     }
+
+    console.log('✅ Payment signature verified, creating order...');
 
     // ✅ Create order after successful verification
     const order = await Order.create({
@@ -666,6 +675,8 @@ exports.verifyPayment = async (req, res) => {
       estimatedDelivery: new Date(Date.now() + 6 * 24 * 60 * 60 * 1000),
     });
 
+    console.log('✅ Order created:', order._id);
+
     // ✅ Reduce stock
     for (let item of checkoutData.orderItems) {
       await Product.findByIdAndUpdate(item.product._id, {
@@ -684,11 +695,14 @@ exports.verifyPayment = async (req, res) => {
     req.session.orderId = order._id.toString();
     req.session.paymentVerified = true;
 
+    console.log('✅ Session updated, redirecting to confirm-payment');
+
     return res.json({
       success: true,
       orderId: order._id,
       redirectUrl: "/user/confirm-payment"
     });
+
   } catch (err) {
     console.error("❌ verifyPayment Error:", err);
     return res.json({ success: false, error: "Payment verification failed" });
