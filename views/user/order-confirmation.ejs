@@ -513,20 +513,39 @@
           </div>
 
           <section class="section confirm-order">
-            <form action="/user/confirm-payment" method="POST" id="checkoutForm">
-              <% orderItems.forEach((item)=> { %>
-                <input type="hidden" name="productIds[]" value="<%= item.product._id %>">
-                <input type="hidden" name="quantities[]" value="<%= item.quantity %>">
-                <input type="hidden" name="offerPrices[]" value="<%= item.offerPrice %>">
-                <% }); %>
-                  <input type="hidden" name="selectedAddress" value="<%= address._id %>">
-                  <input type="hidden" name="totalAmount" value="<%= totalAmount %>">
-                  <input type="hidden" name="paymentMethod" value="<%= paymentMethod %>">
-                  <button type="submit" class="place-order-btn" id="submitOrder">
-                    <i class="fas fa-check-circle"></i> Confirm & Place Order
-                  </button>
-            </form>
-          </section>
+  <% if (paymentMethod === 'Online') { %>
+    <!-- For Online Payments - Show processing message -->
+    <div class="payment-processing">
+      <h2><i class="fas fa-spinner"></i> Payment Processing</h2>
+      <div class="spinner"></div>
+      <p>Your payment is being processed. You will be redirected to the confirmation page shortly.</p>
+      <p>If you are not redirected automatically, <a href="/user/confirm-payment">click here</a>.</p>
+    </div>
+    
+    <!-- Auto-redirect script for online payments -->
+    <script>
+      setTimeout(() => {
+        window.location.href = '/user/confirm-payment';
+      }, 3000);
+    </script>
+    
+  <% } else { %>
+    <!-- For COD/Wallet - Keep the form -->
+    <form action="/user/confirm-payment" method="POST" id="checkoutForm">
+      <% orderItems.forEach((item)=> { %>
+        <input type="hidden" name="productIds[]" value="<%= item.product._id %>">
+        <input type="hidden" name="quantities[]" value="<%= item.quantity %>">
+        <input type="hidden" name="offerPrices[]" value="<%= item.offerPrice %>">
+      <% }); %>
+      <input type="hidden" name="selectedAddress" value="<%= address._id %>">
+      <input type="hidden" name="totalAmount" value="<%= totalAmount %>">
+      <input type="hidden" name="paymentMethod" value="<%= paymentMethod %>">
+      <button type="submit" class="place-order-btn" id="submitOrder">
+        <i class="fas fa-check-circle"></i> Confirm & Place Order
+      </button>
+    </form>
+  <% } %>
+</section>
 
           <div class="footer-links">
             <a href="/privacy-policy">Privacy Policy</a>
@@ -536,56 +555,5 @@
           </div>
     </main>
   </div>
-
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-<script>
-  document.addEventListener('DOMContentLoaded', function() {
-    const submitBtn = document.getElementById('submitOrder');
-    const form = document.getElementById('checkoutForm');
-
-    if (form && submitBtn) {
-      form.addEventListener('submit', function(e) {
-        submitBtn.disabled = true;
-        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
-        
-        console.log('Form submitting normally...');
-      });
-    }
-
-    <% if (paymentMethod === 'Online' && !paymentVerified) { %>
-      console.log('Starting payment verification...');
-      setTimeout(async function() {
-        try {
-          const verificationData = {
-            razorpay_payment_id: '<%= paymentDetails?.razorpay_payment_id %>',
-            razorpay_order_id: '<%= paymentDetails?.razorpay_order_id %>',
-            razorpay_signature: '<%= paymentDetails?.razorpay_signature %>'
-          };
-
-          const response = await fetch('/payment/verify', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(verificationData)
-          });
-
-          const result = await response.json();
-          
-          if (result.success) {
-            window.location.href = `/order/success/<%= orderId %>`;
-          } else {
-            window.location.href = `/payment/failed?orderId=<%= orderId %>&error=${encodeURIComponent(result.error || 'Verification failed')}`;
-          }
-        } catch (error) {
-          console.error('Payment verification error:', error);
-          window.location.href = `/payment/failed?orderId=<%= orderId %>&error=${encodeURIComponent('Network error during verification')}`;
-        }
-      }, 2000);
-    <% } %>
-  });
-  
-</script>
-
 </body>
 </html>
