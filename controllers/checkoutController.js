@@ -5,6 +5,7 @@ const Cart = require('../models/Cart');
 const Coupon = require('../models/Coupon');
 const {HTTP_STATUS}= require('../SM/status');
 const { MESSAGE } = require('../SM/messages');
+const Razorpay = require('razorpay'); 
 exports.getCheckout = async (req, res) => {
   try {
     if (!req.session.user) return res.redirect('/login');
@@ -63,7 +64,7 @@ req.session.checkout = checkout;
       totalAmount,
       coupons: validCoupons,
       session: req.session,
-      razorpayKeyId: process.env.RAZORPAY_KEY_ID,
+      razorpayKeyId: process.env.RAZORPAY_KEY_ID, 
       walletBalance: user.wallet?.balance || 0
     });
   } catch (error) {
