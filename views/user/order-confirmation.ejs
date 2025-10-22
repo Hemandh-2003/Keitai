@@ -531,49 +531,87 @@
 
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
-  document.addEventListener('DOMContentLoaded', function() {
+  document.addEventListener('DOMContentLoaded', async () => {
     const submitBtn = document.getElementById('submitOrder');
     const form = document.getElementById('checkoutForm');
+    const paymentMethod = '<%= paymentMethod %>';
 
-    if (form && submitBtn) {
-      form.addEventListener('submit', function(e) {
+    // COD or Wallet: Normal form submit
+    if (paymentMethod !== 'Online') {
+      form.addEventListener('submit', function (e) {
         submitBtn.disabled = true;
-        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
-        
-        console.log('Form submitting normally...');
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Placing Order...';
       });
+      return;
     }
 
-   <% if (paymentMethod === 'Online' && !paymentVerified) { %>
-  console.log('Starting payment verification...');
-  setTimeout(async function() {
-    try {
-      const verificationData = {
-        razorpay_payment_id: '<%= paymentDetails?.razorpay_payment_id %>',
-        razorpay_order_id: '<%= paymentDetails?.razorpay_order_id %>',
-        razorpay_signature: '<%= paymentDetails?.razorpay_signature %>'
-      };
+    // 🔹 Online Payment Flow
+    submitBtn.addEventListener('click', async function (e) {
+      e.preventDefault();
 
-      const response = await fetch('/verify-payment', {  // <-- correct endpoint
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(verificationData)
-      });
+      try {
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing Payment...';
 
-      const result = await response.json();
+        // Create Razorpay order
+        const orderResponse = await fetch('/create-razorpay-order', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ totalAmount: '<%= totalAmount %>' })
+        });
+        const orderData = await orderResponse.json();
 
-      if (result.success && result.orderId) {
-  window.location.href = `/user/confirm-payment?orderId=${result.orderId}`;
-} else {
-        window.location.href = `/payment/failed?error=${encodeURIComponent(result.error || 'Verification failed')}`;
+        if (!orderData || !orderData.id) {
+          Swal.fire('Error', 'Unable to initialize payment. Please try again.', 'error');
+          return;
+        }
+
+        // Initialize Razorpay
+        const options = {
+          key: '<%= process.env.RAZORPAY_KEY_ID %>',
+          amount: orderData.amount,
+          currency: 'INR',
+          name: 'Keitai',
+          description: 'Order Payment',
+          order_id: orderData.id,
+          handler: async function (response) {
+            try {
+              const verifyRes = await fetch('/verify-payment', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(response)
+              });
+              const verifyData = await verifyRes.json();
+
+              if (verifyData.success) {
+                window.location.href = '/user/confirm-payment';
+              } else {
+                Swal.fire('Payment Failed', verifyData.error || 'Verification failed.', 'error');
+              }
+            } catch (err) {
+              Swal.fire('Error', 'Something went wrong verifying payment.', 'error');
+            }
+          },
+          prefill: {
+            name: '<%= address?.name %>',
+            email: '<%= user?.email %>',
+            contact: '<%= address?.phone %>'
+          },
+          theme: { color: '#2563eb' }
+        };
+
+        const rzp = new Razorpay(options);
+        rzp.open();
+        rzp.on('payment.failed', function (response) {
+          Swal.fire('Payment Failed', 'Your payment was not completed.', 'error');
+        });
+      } catch (error) {
+        console.error('Payment error:', error);
+        Swal.fire('Error', 'Unable to start payment. Try again later.', 'error');
       }
-    } catch (error) {
-      console.error('Payment verification error:', error);
-      window.location.href = `/payment/failed?error=${encodeURIComponent('Network error during verification')}`;
-    }
-  }, 2000);
-<% } %>
+    });
   });
 </script>
+
 </body>
 </html>

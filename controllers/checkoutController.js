@@ -473,6 +473,29 @@ exports.renderConfirmPayment = async (req, res) => {
   }
 };
 
+exports.createRazorpayOrder = async (req, res) => {
+  try {
+    const amount = Math.round(req.body.totalAmount * 100); // convert to paise
+    const razorpay = new Razorpay({
+      key_id: process.env.RAZORPAY_KEY_ID,
+      key_secret: process.env.RAZORPAY_KEY_SECRET,
+    });
+
+    const options = {
+      amount: amount,
+      currency: 'INR',
+      receipt: `order_rcpt_${Date.now()}`,
+    };
+
+    const order = await razorpay.orders.create(options);
+    res.json(order);
+  } catch (err) {
+    console.error('❌ createRazorpayOrder Error:', err);
+    res.status(500).json({ error: 'Failed to create Razorpay order' });
+  }
+};
+
+
 exports.createInlineAddress = async (req, res) => {
   try {
     const { name, street, city, state, zip, country, phone } = req.body;
@@ -605,21 +628,32 @@ exports.retryCheckoutWithOrderId = async (req, res) => {
 exports.verifyPayment = async (req, res) => {
   try {
     const { razorpay_payment_id, razorpay_order_id, razorpay_signature } = req.body;
-    const checkoutData = req.session.checkout.orderData;
-
-    // Verify payment using Razorpay SDK
-    const isValid = verifyRazorpaySignature({ razorpay_payment_id, razorpay_order_id, razorpay_signature });
-    if (!isValid) return res.json({ success: false, error: "Invalid payment signature" });
-
-    // Create order in DB
+    const checkoutData = req.session.checkout?.orderData;
     const user = await User.findById(req.session.user._id);
+
+    if (!checkoutData || !user) {
+      return res.json({ success: false, error: "Session expired. Please try again." });
+    }
+
+    // ✅ Verify Razorpay signature
+    const crypto = require("crypto");
+    const expectedSignature = crypto
+      .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET)
+      .update(razorpay_order_id + "|" + razorpay_payment_id)
+      .digest("hex");
+
+    if (expectedSignature !== razorpay_signature) {
+      return res.json({ success: false, error: "Invalid payment signature" });
+    }
+
+    // ✅ Create order after successful verification
     const order = await Order.create({
       user: user._id,
-      selectedAddress: checkoutData.selectedAddress,
+      selectedAddress: req.session.checkout.selectedAddress,
       products: checkoutData.orderItems.map(i => ({
         product: i.product._id,
         quantity: i.quantity,
-        unitPrice: i.offerPrice
+        unitPrice: i.offerPrice,
       })),
       totalAmount: checkoutData.totalAmount,
       paymentMethod: "Online",
@@ -627,23 +661,36 @@ exports.verifyPayment = async (req, res) => {
       status: "Paid",
       discountAmount: checkoutData.discountAmount,
       couponDiscount: checkoutData.couponDiscount,
-      estimatedDelivery: new Date(Date.now() + 6 * 24 * 60 * 60 * 1000)
+      estimatedDelivery: new Date(Date.now() + 6 * 24 * 60 * 60 * 1000),
     });
 
-    // Reduce stock
-    for (let i = 0; i < checkoutData.orderItems.length; i++) {
-      await Product.findByIdAndUpdate(checkoutData.orderItems[i].product._id, {
-        $inc: { quantity: -checkoutData.orderItems[i].quantity }
+    // ✅ Reduce stock
+    for (let item of checkoutData.orderItems) {
+      await Product.findByIdAndUpdate(item.product._id, {
+        $inc: { quantity: -item.quantity },
       });
     }
 
-    req.session.checkout.orderData.orderId = order._id.toString();
-    req.session.checkout.paymentVerified = true;
+    // ✅ Update session to render confirmation page
+    req.session.orderItems = checkoutData.orderItems;
+    req.session.address = user.addresses.id(req.session.checkout.selectedAddress);
+    req.session.paymentMethod = "Online";
+    req.session.totalAmount = checkoutData.totalAmount;
+    req.session.deliveryCharge = checkoutData.deliveryCharge;
+    req.session.arrivalDate = new Date(Date.now() + 6 * 24 * 60 * 60 * 1000);
+    req.session.couponDiscount = checkoutData.couponDiscount;
+    req.session.orderId = order._id.toString();
+    req.session.paymentVerified = true;
 
-    res.json({ success: true, orderId: order._id });
+    return res.json({
+      success: true,
+      orderId: order._id,
+      redirectUrl: "/user/confirm-payment"
+    });
   } catch (err) {
-    console.error(err);
-    res.json({ success: false, error: err.message || 'Payment verification failed' });
+    console.error("❌ verifyPayment Error:", err);
+    return res.json({ success: false, error: "Payment verification failed" });
   }
 };
+
 
