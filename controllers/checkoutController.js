@@ -692,5 +692,3 @@ exports.verifyPayment = async (req, res) => {
     return res.json({ success: false, error: "Payment verification failed" });
   }
 };
-
-

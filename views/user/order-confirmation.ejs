@@ -531,87 +531,99 @@
 
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
-  document.addEventListener('DOMContentLoaded', async () => {
-    const submitBtn = document.getElementById('submitOrder');
-    const form = document.getElementById('checkoutForm');
-    const paymentMethod = '<%= paymentMethod %>';
+document.addEventListener('DOMContentLoaded', async () => {
+  const submitBtn = document.getElementById('submitOrder');
+  const form = document.getElementById('checkoutForm');
+  const paymentMethod = '<%= paymentMethod %>';
 
-    // COD or Wallet: Normal form submit
-    if (paymentMethod !== 'Online') {
-      form.addEventListener('submit', function (e) {
-        submitBtn.disabled = true;
-        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Placing Order...';
-      });
-      return;
-    }
-
-    // 🔹 Online Payment Flow
-    submitBtn.addEventListener('click', async function (e) {
-      e.preventDefault();
-
-      try {
-        submitBtn.disabled = true;
-        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing Payment...';
-
-        // Create Razorpay order
-        const orderResponse = await fetch('/create-razorpay-order', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ totalAmount: '<%= totalAmount %>' })
-        });
-        const orderData = await orderResponse.json();
-
-        if (!orderData || !orderData.id) {
-          Swal.fire('Error', 'Unable to initialize payment. Please try again.', 'error');
-          return;
-        }
-
-        // Initialize Razorpay
-        const options = {
-          key: '<%= process.env.RAZORPAY_KEY_ID %>',
-          amount: orderData.amount,
-          currency: 'INR',
-          name: 'Keitai',
-          description: 'Order Payment',
-          order_id: orderData.id,
-          handler: async function (response) {
-            try {
-              const verifyRes = await fetch('/verify-payment', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(response)
-              });
-              const verifyData = await verifyRes.json();
-
-              if (verifyData.success) {
-                window.location.href = '/user/confirm-payment';
-              } else {
-                Swal.fire('Payment Failed', verifyData.error || 'Verification failed.', 'error');
-              }
-            } catch (err) {
-              Swal.fire('Error', 'Something went wrong verifying payment.', 'error');
-            }
-          },
-          prefill: {
-            name: '<%= address?.name %>',
-            email: '<%= user?.email %>',
-            contact: '<%= address?.phone %>'
-          },
-          theme: { color: '#2563eb' }
-        };
-
-        const rzp = new Razorpay(options);
-        rzp.open();
-        rzp.on('payment.failed', function (response) {
-          Swal.fire('Payment Failed', 'Your payment was not completed.', 'error');
-        });
-      } catch (error) {
-        console.error('Payment error:', error);
-        Swal.fire('Error', 'Unable to start payment. Try again later.', 'error');
-      }
+  // COD or Wallet: Normal submit
+  if (paymentMethod !== 'Online') {
+    form.addEventListener('submit', () => {
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Placing Order...';
     });
+    return;
+  }
+
+  // Online Payment
+  submitBtn.addEventListener('click', async (e) => {
+    e.preventDefault();
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing Payment...';
+
+    try {
+      // 1️⃣ Create Razorpay order
+      const orderResponse = await fetch('/create-razorpay-order', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ totalAmount: '<%= totalAmount %>' })
+      });
+      const orderData = await orderResponse.json();
+
+      if (!orderData || !orderData.id) {
+        Swal.fire('Error', 'Unable to initialize payment. Please try again.', 'error');
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = '<i class="fas fa-check-circle"></i> Confirm & Place Order';
+        return;
+      }
+
+      // 2️⃣ Razorpay options
+      const options = {
+        key: '<%= process.env.RAZORPAY_KEY_ID %>',
+        amount: orderData.amount,
+        currency: 'INR',
+        name: 'Keitai Shoppe',
+        description: 'Order Payment',
+        order_id: orderData.id,
+        handler: async function (response) {
+          try {
+            // 3️⃣ Verify payment
+            const verifyRes = await fetch('/verify-payment', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(response)
+            });
+            const verifyData = await verifyRes.json();
+
+            if (verifyData.success) {
+              // 4️⃣ Redirect to confirm-payment with session
+              window.location.href = `/user/confirm-payment?orderId=${verifyData.orderId}`;
+            } else {
+              Swal.fire('Payment Failed', verifyData.error || 'Verification failed.', 'error');
+              submitBtn.disabled = false;
+              submitBtn.innerHTML = '<i class="fas fa-check-circle"></i> Confirm & Place Order';
+            }
+          } catch (err) {
+            console.error(err);
+            Swal.fire('Error', 'Unable to verify payment.', 'error');
+          }
+        },
+        prefill: {
+          name: '<%= address?.name %>',
+          email: '<%= user?.email %>',
+          contact: '<%= address?.phone %>'
+        },
+        theme: { color: '#2563eb' }
+      };
+
+      const rzp = new Razorpay(options);
+      rzp.open();
+      rzp.on('payment.failed', function () {
+        Swal.fire('Payment Failed', 'Your payment was not completed.', 'error');
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = '<i class="fas fa-check-circle"></i> Confirm & Place Order';
+      });
+
+    } catch (error) {
+      console.error('Payment error:', error);
+      Swal.fire('Error', 'Unable to start payment. Try again later.', 'error');
+      submitBtn.disabled = false;
+      submitBtn.innerHTML = '<i class="fas fa-check-circle"></i> Confirm & Place Order';
+    }
   });
+});
 </script>
+
 
 </body>
 </html>
