@@ -299,32 +299,15 @@ return res.redirect('/user/order-confirmation');
 exports.renderOrderConfirmation = async (req, res) => {
   try {
     const checkoutData = req.session.checkout;
-    if (!checkoutData || !checkoutData.orderData) return res.redirect('/user/checkout');
+    if (!checkoutData || !checkoutData.orderData) {
+      return res.redirect('/user/checkout');
+    }
 
     const user = await User.findById(req.session.user._id);
     if (!user) return res.redirect('/user/checkout');
 
-    const addressId = checkoutData.selectedAddress || checkoutData.orderData?.selectedAddress;
+    const addressId = checkoutData.selectedAddress;
     const address = addressId ? user.addresses.id(addressId) : null;
-
-    // Create Razorpay order for online payments
-    let razorpayOrder = null;
-    if (checkoutData.orderData.paymentMethod === "Online") {
-      const Razorpay = require('razorpay');
-      const razorpay = new Razorpay({
-        key_id: process.env.RAZORPAY_KEY_ID,
-        key_secret: process.env.RAZORPAY_KEY_SECRET,
-      });
-
-      const amount = Math.round(checkoutData.orderData.totalAmount * 100);
-      
-      razorpayOrder = await razorpay.orders.create({
-        amount: amount,
-        currency: 'INR',
-        receipt: `receipt_${Date.now()}`,
-        payment_capture: 1
-      });
-    }
 
     res.render('user/order-confirmation', {
       orderItems: checkoutData.orderData.orderItems || [],
@@ -334,11 +317,8 @@ exports.renderOrderConfirmation = async (req, res) => {
       paymentMethod: checkoutData.orderData.paymentMethod || "Online",
       address,
       estimatedDate: new Date(Date.now() + 6 * 24 * 60 * 60 * 1000),
-      orderId: checkoutData.orderData.orderId || null,
-      paymentVerified: checkoutData.paymentVerified || false,
-      paymentDetails: checkoutData.paymentDetails || null,
-      razorpayOrder: razorpayOrder, // Pass to EJS
-      razorpayKeyId: process.env.RAZORPAY_KEY_ID
+      razorpayKeyId: process.env.RAZORPAY_KEY_ID, // Pass to EJS
+      user: req.session.user // Pass user data for prefill
     });
   } catch (err) {
     console.error("Error rendering order confirmation:", err);
