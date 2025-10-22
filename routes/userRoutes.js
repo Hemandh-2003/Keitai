@@ -42,12 +42,12 @@ router.get('/checkout', ...protect, checkoutController.getCheckout);
 router.post('/checkout', ...protect, checkoutController.checkout);
 router.post('/place-order', ...protect, checkoutController.placeOrder);
 router.get('/order-confirmation', protect, checkoutController.renderOrderConfirmation);
+router.post('/verify-payment', checkoutController.verifyPayment);
 router.post('/confirm-payment', ...protect, checkoutController.confirmPayment);
 router.get('/confirm-payment', ...protect, checkoutController.renderConfirmPayment);
 router.post('/address/create-inline', checkoutController.createInlineAddress);
 router.get('/retry-checkout', checkoutController.retryCheckout);
 router.get('/retry-checkout/:orderId', checkoutController.retryCheckoutWithOrderId);
-router.post('/verify-payment', checkoutController.verifyPayment);
 router.post('/create-razorpay-order', checkoutController.createRazorpayOrder);
 
 // Settings and Password Routes

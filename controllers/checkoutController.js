@@ -307,17 +307,38 @@ exports.renderOrderConfirmation = async (req, res) => {
     const addressId = checkoutData.selectedAddress || checkoutData.orderData?.selectedAddress;
     const address = addressId ? user.addresses.id(addressId) : null;
 
+    // Create Razorpay order for online payments
+    let razorpayOrder = null;
+    if (checkoutData.orderData.paymentMethod === "Online") {
+      const Razorpay = require('razorpay');
+      const razorpay = new Razorpay({
+        key_id: process.env.RAZORPAY_KEY_ID,
+        key_secret: process.env.RAZORPAY_KEY_SECRET,
+      });
+
+      const amount = Math.round(checkoutData.orderData.totalAmount * 100);
+      
+      razorpayOrder = await razorpay.orders.create({
+        amount: amount,
+        currency: 'INR',
+        receipt: `receipt_${Date.now()}`,
+        payment_capture: 1
+      });
+    }
+
     res.render('user/order-confirmation', {
       orderItems: checkoutData.orderData.orderItems || [],
       totalAmount: checkoutData.orderData.totalAmount || 0,
       deliveryCharge: checkoutData.orderData.deliveryCharge || 0,
       couponDiscount: checkoutData.orderData.couponDiscount || 0,
       paymentMethod: checkoutData.orderData.paymentMethod || "Online",
-      address, // can be null, EJS should handle
+      address,
       estimatedDate: new Date(Date.now() + 6 * 24 * 60 * 60 * 1000),
       orderId: checkoutData.orderData.orderId || null,
       paymentVerified: checkoutData.paymentVerified || false,
-      paymentDetails: checkoutData.paymentDetails || null
+      paymentDetails: checkoutData.paymentDetails || null,
+      razorpayOrder: razorpayOrder, // Pass to EJS
+      razorpayKeyId: process.env.RAZORPAY_KEY_ID
     });
   } catch (err) {
     console.error("Error rendering order confirmation:", err);

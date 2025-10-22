@@ -505,20 +505,28 @@
           </div>
 
           <section class="section confirm-order">
-            <form action="/user/confirm-payment" method="POST" id="checkoutForm">
-              <% orderItems.forEach((item)=> { %>
-                <input type="hidden" name="productIds[]" value="<%= item.product._id %>">
-                <input type="hidden" name="quantities[]" value="<%= item.quantity %>">
-                <input type="hidden" name="offerPrices[]" value="<%= item.offerPrice %>">
-                <% }); %>
-                <input type="hidden" name="selectedAddress" value="<%= address?._id || '' %>">
-                  <input type="hidden" name="totalAmount" value="<%= totalAmount %>">
-                  <input type="hidden" name="paymentMethod" value="<%= paymentMethod %>">
-                  <button type="submit" class="place-order-btn" id="submitOrder">
-                    <i class="fas fa-check-circle"></i> Confirm & Place Order
-                  </button>
-            </form>
-          </section>
+  <% if (paymentMethod === 'Online') { %>
+    <!-- For Online Payments - just show the button -->
+    <button type="button" class="place-order-btn" id="submitOrder">
+      <i class="fas fa-credit-card"></i> Proceed to Payment
+    </button>
+  <% } else { %>
+    <!-- For COD/Wallet - keep the form -->
+    <form action="/user/confirm-payment" method="POST" id="checkoutForm">
+      <% orderItems.forEach((item)=> { %>
+        <input type="hidden" name="productIds[]" value="<%= item.product._id %>">
+        <input type="hidden" name="quantities[]" value="<%= item.quantity %>">
+        <input type="hidden" name="offerPrices[]" value="<%= item.offerPrice %>">
+      <% }); %>
+      <input type="hidden" name="selectedAddress" value="<%= address?._id || '' %>">
+      <input type="hidden" name="totalAmount" value="<%= totalAmount %>">
+      <input type="hidden" name="paymentMethod" value="<%= paymentMethod %>">
+      <button type="submit" class="place-order-btn" id="submitOrder">
+        <i class="fas fa-check-circle"></i> Confirm & Place Order
+      </button>
+    </form>
+  <% } %>
+</section>
 
           <div class="footer-links">
             <a href="/privacy-policy">Privacy Policy</a>
@@ -529,6 +537,7 @@
     </main>
   </div>
 
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
 document.addEventListener('DOMContentLoaded', async () => {
@@ -536,7 +545,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   const form = document.getElementById('checkoutForm');
   const paymentMethod = '<%= paymentMethod %>';
 
-  // COD or Wallet: Normal submit
+  // For COD or Wallet: Normal form submission
   if (paymentMethod !== 'Online') {
     form.addEventListener('submit', () => {
       submitBtn.disabled = true;
@@ -545,31 +554,29 @@ document.addEventListener('DOMContentLoaded', async () => {
     return;
   }
 
-  // Online Payment
+  // For Online Payment: Handle Razorpay
   submitBtn.addEventListener('click', async (e) => {
     e.preventDefault();
     submitBtn.disabled = true;
     submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing Payment...';
 
     try {
-      // 1️⃣ Create Razorpay order
-      const orderResponse = await fetch('/create-razorpay-order', {
+      // 1. Create Razorpay order
+      const orderResponse = await fetch('/user/create-razorpay-order', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ totalAmount: '<%= totalAmount %>' })
       });
+      
       const orderData = await orderResponse.json();
 
       if (!orderData || !orderData.id) {
-        Swal.fire('Error', 'Unable to initialize payment. Please try again.', 'error');
-        submitBtn.disabled = false;
-        submitBtn.innerHTML = '<i class="fas fa-check-circle"></i> Confirm & Place Order';
-        return;
+        throw new Error('Failed to create payment order');
       }
 
-      // 2️⃣ Razorpay options
+      // 2. Razorpay options
       const options = {
-        key: '<%= process.env.RAZORPAY_KEY_ID %>',
+        key: '<%= razorpayKeyId %>', // This should be passed from controller
         amount: orderData.amount,
         currency: 'INR',
         name: 'Keitai Shoppe',
@@ -577,46 +584,54 @@ document.addEventListener('DOMContentLoaded', async () => {
         order_id: orderData.id,
         handler: async function (response) {
           try {
-            // 3️⃣ Verify payment
-            const verifyRes = await fetch('/verify-payment', {
+            // 3. Verify payment
+            const verifyRes = await fetch('/user/verify-payment', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify(response)
+              body: JSON.stringify({
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_signature: response.razorpay_signature
+              })
             });
+            
             const verifyData = await verifyRes.json();
 
             if (verifyData.success) {
-              // 4️⃣ Redirect to confirm-payment with session
-              window.location.href = `/user/confirm-payment?orderId=${verifyData.orderId}`;
+              // 4. Redirect to success page
+              window.location.href = verifyData.redirectUrl || '/user/confirm-payment';
             } else {
-              Swal.fire('Payment Failed', verifyData.error || 'Verification failed.', 'error');
+              Swal.fire('Payment Failed', verifyData.error || 'Payment verification failed', 'error');
               submitBtn.disabled = false;
               submitBtn.innerHTML = '<i class="fas fa-check-circle"></i> Confirm & Place Order';
             }
           } catch (err) {
-            console.error(err);
-            Swal.fire('Error', 'Unable to verify payment.', 'error');
+            console.error('Verification error:', err);
+            Swal.fire('Error', 'Unable to verify payment. Please contact support.', 'error');
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = '<i class="fas fa-check-circle"></i> Confirm & Place Order';
           }
         },
         prefill: {
-          name: '<%= address?.name %>',
-          email: '<%= user?.email %>',
-          contact: '<%= address?.phone %>'
+          name: '<%= address?.name || "" %>',
+          email: '<%= user?.email || "" %>',
+          contact: '<%= address?.phone || "" %>'
         },
-        theme: { color: '#2563eb' }
+        theme: { color: '#2563eb' },
+        modal: {
+          ondismiss: function() {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = '<i class="fas fa-check-circle"></i> Confirm & Place Order';
+          }
+        }
       };
 
       const rzp = new Razorpay(options);
       rzp.open();
-      rzp.on('payment.failed', function () {
-        Swal.fire('Payment Failed', 'Your payment was not completed.', 'error');
-        submitBtn.disabled = false;
-        submitBtn.innerHTML = '<i class="fas fa-check-circle"></i> Confirm & Place Order';
-      });
 
     } catch (error) {
-      console.error('Payment error:', error);
-      Swal.fire('Error', 'Unable to start payment. Try again later.', 'error');
+      console.error('Payment initialization error:', error);
+      Swal.fire('Error', 'Unable to start payment process. Please try again.', 'error');
       submitBtn.disabled = false;
       submitBtn.innerHTML = '<i class="fas fa-check-circle"></i> Confirm & Place Order';
     }
