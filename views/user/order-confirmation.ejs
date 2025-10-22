@@ -563,9 +563,8 @@
       const result = await response.json();
 
       if (result.success && result.orderId) {
-        // Redirect only after server confirms and returns orderId
-        window.location.href = `/user/order/${result.orderId}`;
-      } else {
+  window.location.href = `/user/confirm-payment?orderId=${result.orderId}`;
+} else {
         window.location.href = `/payment/failed?error=${encodeURIComponent(result.error || 'Verification failed')}`;
       }
     } catch (error) {
