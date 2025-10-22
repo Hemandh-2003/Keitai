@@ -274,8 +274,8 @@ exports.placeOrder = async (req, res) => {
   });
 }
 
-    // Online: do not create order yet, just store checkout session
-  req.session.checkout = {
+   // Online: do not create order yet, just store checkout session
+req.session.checkout = {
   ...req.session.checkout,
   selectedAddress: address._id,
   orderData: {
@@ -284,7 +284,7 @@ exports.placeOrder = async (req, res) => {
     deliveryCharge,
     discountAmount,
     couponDiscount,
-    paymentMethod
+    paymentMethod: "Online"
   }
 };
 return res.redirect('/user/order-confirmation');
