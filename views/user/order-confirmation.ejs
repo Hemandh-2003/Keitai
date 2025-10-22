@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,7 +8,6 @@
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
   <style>
-    /* Keep all your existing CSS styles */
     :root {
       --primary: #2563eb;
       --primary-hover: #1d4ed8;
@@ -22,21 +22,387 @@
       --border: #e5e7eb;
       --shadow: rgba(0, 0, 0, 0.05);
     }
-    /* ... keep all your existing CSS ... */
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Poppins', sans-serif;
+      background-color: var(--bg-light);
+      color: var(--text);
+      line-height: 1.6;
+    }
+
+    .secure-banner {
+      background-color: #f0f9ff;
+      color: #0369a1;
+      text-align: center;
+      padding: 10px 0;
+      font-size: 0.9rem;
+      font-weight: 500;
+      border-bottom: 1px solid #bae6fd;
+    }
+
+    .secure-banner i {
+      margin-right: 5px;
+    }
+
+    .order-confirmation-container {
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: 20px;
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px var(--shadow);
+      margin-top: 20px;
+      margin-bottom: 20px;
+    }
+
+    .navbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 15px 30px;
+      background-color: #000000;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+    }
+
+    .navbar .logo img {
+      height: 50px;
+      object-fit: contain;
+    }
+
+    .order-confirmation-header {
+      text-align: center;
+      margin-bottom: 2rem;
+      padding-bottom: 1rem;
+      border-bottom: 2px solid var(--border);
+    }
+
+    .order-confirmation-header h1 {
+      font-size: 2.2rem;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 0.5rem;
+    }
+
+    .order-status {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.5rem 1rem;
+      background: #dcfce7;
+      color: #166534;
+      border-radius: 20px;
+      font-weight: 600;
+      font-size: 0.9rem;
+    }
+
+    .section {
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px var(--shadow);
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+      border: 1px solid var(--border);
+    }
+
+    .section h2 {
+      font-size: 1.3rem;
+      font-weight: 600;
+      margin-bottom: 1.25rem;
+      color: #334155;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .section h2 i {
+      color: var(--primary);
+    }
+
+    .order-items {
+      margin-bottom: 1.5rem;
+    }
+
+    .order-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      padding: 1rem 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .order-item:last-child {
+      border-bottom: none;
+    }
+
+    .item-details {
+      flex: 1;
+    }
+
+    .item-name {
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 0.25rem;
+    }
+
+    .item-price {
+      font-weight: 600;
+      color: var(--success);
+    }
+
+    .item-quantity {
+      color: var(--text-light);
+      font-size: 0.9rem;
+    }
+
+    .original-price {
+      text-decoration: line-through;
+      color: #94a3b8;
+      font-size: 0.9rem;
+      margin-left: 0.5rem;
+    }
+
+    .summary-total {
+      margin-top: 1.5rem;
+      padding-top: 1rem;
+      border-top: 2px solid var(--border);
+    }
+
+    .summary-total p {
+      margin-bottom: 0.75rem;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .total-amount {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: #1e293b;
+    }
+
+    .address-details {
+      background: #f8fafc;
+      padding: 1.25rem;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      margin-bottom: 1rem;
+    }
+
+    .address-details p {
+      margin-bottom: 0.5rem;
+      color: var(--text);
+    }
+
+    .edit-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      color: var(--primary);
+      font-weight: 500;
+      transition: color 0.2s ease;
+    }
+
+    .edit-link:hover {
+      color: var(--primary-hover);
+    }
+
+    .payment-method p {
+      font-size: 1.1rem;
+      color: var(--text);
+    }
+
+    .delivery-date p {
+      font-size: 1.1rem;
+      color: var(--text);
+    }
+
+    .delivery-date strong {
+      color: var(--success);
+    }
+
+    .confirm-order {
+      text-align: center;
+      background: #f8fafc;
+    }
+
+    .place-order-btn {
+      background-color: var(--success);
+      color: white;
+      border: none;
+      padding: 1rem 2rem;
+      font-size: 1.1rem;
+      font-weight: 600;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      width: 100%;
+      max-width: 300px;
+    }
+
+    .place-order-btn:hover {
+      background-color: var(--success-hover);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(34, 197, 94, 0.3);
+    }
+
+    .place-order-btn:disabled {
+      background-color: #9ca3af;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+
+    .payment-processing {
+      text-align: center;
+      padding: 3rem 2rem;
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px var(--shadow);
+      margin-bottom: 2rem;
+    }
+
+    .payment-processing h2 {
+      color: var(--primary);
+      margin-bottom: 1rem;
+    }
+
+    .spinner {
+      border: 4px solid #f3f3f3;
+      border-top: 4px solid var(--primary);
+      border-radius: 50%;
+      width: 60px;
+      height: 60px;
+      animation: spin 1s linear infinite;
+      margin: 1rem auto;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    .trust-badges {
+      display: flex;
+      justify-content: center;
+      gap: 30px;
+      margin-top: 2rem;
+      padding: 1.5rem;
+      background: #f8fafc;
+      border-radius: 8px;
+    }
+
+    .trust-badge {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.8rem;
+      color: var(--text-light);
+    }
+
+    .trust-badge i {
+      font-size: 1.8rem;
+      color: var(--primary);
+    }
+
+    .footer-links {
+      display: flex;
+      justify-content: center;
+      gap: 25px;
+      margin-top: 2rem;
+      padding-top: 2rem;
+      border-top: 1px solid var(--border);
+      font-size: 0.9rem;
+      color: var(--text-light);
+    }
+
+    .footer-links a {
+      color: var(--text-light);
+      text-decoration: none;
+      transition: color 0.2s ease;
+    }
+
+    .footer-links a:hover {
+      color: var(--primary);
+      text-decoration: underline;
+    }
+
+    @media (max-width: 768px) {
+      .order-confirmation-container {
+        padding: 15px;
+        margin: 10px;
+      }
+
+      .order-confirmation-header h1 {
+        font-size: 1.8rem;
+      }
+
+      .section {
+        padding: 1.25rem;
+      }
+
+      .trust-badges {
+        flex-wrap: wrap;
+        gap: 20px;
+      }
+
+      .footer-links {
+        flex-wrap: wrap;
+        gap: 15px;
+      }
+
+      .order-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+      }
+
+      .item-price {
+        align-self: flex-end;
+      }
+    }
+
+    .error {
+      color: var(--danger);
+      font-weight: 500;
+      padding: 0.75rem;
+      background: #fef2f2;
+      border: 1px solid #fecaca;
+      border-radius: 6px;
+      margin: 0.5rem 0;
+    }
+
+    .discount-line {
+      color: var(--success);
+      font-weight: 500;
+    }
+
+    .delivery-charge {
+      color: var(--text);
+    }
   </style>
 </head>
+
 <body>
   <nav class="navbar">
-    <div class="logo">
-      <a href="/"><img src="/images/logo1.png" alt="Keitai Logo" /></a>
-    </div>
-  </nav>
-  
+      <div class="logo">
+        <a href="/"><img src="/images/logo1.png" alt="Keitai Logo" /></a>
+      </div>
+    </nav>
   <div class="secure-banner">
     <i class="fas fa-lock"></i> Secure Order Confirmation - Your order is protected with 256-bit SSL encryption
   </div>
 
   <div class="order-confirmation-container">
+
     <header class="order-confirmation-header">
       <h1><i class="fas fa-check-circle"></i> Order Confirmation</h1>
       <div class="order-status">
@@ -45,90 +411,149 @@
     </header>
 
     <main>
-      <% if (paymentMethod === 'Online') { %>
+      <% if (paymentMethod==='Online' && !paymentVerified) { %>
         <div class="payment-processing">
-          <h2><i class="fas fa-spinner"></i> Payment Processing Complete</h2>
+          <h2><i class="fas fa-spinner"></i> Verifying Your Payment...</h2>
           <div class="spinner"></div>
-          <p>Your payment has been successfully processed!</p>
-          <p>Redirecting to order confirmation...</p>
+          <p>Please wait while we verify your payment details. This may take a few moments.</p>
         </div>
-        
-        <!-- Auto-redirect to confirm-payment -->
-        <script>
-          setTimeout(() => {
-            window.location.href = '/user/confirm-payment';
-          }, 2000);
-        </script>
-        
-      <% } else { %>
-        <!-- Show normal order details for COD/Wallet -->
-        <section class="section order-summary">
-          <h2><i class="fas fa-shopping-bag"></i> Order Summary</h2>
-          <div class="order-items">
-            <% orderItems.forEach((item)=> { %>
-              <div class="order-item">
-                <div class="item-details">
-                  <p class="item-name"><strong><%= item.product.name %></strong></p>
-                  <p class="item-quantity">Quantity: <%= item.quantity %></p>
+        <% } %>
+
+          <section class="section order-summary">
+            <h2><i class="fas fa-shopping-bag"></i> Order Summary</h2>
+            <div class="order-items">
+              <% orderItems.forEach((item)=> { %>
+                <div class="order-item">
+                  <div class="item-details">
+                    <p class="item-name"><strong>
+                        <%= item.product.name %>
+                      </strong></p>
+                    <p class="item-quantity">Quantity: <%= item.quantity %>
+                    </p>
+                  </div>
+                  <div class="item-price">
+                    ₹<%= item.offerPrice * item.quantity %>
+                    <% if (item.product.regularPrice> item.offerPrice) { %>
+                      <span class="original-price">₹<%= (item.product.regularPrice * item.quantity) %></span>
+                      <% } %>
+                  </div>
                 </div>
-                <div class="item-price">
-                  ₹<%= item.offerPrice * item.quantity %>
-                  <% if (item.product.regularPrice> item.offerPrice) { %>
-                    <span class="original-price">₹<%= (item.product.regularPrice * item.quantity) %></span>
-                  <% } %>
-                </div>
+                <% }); %>
+            </div>
+            <div class="summary-total">
+              <p class="delivery-charge">Delivery Charge: ₹<%= deliveryCharge %>
+              </p>
+
+              <% if (typeof couponDiscount !=='undefined' && couponDiscount> 0) { %>
+                <p class="discount-line">Coupon Discount: - ₹<%= couponDiscount %>
+                </p>
+                <% } %>
+
+                  <p class="total-amount"><strong>Total Amount: ₹<%= totalAmount %></strong></p>
+            </div>
+          </section>
+
+          <section class="section shipping-info">
+            <h2><i class="fas fa-map-marker-alt"></i> Shipping Address</h2>
+            <% if (address) { %>
+              <div class="address-details">
+                <p><strong>Name:</strong>
+                  <%= address.name %>
+                </p>
+                <p><strong>Address:</strong>
+                  <%= address.street %>, <%= address.city %>, <%= address.state %> - <%= address.zip %>
+                </p>
+                <p><strong>Phone:</strong>
+                  <%= address.phone %>
+                </p>
               </div>
-            <% }); %>
-          </div>
-          <div class="summary-total">
-            <p class="delivery-charge">Delivery Charge: ₹<%= deliveryCharge %></p>
-            <% if (typeof couponDiscount !=='undefined' && couponDiscount> 0) { %>
-              <p class="discount-line">Coupon Discount: - ₹<%= couponDiscount %></p>
-            <% } %>
-            <p class="total-amount"><strong>Total Amount: ₹<%= totalAmount %></strong></p>
-          </div>
-        </section>
+              <a href="/user/checkout" class="edit-link"><i class="fas fa-edit"></i> Change Address</a>
+              <% } else { %>
+                <p class="error"><i class="fas fa-exclamation-triangle"></i> No shipping address provided.</p>
+                <% } %>
+          </section>
 
-        <!-- Other sections... -->
-        <section class="section confirm-order">
-          <form action="/user/confirm-payment" method="POST" id="checkoutForm">
-            <% orderItems.forEach((item)=> { %>
-              <input type="hidden" name="productIds[]" value="<%= item.product._id %>">
-              <input type="hidden" name="quantities[]" value="<%= item.quantity %>">
-              <input type="hidden" name="offerPrices[]" value="<%= item.offerPrice %>">
-            <% }); %>
-            <input type="hidden" name="selectedAddress" value="<%= address._id %>">
-            <input type="hidden" name="totalAmount" value="<%= totalAmount %>">
-            <input type="hidden" name="paymentMethod" value="<%= paymentMethod %>">
-            <button type="submit" class="place-order-btn" id="submitOrder">
-              <i class="fas fa-check-circle"></i> Confirm & Place Order
-            </button>
-          </form>
-        </section>
-      <% } %>
+          <section class="section payment-method">
+            <h2><i class="fas fa-credit-card"></i> Payment Method</h2>
+            <% if (paymentMethod) { %>
+              <p><strong>Selected Payment Method:</strong> 
+                <span style="color: var(--success); font-weight: 600;">
+                  <%= paymentMethod === 'Online' ? 'Online Payment' : paymentMethod === 'COD' ? 'Cash on Delivery' : paymentMethod === 'Wallet' ? 'Wallet Payment' : paymentMethod %>
+                </span>
+              </p>
+              <% } else { %>
+                <p class="error"><i class="fas fa-exclamation-triangle"></i> No payment method selected.</p>
+                <% } %>
+          </section>
 
-      <div class="footer-links">
-        <a href="/privacy-policy">Privacy Policy</a>
-        <a href="/terms-of-service">Terms of Service</a>
-        <a href="/refund-policy">Refund Policy</a>
-        <a href="/contact">Contact Support</a>
-      </div>
+          <section class="section delivery-date">
+            <h2><i class="fas fa-shipping-fast"></i> Estimated Delivery</h2>
+            <p>Your order will arrive by: <strong>
+                <%= estimatedDate.toDateString() %>
+              </strong></p>
+          </section>
+
+          <div class="trust-badges">
+            <div class="trust-badge">
+              <i class="fas fa-shield-alt"></i>
+              <span>SSL Secure</span>
+            </div>
+            <div class="trust-badge">
+              <i class="fas fa-lock"></i>
+              <span>256-bit Encryption</span>
+            </div>
+            <div class="trust-badge">
+              <i class="fas fa-award"></i>
+              <span>Money Back Guarantee</span>
+            </div>
+            <div class="trust-badge">
+              <i class="fas fa-truck"></i>
+              <span>Fast Delivery</span>
+            </div>
+          </div>
+
+          <section class="section confirm-order">
+  <% if (paymentMethod === 'Online') { %>
+    <!-- For Online Payments - Show processing message -->
+    <div class="payment-processing">
+      <h2><i class="fas fa-spinner"></i> Payment Processing</h2>
+      <div class="spinner"></div>
+      <p>Your payment is being processed. You will be redirected to the confirmation page shortly.</p>
+      <p>If you are not redirected automatically, <a href="/user/confirm-payment">click here</a>.</p>
+    </div>
+    
+    <!-- Auto-redirect script for online payments -->
+    <script>
+      setTimeout(() => {
+        window.location.href = '/user/confirm-payment';
+      }, 3000);
+    </script>
+    
+  <% } else { %>
+    <!-- For COD/Wallet - Keep the form -->
+    <form action="/user/confirm-payment" method="POST" id="checkoutForm">
+      <% orderItems.forEach((item)=> { %>
+        <input type="hidden" name="productIds[]" value="<%= item.product._id %>">
+        <input type="hidden" name="quantities[]" value="<%= item.quantity %>">
+        <input type="hidden" name="offerPrices[]" value="<%= item.offerPrice %>">
+      <% }); %>
+      <input type="hidden" name="selectedAddress" value="<%= address._id %>">
+      <input type="hidden" name="totalAmount" value="<%= totalAmount %>">
+      <input type="hidden" name="paymentMethod" value="<%= paymentMethod %>">
+      <button type="submit" class="place-order-btn" id="submitOrder">
+        <i class="fas fa-check-circle"></i> Confirm & Place Order
+      </button>
+    </form>
+  <% } %>
+</section>
+
+          <div class="footer-links">
+            <a href="/privacy-policy">Privacy Policy</a>
+            <a href="/terms-of-service">Terms of Service</a>
+            <a href="/refund-policy">Refund Policy</a>
+            <a href="/contact">Contact Support</a>
+          </div>
     </main>
   </div>
-
-  <script>
-    // Simple form submission handler for COD/Wallet
-    document.addEventListener('DOMContentLoaded', function() {
-      const form = document.getElementById('checkoutForm');
-      const submitBtn = document.getElementById('submitOrder');
-      
-      if (form && submitBtn) {
-        form.addEventListener('submit', function() {
-          submitBtn.disabled = true;
-          submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Placing Order...';
-        });
-      }
-    });
-  </script>
 </body>
 </html>
