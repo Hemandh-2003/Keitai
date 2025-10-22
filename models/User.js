@@ -48,7 +48,7 @@ const userSchema = new mongoose.Schema({
     transactions: [walletTransactionSchema],
   },
 
-  usedCoupons: { type: [String], default: [] },
+  couponUsage: {type: Map,of: Number,default: () => new Map(),},
 
   referralCode: { type: String, unique: true }, 
   referredBy: { type: String, default: null },  

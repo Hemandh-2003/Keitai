@@ -1,3 +1,4 @@
+const User = require('../models/User')
 const Coupon = require('../models/Coupon');
 const {HTTP_STATUS}= require('../SM/status');
 const { MESSAGE }= require('../SM/messages');
@@ -215,34 +216,60 @@ exports.applyCoupon = async (req, res) => {
   const { code, total } = req.body;
 
   try {
-    const formattedCode = code.toUpperCase();
+    if (!req.session.user) {
+      return res
+        .status(HTTP_STATUS.UNAUTHORIZED)
+        .json({ success: false, message: 'Please login to apply coupon' });
+    }
 
-    if (req.session.coupon && req.session.coupon.code === formattedCode) {
-      return res.status(HTTP_STATUS.BAD_REQUEST).json({ success: false, message: 'Coupon already applied' });
+    const formattedCode = code.trim().toUpperCase();
+    const userId = req.session.user._id;
+    const user = await User.findById(userId);
+
+    if (!user) {
+      return res
+        .status(HTTP_STATUS.BAD_REQUEST)
+        .json({ success: false, message: 'User not found' });
+    }
+
+    if (!(user.couponUsage instanceof Map)) {
+      user.couponUsage = new Map(Object.entries(user.couponUsage || {}));
     }
 
     const coupon = await Coupon.findOne({ code: formattedCode, isActive: true });
-
     if (!coupon) {
-      return res.status(HTTP_STATUS.BAD_REQUEST).json({ success: false, message: 'Invalid coupon code' });
+      return res
+        .status(HTTP_STATUS.BAD_REQUEST)
+        .json({ success: false, message: 'Invalid coupon code' });
     }
 
     const now = new Date();
     if (coupon.startDate > now || coupon.endDate < now) {
-      return res.status(HTTP_STATUS.BAD_REQUEST).json({ success: false, message: 'Coupon is not valid at this time' });
+      return res
+        .status(HTTP_STATUS.BAD_REQUEST)
+        .json({ success: false, message: 'Coupon is not valid at this time' });
+    }
+
+    // ✅ Check usage limit (max 2 times per user)
+    const usedCount = user.couponUsage.get(formattedCode) || 0;
+    if (usedCount >= 2) {
+      return res.status(HTTP_STATUS.BAD_REQUEST).json({
+        success: false,
+        message: `You have already used coupon ${formattedCode} 2 times.`,
+      });
     }
 
     if (total < coupon.minPurchase) {
       return res.status(HTTP_STATUS.BAD_REQUEST).json({
         success: false,
-        message: `Minimum order value for this coupon is ₹${coupon.minPurchase}`
+        message: `Minimum order value for this coupon is ₹${coupon.minPurchase}.`,
       });
     }
 
+    // ✅ Calculate discount
     let discountAmount = 0;
     if (coupon.discountType === 'percentage') {
       discountAmount = Math.round((total * coupon.discount) / 100);
-
       if (coupon.maxDiscount && discountAmount > coupon.maxDiscount) {
         discountAmount = coupon.maxDiscount;
       }
@@ -250,25 +277,30 @@ exports.applyCoupon = async (req, res) => {
       discountAmount = Math.min(coupon.discount, total);
     }
 
+    // ✅ Save coupon info in session
     req.session.coupon = {
       code: coupon.code,
       discount: coupon.discount,
       discountType: coupon.discountType,
-      discountAmount
+      discountAmount,
     };
 
-    //console.log(`✅ Coupon applied: ${coupon.code} | Discount: ₹${discountAmount}`);
+    // ✅ Increment usage count & save
+    user.couponUsage.set(formattedCode, usedCount + 1);
+    await user.save();
 
     return res.status(HTTP_STATUS.OK).json({
       success: true,
       discountAmount,
       finalAmount: total - discountAmount,
-      code: coupon.code
+      code: coupon.code,
+      message: `Coupon applied successfully! (${usedCount + 1}/2 uses)`,
     });
-
   } catch (err) {
     console.error('❌ Coupon error:', err);
-    return res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ success: false, message: MESSAGE.SERVER_ERROR});
+    return res
+      .status(HTTP_STATUS.INTERNAL_SERVER_ERROR)
+      .json({ success: false, message: 'Server error' });
   }
 };
 
