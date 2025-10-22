@@ -211,8 +211,8 @@ exports.placeOrder = async (req, res) => {
       return res.status(HTTP_STATUS.BAD_REQUEST).send("Insufficient wallet balance.");
     }
 
-// COD or Wallet: create order immediately
-if (paymentMethod === "COD" || paymentMethod === "Wallet") {
+    // COD or Wallet: create order immediately
+    if (paymentMethod === "COD" || paymentMethod === "Wallet") {
   const order = await Order.create({
     user: user._id,
     selectedAddress: address._id,
