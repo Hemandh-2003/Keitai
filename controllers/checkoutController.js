@@ -211,59 +211,68 @@ exports.placeOrder = async (req, res) => {
       return res.status(HTTP_STATUS.BAD_REQUEST).send("Insufficient wallet balance.");
     }
 
-    // COD or Wallet: create order immediately
-    if (paymentMethod === "COD" || paymentMethod === "Wallet") {
-      const order = await Order.create({
-        user: user._id,
-        selectedAddress: address._id,
-        products: orderItems.map(i => ({ product: i.product._id, quantity: i.quantity, unitPrice: i.offerPrice })),
-        totalAmount,
-        paymentMethod,
-        deliveryCharge,
-        estimatedDelivery: new Date(Date.now() + 6 * 24 * 60 * 60 * 1000),
-        status: paymentMethod === "COD" ? "Placed" : "Paid",
-        discountAmount,
-        couponDiscount,
-      });
+// COD or Wallet: create order immediately
+if (paymentMethod === "COD" || paymentMethod === "Wallet") {
+  const order = await Order.create({
+    user: user._id,
+    selectedAddress: address._id,
+    products: orderItems.map(i => ({ product: i.product._id, quantity: i.quantity, unitPrice: i.offerPrice })),
+    totalAmount,
+    paymentMethod,
+    deliveryCharge,
+    estimatedDelivery: new Date(Date.now() + 6 * 24 * 60 * 60 * 1000),
+    status: paymentMethod === "COD" ? "Placed" : "Paid",
+    discountAmount,
+    couponDiscount,
+  });
 
-      // Deduct wallet
-      if (paymentMethod === "Wallet") {
-        user.wallet.balance -= totalAmount;
-        user.wallet.transactions.push({
-          type: "Debit",
-          amount: totalAmount,
-          reason: "Order payment",
-          orderId: order._id.toString(),
-          date: new Date(),
-        });
-        await user.save();
-      }
+  // Deduct wallet
+  if (paymentMethod === "Wallet") {
+    user.wallet.balance -= totalAmount;
+    user.wallet.transactions.push({
+      type: "Debit",
+      amount: totalAmount,
+      reason: "Order payment",
+      orderId: order._id.toString(),
+      date: new Date(),
+    });
+    await user.save();
+  }
 
-      // Reduce stock
-      for (let i = 0; i < products.length; i++) {
-        await Product.findOneAndUpdate(
-          { _id: products[i]._id, quantity: { $gte: quantities[i] } },
-          { $inc: { quantity: -quantities[i] } }
-        );
-      }
+  // Reduce stock
+  for (let i = 0; i < products.length; i++) {
+    await Product.findOneAndUpdate(
+      { _id: products[i]._id, quantity: { $gte: quantities[i] } },
+      { $inc: { quantity: -quantities[i] } }
+    );
+  }
 
-      req.session.orderId = order._id.toString();
-      req.session.paymentVerified = paymentMethod === "Wallet";
+  // ✅ ADD THESE LINES:
+  req.session.orderItems = orderItems;
+  req.session.address = address;
+  req.session.paymentMethod = paymentMethod;
+  req.session.totalAmount = totalAmount;
+  req.session.deliveryCharge = deliveryCharge;
+  req.session.arrivalDate = new Date(Date.now() + 6 * 24 * 60 * 60 * 1000);
+  req.session.couponDiscount = couponDiscount;
 
-      return res.render("user/order-confirmation", {
-        orderItems,
-        address,
-        paymentMethod,
-        totalAmount,
-        deliveryCharge,
-        estimatedDate: new Date(Date.now() + 6 * 24 * 60 * 60 * 1000),
-        orderId: order._id,
-        paymentVerified: req.session.paymentVerified,
-        paymentDetails: null,
-        checkoutUrl: "/user/checkout",
-        couponDiscount,
-      });
-    }
+  req.session.orderId = order._id.toString();
+  req.session.paymentVerified = paymentMethod === "Wallet";
+
+  return res.render("user/order-confirmation", {
+    orderItems,
+    address,
+    paymentMethod,
+    totalAmount,
+    deliveryCharge,
+    estimatedDate: new Date(Date.now() + 6 * 24 * 60 * 60 * 1000),
+    orderId: order._id,
+    paymentVerified: req.session.paymentVerified,
+    paymentDetails: null,
+    checkoutUrl: "/user/checkout",
+    couponDiscount,
+  });
+}
 
     // Online: do not create order yet, just store checkout session
   req.session.checkout = {
