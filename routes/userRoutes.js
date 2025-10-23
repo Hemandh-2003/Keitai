@@ -1,11 +1,11 @@
 const express = require('express');
 const userOrderController= require('../controllers/userOrderController');
 const checkoutController= require('../controllers/checkoutController');
-const productController= require('../controllers/productController');
+const productController = require('../controllers/productController'); 
 const settingsController= require('../controllers/settingsController');
 const { isLoggedIn } = require('../middleware/authMiddleware');
-const userController = require('../controllers/userController');
 const orderController = require('../controllers/orderController');
+const userController= require('../controllers/userController')
 const checkBlockedUser = require('../middleware/checkBlocked');
 const couponController = require('../controllers/couponController');
 const multer = require('multer');
@@ -37,18 +37,19 @@ router.get('/order/:id/invoice', userOrderController.downloadInvoice);
 // router.get('/home', userController.getProducts);
 router.get('/product/:productId', productController.getProductDetailsWithRelated);
 
-// Checkout
+// Checkout Routes
 router.get('/checkout', ...protect, checkoutController.getCheckout);
 router.post('/checkout', ...protect, checkoutController.checkout);
 router.post('/place-order', ...protect, checkoutController.placeOrder);
-router.get('/order-confirmation', ...protect, checkoutController.renderOrderConfirmation);
-router.post('/create-razorpay-order', ...protect, checkoutController.createRazorpayOrder); 
-router.post('/verify-payment', ...protect, checkoutController.verifyPayment); 
+router.get('/order-confirmation', protect, checkoutController.renderOrderConfirmation);
 router.post('/confirm-payment', ...protect, checkoutController.confirmPayment);
 router.get('/confirm-payment', ...protect, checkoutController.renderConfirmPayment);
-router.post('/address/create-inline', ...protect, checkoutController.createInlineAddress); 
-router.get('/retry-checkout', ...protect, checkoutController.retryCheckout); 
-router.get('/retry-checkout/:orderId', ...protect, checkoutController.retryCheckoutWithOrderId);
+router.post('/address/create-inline', checkoutController.createInlineAddress);
+router.get('/retry-checkout', checkoutController.retryCheckout);
+router.get('/retry-checkout/:orderId', checkoutController.retryCheckoutWithOrderId);
+router.post('/verify-payment', checkoutController.verifyPayment);
+router.post('/create-razorpay-order', checkoutController.createRazorpayOrder);
+
 // Settings and Password Routes
 router.get('/settings', ...protect, settingsController.getSettingsPage);
 router.post('/change-password', ...protect, upload.none(), settingsController.changePassword);
@@ -62,7 +63,7 @@ router.get('/reset-password/:email', userController.getResetPasswordPage);
 router.post('/reset-password', userController.handleResetPassword);
 //console.log(userController.verifyOtp);
 router.post('/verify-otp-reset', userController.verifyOtp);
-router.get('/product/:id/related', userController.getProductDetailsWithRelated);
+router.get('/product/:productId/related', productController.getProductDetailsWithRelated);
 
 //coupon Routes
 router.post('/apply-coupon', ...protect, couponController.applyCoupon);
@@ -82,4 +83,5 @@ router.post('/retry-payment', ...protect, userController.retryPayment);
 
 //whishlist
 router.post('/add-to-cart-from-wishlist/:productId', ...protect, userController.addToCartFromWishlist);
+
 module.exports = router;
