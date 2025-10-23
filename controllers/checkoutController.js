@@ -5,12 +5,13 @@ const Cart = require('../models/Cart');
 const Coupon = require('../models/Coupon');
 const {HTTP_STATUS}= require('../SM/status');
 const { MESSAGE } = require('../SM/messages');
-const Razorpay = require('razorpay'); 
+const crypto = require('crypto');
 require('dotenv').config();
+const Razorpay = require('razorpay'); 
 const razorpay = new Razorpay({
-  key_id: process.env.RAZORPAY_KEY_ID,
-  key_secret: process.env.RAZORPAY_KEY_SECRET,
-});
+    key_id: process.env.RAZORPAY_KEY_ID,
+    key_secret: process.env.RAZORPAY_KEY_SECRET,
+})
 exports.getCheckout = async (req, res) => {
   try {
     if (!req.session.user) return res.redirect('/login');
@@ -127,21 +128,26 @@ exports.checkout = async (req, res) => {
 
 exports.placeOrder = async (req, res) => {
   try {
-    const { selectedAddress, paymentMethod } = req.body;
+  const { selectedAddress, paymentMethod } = req.body;
+  console.log('placeOrder called. selectedAddress:', selectedAddress, 'paymentMethod:', paymentMethod);
     const checkoutData = req.session.checkout;
 
-    if (!checkoutData || !Array.isArray(checkoutData.productIds)) return res.status(HTTP_STATUS.BAD_REQUEST).send("Checkout session missing or invalid.");
+  if (!checkoutData || !Array.isArray(checkoutData.productIds)) return res.status(HTTP_STATUS.BAD_REQUEST).json({ error: "Checkout session missing or invalid." });
 
     const { productIds, quantities, totalAmount: sessionTotal } = checkoutData; // Removed offerPrices from destructuring
     const user = await User.findById(req.session.user._id);
-    if (!user) return res.status(HTTP_STATUS.NOT_FOUND).send("User not found");
+  if (!user) return res.status(HTTP_STATUS.NOT_FOUND).json({ error: "User not found" });
 
     const address = user.addresses.id(selectedAddress);
-    if (!address) return res.status(HTTP_STATUS.NOT_FOUND).send("Address not found");
+  if (!address) {
+    const available = (user.addresses || []).map(a => a._id ? a._id.toString() : a.toString());
+    console.error(`Address not found for user ${user._id}. posted selectedAddress=${selectedAddress}. available addresses=${available}`);
+    return res.status(HTTP_STATUS.NOT_FOUND).json({ error: "Address not found", selectedAddress: selectedAddress || null, availableAddresses: available });
+  }
 
     // Fetch products based on IDs
     const products = await Product.find({ _id: { $in: productIds } });
-    if (products.length !== productIds.length) return res.status(HTTP_STATUS.NOT_FOUND).send("One or more products not found");
+  if (products.length !== productIds.length) return res.status(HTTP_STATUS.NOT_FOUND).json({ error: "One or more products not found" });
 
     // **CRITICAL FIX: RECALCULATE FINAL PRICE FROM DATABASE**
     let subTotalAmount = 0; // Renamed to subTotalAmount for clarity before adding charges/discounts
@@ -151,7 +157,7 @@ exports.placeOrder = async (req, res) => {
       const product = products[i];
       const qty = parseInt(quantities[i]);
       
-      if (qty > product.quantity) return res.status(HTTP_STATUS.BAD_REQUEST).send(`Insufficient stock for ${product.name}`);
+  if (qty > product.quantity) return res.status(HTTP_STATUS.BAD_REQUEST).json({ error: `Insufficient stock for ${product.name}` });
       
       // Get the current best offer price directly from the product model/DB
       const offer = await product.getBestOfferPrice(); 
@@ -201,6 +207,34 @@ exports.placeOrder = async (req, res) => {
       if (paymentMethod === "Wallet") {
         user.wallet.balance -= totalAmount;
         await user.save();
+      }
+
+      // Prepare session data expected by renderConfirmPayment
+      try {
+        const sessionOrderItems = orderItems.map(oi => {
+          const prod = products.find(p => p._id.toString() === oi.product.toString());
+          return {
+            product: {
+              _id: prod?._id || oi.product,
+              name: prod?.name || '',
+              brand: prod?.brand || '',
+              images: prod?.images || [],
+              category: prod?.category || null
+            },
+            quantity: oi.quantity,
+            offerPrice: oi.unitPrice
+          };
+        });
+
+        req.session.orderItems = sessionOrderItems;
+        req.session.address = address;
+        req.session.paymentMethod = paymentMethod;
+        req.session.totalAmount = totalAmount;
+        req.session.deliveryCharge = deliveryCharge;
+        req.session.arrivalDate = new Date(Date.now() + 6 * 24 * 60 * 60 * 1000);
+        req.session.couponDiscount = couponDiscount;
+      } catch (sessErr) {
+        console.error('Error setting session for confirm-payment:', sessErr);
       }
 
       req.session.checkout = null;
@@ -573,20 +607,21 @@ exports.retryCheckoutWithOrderId = async (req, res) => {
 exports.verifyPayment = async (req, res) => {
   try {
     console.log('🔐 verifyPayment called with:', req.body);
-    
+
     const { razorpay_payment_id, razorpay_order_id, razorpay_signature } = req.body;
-    const checkoutData = req.session.checkout?.orderData;
+    // Use pendingOrderData saved by placeOrder for online payments
+    const pending = req.session.pendingOrderData;
     const user = await User.findById(req.session.user._id);
 
-    console.log('Session checkout data:', checkoutData);
+    console.log('Session pendingOrderData:', pending);
     console.log('User:', user?._id);
 
-    if (!checkoutData || !user) {
-      console.error('❌ Session expired or checkout data missing');
+    if (!pending || !user) {
+      console.error('❌ Session expired or pending order data missing');
       return res.json({ success: false, error: "Session expired. Please try again." });
     }
 
-    // ✅ Verify Razorpay signature
+    // Verify Razorpay signature
     const crypto = require("crypto");
     const expectedSignature = crypto
       .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET)
@@ -598,47 +633,62 @@ exports.verifyPayment = async (req, res) => {
       return res.json({ success: false, error: "Invalid payment signature" });
     }
 
-    console.log('✅ Payment signature verified, creating order...');
+    console.log('✅ Payment signature verified, creating order from pending data...');
 
-    // ✅ Create order after successful verification
+    // Create order from pending data (pending.products is an array of { product, quantity, unitPrice })
     const order = await Order.create({
       user: user._id,
-      selectedAddress: req.session.checkout.selectedAddress,
-      products: checkoutData.orderItems.map(i => ({
-        product: i.product._id,
-        quantity: i.quantity,
-        unitPrice: i.offerPrice,
+      selectedAddress: pending.selectedAddress,
+      products: pending.products.map(p => ({
+        product: p.product,
+        quantity: p.quantity,
+        unitPrice: p.unitPrice
       })),
-      totalAmount: checkoutData.totalAmount,
+      totalAmount: pending.totalAmount,
       paymentMethod: "Online",
-      deliveryCharge: checkoutData.deliveryCharge,
+      deliveryCharge: pending.deliveryCharge,
       status: "Paid",
-      discountAmount: checkoutData.discountAmount,
-      couponDiscount: checkoutData.couponDiscount,
+      couponDiscount: pending.couponDiscount,
       estimatedDelivery: new Date(Date.now() + 6 * 24 * 60 * 60 * 1000),
     });
 
     console.log('✅ Order created:', order._id);
 
-    // ✅ Reduce stock
-    for (let item of checkoutData.orderItems) {
-      await Product.findByIdAndUpdate(item.product._id, {
-        $inc: { quantity: -item.quantity },
-      });
-    }
+    // Do NOT decrement stock here: stock was already decremented when creating pendingOrderData in placeOrder
 
-    // ✅ Update session to render confirmation page
-    req.session.orderItems = checkoutData.orderItems;
-    req.session.address = user.addresses.id(req.session.checkout.selectedAddress);
+    // Build session.orderItems for confirmation page with product details
+    const productIds = pending.products.map(p => p.product);
+    const productDocs = await Product.find({ _id: { $in: productIds } });
+    const orderItems = pending.products.map(p => {
+      const prod = productDocs.find(d => d._id.toString() === p.product.toString());
+      return {
+        product: {
+          _id: prod?._id || p.product,
+          name: prod?.name || '',
+          brand: prod?.brand || '',
+          images: prod?.images || [],
+          category: prod?.category || null
+        },
+        quantity: p.quantity,
+        offerPrice: p.unitPrice
+      };
+    });
+
+    // Update session for confirmation page
+    req.session.orderItems = orderItems;
+    req.session.address = user.addresses.id(pending.selectedAddress);
     req.session.paymentMethod = "Online";
-    req.session.totalAmount = checkoutData.totalAmount;
-    req.session.deliveryCharge = checkoutData.deliveryCharge;
+    req.session.totalAmount = pending.totalAmount;
+    req.session.deliveryCharge = pending.deliveryCharge;
     req.session.arrivalDate = new Date(Date.now() + 6 * 24 * 60 * 60 * 1000);
-    req.session.couponDiscount = checkoutData.couponDiscount;
+    req.session.couponDiscount = pending.couponDiscount;
     req.session.orderId = order._id.toString();
     req.session.paymentVerified = true;
 
-    console.log('✅ Session updated, redirecting to confirm-payment');
+    // Clear pending data
+    delete req.session.pendingOrderData;
+
+    console.log('✅ Session updated, ready to redirect to confirm-payment');
 
     return res.json({
       success: true,

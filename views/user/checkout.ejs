@@ -571,11 +571,14 @@ document.querySelector('.submit-btn').addEventListener('click', async (e) => {
     
     // Use AJAX for COD/Wallet to display server-side errors elegantly
     try {
-        const formData = new FormData(form);
-        const response = await fetch('/user/place-order', {
-            method: 'POST',
-            body: formData
-        });
+    // Convert FormData to URLSearchParams so express.urlencoded can parse it
+    const formData = new FormData(form);
+    const body = new URLSearchParams(formData);
+    const response = await fetch('/user/place-order', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8' },
+      body: body.toString()
+    });
 
         // Robust error handling
         if (!response.ok) {
@@ -625,10 +628,13 @@ document.querySelector('.submit-btn').addEventListener('click', async (e) => {
       });
       
       // 1. Submit order details to create a PENDING order session
+      // Convert FormData to URLSearchParams so express.urlencoded can parse the selectedAddress and arrays
       const formData = new FormData(form);
+      const body = new URLSearchParams(formData);
       const orderSessionResponse = await fetch('/user/place-order', {
         method: 'POST',
-        body: formData
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8' },
+        body: body.toString()
       });
 
       // **FIX: Robust check for HTTP status and redirect**
@@ -637,18 +643,33 @@ document.querySelector('.submit-btn').addEventListener('click', async (e) => {
           return;
       }
       if (!orderSessionResponse.ok) {
-          const errorData = await orderSessionResponse.json().catch(() => ({ error: 'Failed to connect to server.' }));
+          // Try to parse JSON; if parsing fails, read plain text to show a clearer error from the server
+          let errorData;
+          try {
+            errorData = await orderSessionResponse.json();
+          } catch (parseErr) {
+            const text = await orderSessionResponse.text().catch(() => null);
+            errorData = { error: text || `Server responded with status ${orderSessionResponse.status}` };
+          }
           Swal.close();
           throw new Error(errorData.error || `Order setup failed with status ${orderSessionResponse.status}`);
       }
-      
-      const sessionData = await orderSessionResponse.json();
+
+      // Parse the successful JSON response, with a safe fallback to text for debugging
+      let sessionData;
+      try {
+        sessionData = await orderSessionResponse.json();
+      } catch (parseErr) {
+        const text = await orderSessionResponse.text().catch(() => null);
+        throw new Error(text || 'Server returned a non-JSON response while setting up the order.');
+      }
       const finalTotalAmount = sessionData.totalAmount;
 
       // 2. Create Razorpay order ID using the final server-validated amount
       const razorpayResponse = await fetch('/user/create-razorpay-order', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin',
         body: JSON.stringify({
           totalAmount: finalTotalAmount // Use the totalAmount validated/returned by the server
         })
@@ -677,25 +698,30 @@ document.querySelector('.submit-btn').addEventListener('click', async (e) => {
             const verifyRes = await fetch('/user/verify-payment', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
+                credentials: 'same-origin',
+                body: JSON.stringify({
                 razorpay_payment_id: response.razorpay_payment_id,
                 razorpay_order_id: response.razorpay_order_id,
                 razorpay_signature: response.razorpay_signature
               })
             });
             
-            // **FIX: Robust verification response handling**
+            // Robust verification response handling
+            console.log('verifyRes status:', verifyRes.status, 'ok:', verifyRes.ok);
             if (!verifyRes.ok) {
                 const errorData = await verifyRes.json().catch(() => ({ error: 'Verification server failed.' }));
                 throw new Error(errorData.error || `Verification failed with status ${verifyRes.status}`);
             }
 
-            const verifyData = await verifyRes.json();
-            
-            if (verifyData.success) {
-              window.location.href = verifyData.redirectUrl || '/user/confirm-payment';
+            const verifyData = await verifyRes.json().catch(() => null);
+            console.log('verifyData:', verifyData);
+
+            if (verifyData && verifyData.success) {
+              // Force a replace navigation so no other handlers can interrupt
+              window.location.replace(verifyData.redirectUrl || '/user/confirm-payment');
+              return;
             } else {
-              throw new Error(verifyData.error || 'Payment verification failed. Please contact support.');
+              throw new Error((verifyData && verifyData.error) || 'Payment verification failed. Please contact support.');
             }
           } catch (err) {
             Swal.fire({
