@@ -521,9 +521,9 @@
     </div>
   </div>
 
-  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+ <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
-  <script>
+<script>
     document.querySelectorAll('.address-item').forEach(item => {
       item.addEventListener('click', function() {
         document.querySelectorAll('.address-item').forEach(i => i.classList.remove('selected'));
@@ -537,6 +537,8 @@
       if (selectedAddress) {
         selectedAddress.closest('.address-item').classList.add('selected');
       }
+      // Initialize payment method state
+      document.querySelector('input[name="paymentMethod"]:checked').dispatchEvent(new Event('change'));
     });
 
 document.querySelector('.submit-btn').addEventListener('click', async (e) => {
@@ -544,32 +546,64 @@ document.querySelector('.submit-btn').addEventListener('click', async (e) => {
 
   if (!validateAddress()) return;
 
+  const form = document.querySelector('.checkout-form');
   const paymentMethod = document.querySelector('input[name="paymentMethod"]:checked')?.value;
-  const grandTotal = Number(`<%= grandTotal %>`);
-  const walletBalance = Number(`<%= walletBalance %>`);
+  // Get grandTotal from the hidden input, which is updated on the server
+  const grandTotal = Number('<%= grandTotal %>'); 
+  const walletBalance = Number('<%= walletBalance %>');
 
-  if (paymentMethod === 'COD') {
-    if (grandTotal > 20000) {
+  // --- Step 1: Handle COD/Wallet submission (direct form submission) ---
+  if (paymentMethod === 'COD' || paymentMethod === 'Wallet') {
+    if (paymentMethod === 'COD' && grandTotal > 20000) {
       return Swal.fire({
         icon: 'warning',
         title: 'COD Not Allowed',
         text: 'Cash on Delivery is only available for orders up to ₹20,000. Please choose Online Payment.'
       });
     }
-    // For COD - submit the form normally
-    document.querySelector('.checkout-form').submit();
-
-  } else if (paymentMethod === 'Wallet') {
-    if (walletBalance < grandTotal) {
+    if (paymentMethod === 'Wallet' && walletBalance < grandTotal) {
       return Swal.fire({
         icon: 'error',
         title: 'Insufficient Wallet Balance',
-        text: 'You dont have enough wallet balance to place this order.'
+        text: 'You don\'t have enough wallet balance to place this order.'
       });
     }
-    // For Wallet - submit the form normally
-    document.querySelector('.checkout-form').submit();
+    
+    // Use AJAX for COD/Wallet to display server-side errors elegantly
+    try {
+        const formData = new FormData(form);
+        const response = await fetch('/user/place-order', {
+            method: 'POST',
+            body: formData
+        });
 
+        // Robust error handling
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({ error: 'Server error occurred.' }));
+            return Swal.fire({
+                icon: 'error',
+                title: 'Order Failed',
+                text: errorData.error || `Failed to place order. Status: ${response.status}`
+            });
+        }
+        
+        const data = await response.json();
+        if (data.success && data.redirectUrl) {
+            window.location.href = data.redirectUrl;
+        } else {
+             throw new Error('Unexpected success response.');
+        }
+
+    } catch (err) {
+        console.error('COD/Wallet payment error:', err);
+        Swal.fire({
+            icon: 'error',
+            title: 'Order Error',
+            text: 'Something went wrong while placing the order. Please try again.'
+        });
+    }
+    
+  // --- Step 2: Handle Online Payment (Two-step process via API) ---
   } else if (paymentMethod === 'Online') {
     if (grandTotal > 450000) {
       return Swal.fire({
@@ -580,47 +614,63 @@ document.querySelector('.submit-btn').addEventListener('click', async (e) => {
     }
 
     try {
-      console.log('Starting online payment process...');
+      Swal.fire({
+          title: 'Processing Order...',
+          text: 'Please wait, we are setting up your payment.',
+          allowOutsideClick: false,
+          showConfirmButton: false,
+          didOpen: () => {
+              Swal.showLoading();
+          }
+      });
       
-      // First, store the order data by submitting the form silently
-      const formData = new FormData(document.querySelector('.checkout-form'));
-      
-      const placeOrderResponse = await fetch('/user/place-order', {
+      // 1. Submit order details to create a PENDING order session
+      const formData = new FormData(form);
+      const orderSessionResponse = await fetch('/user/place-order', {
         method: 'POST',
         body: formData
       });
 
-      if (!placeOrderResponse.ok) {
-        throw new Error('Failed to create order session');
+      // **FIX: Robust check for HTTP status and redirect**
+      if (orderSessionResponse.redirected) {
+          window.location.href = orderSessionResponse.url;
+          return;
       }
+      if (!orderSessionResponse.ok) {
+          const errorData = await orderSessionResponse.json().catch(() => ({ error: 'Failed to connect to server.' }));
+          Swal.close();
+          throw new Error(errorData.error || `Order setup failed with status ${orderSessionResponse.status}`);
+      }
+      
+      const sessionData = await orderSessionResponse.json();
+      const finalTotalAmount = sessionData.totalAmount;
 
-      console.log('Order session created, creating Razorpay order...');
-
-      // Now create Razorpay order
+      // 2. Create Razorpay order ID using the final server-validated amount
       const razorpayResponse = await fetch('/user/create-razorpay-order', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          totalAmount: grandTotal
+          totalAmount: finalTotalAmount // Use the totalAmount validated/returned by the server
         })
       });
 
       if (!razorpayResponse.ok) {
-        throw new Error('Failed to create Razorpay order');
+        const errorData = await razorpayResponse.json().catch(() => ({ error: 'Razorpay API failed.' }));
+        Swal.close();
+        throw new Error(errorData.error || `Failed to create Razorpay order with status ${razorpayResponse.status}`);
       }
 
       const paymentData = await razorpayResponse.json();
-      console.log('Razorpay order created:', paymentData);
-
+      Swal.close(); // Close the processing modal
+      
       const options = {
         key: '<%= razorpayKeyId %>',
-        amount: paymentData.amount,
+        amount: paymentData.amount, // Amount is in paise
         currency: 'INR',
         name: "Keitai",
         description: "Order Payment",
         order_id: paymentData.id,
         handler: async function (response) {
-          console.log('Razorpay payment successful:', response);
           
           try {
             // Verify payment
@@ -634,28 +684,24 @@ document.querySelector('.submit-btn').addEventListener('click', async (e) => {
               })
             });
             
-            const verifyData = await verifyRes.json();
-            console.log('Payment verification result:', verifyData);
+            // **FIX: Robust verification response handling**
+            if (!verifyRes.ok) {
+                const errorData = await verifyRes.json().catch(() => ({ error: 'Verification server failed.' }));
+                throw new Error(errorData.error || `Verification failed with status ${verifyRes.status}`);
+            }
 
+            const verifyData = await verifyRes.json();
+            
             if (verifyData.success) {
-              // Redirect to confirmation page
-              console.log('Payment verified, redirecting to:', verifyData.redirectUrl);
               window.location.href = verifyData.redirectUrl || '/user/confirm-payment';
             } else {
-              console.error('Payment verification failed:', verifyData.error);
-              Swal.fire({
-                icon: 'error',
-                title: 'Payment Failed',
-                text: verifyData.error || 'Payment verification failed. Please contact support.',
-                confirmButtonText: 'OK'
-              });
+              throw new Error(verifyData.error || 'Payment verification failed. Please contact support.');
             }
           } catch (err) {
-            console.error('Payment verification error:', err);
             Swal.fire({
               icon: 'error',
               title: 'Verification Error',
-              text: 'Unable to verify payment. Please contact support.',
+              text: err.message || 'Unable to verify payment. Please contact support.',
               confirmButtonText: 'OK'
             });
           }
@@ -671,7 +717,6 @@ document.querySelector('.submit-btn').addEventListener('click', async (e) => {
       const rzp = new Razorpay(options);
       
       rzp.on('payment.failed', function (response) {
-        console.error('Razorpay payment failed:', response.error);
         Swal.fire({
           icon: 'error',
           title: 'Payment Failed',
@@ -683,11 +728,12 @@ document.querySelector('.submit-btn').addEventListener('click', async (e) => {
       rzp.open();
 
     } catch (err) {
-      console.error('Online payment error:', err);
+      console.error('Online payment critical error:', err);
+      // **FIX: Display the specific error message from the throw**
       Swal.fire({
         icon: 'error',
-        title: 'Payment Error',
-        text: 'Something went wrong while initiating payment. Please try again.',
+        title: 'Payment Initialization Failed',
+        text: err.message || 'Something went wrong while initiating payment. Please try again.',
         confirmButtonText: 'OK'
       });
     }
