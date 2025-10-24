@@ -99,11 +99,11 @@ exports.paymentFailed = async (req, res) => {
         // Clear checkout session
         delete req.session.checkout;
         
-        // Redirect to order details with status
-        return res.redirect(`/api/payment/order-details/${orderId}?status=payment_failed`);
+        // Direct redirect to order details page with retry payment option
+        return res.redirect(`/user/order-details/${orderId}`);
     } catch (err) {
         console.error('Payment failure error:', err);
-        res.status(500).send('Internal Server Error');
+        res.status(500).json({ error: 'Payment processing failed. Please try again.' });
     }
 };
 
