@@ -78,6 +78,7 @@ router.get('/services', userController.getServicesPage);
 router.get('/support', userController.getSupportPage);
 router.get('/contact', userController.getContactPage);
 
+router.get('/order-details/:orderId', ...protect, orderController.getOrderDetails);
 //payment
 router.post('/retry-payment', ...protect, userController.retryPayment);
 
