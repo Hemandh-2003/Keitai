@@ -19,7 +19,7 @@ router.post('/orders/:orderId/cancel', orderController.cancelOrder);
 router.post('/orders/:orderId/return', orderController.requestReturn);
 
 // Add to your routes file
-router.post('/user/retry-payment', auth.isUser, paymentController.retryPaymentFromOrder);
-router.get('/user/order-details/:orderId', auth.isUser, orderController.getOrderDetails);
+router.post('/user/retry-payment', isLoggedIn, paymentController.retryPaymentFromOrder);
+router.get('/user/order-details/:orderId', isLoggedIn, orderController.getOrderDetails);
 
 module.exports = router;
