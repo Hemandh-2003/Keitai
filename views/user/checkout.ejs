@@ -300,6 +300,10 @@
 </head>
 
 <body>
+  <% 
+const isRetryPayment = session?.checkout?.isRetry || false;
+const orderId = session?.checkout?.orderId;
+%>
   <nav class="navbar">
       <div class="logo">
         <a href="/"><img src="/images/logo1.png" alt="Keitai Logo" /></a>
@@ -333,7 +337,10 @@
 
     <form action="/user/place-order" method="POST" class="checkout-form">
       <input type="hidden" name="totalAmount" value="<%= totalAmount %>">
-
+<% if (isRetryPayment) { %>
+  <input type="hidden" name="isRetry" value="true">
+  <input type="hidden" name="orderId" value="<%= orderId %>">
+<% } %>
       <div class="checkout-main">
         <section class="section shipping-address">
           <h2><i class="fas fa-map-marker-alt"></i> Shipping Address</h2>

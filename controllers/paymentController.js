@@ -84,7 +84,6 @@ exports.verifyPayment = async (req, res) => {
 
 exports.paymentFailed = async (req, res) => {
   try {
-    const { error } = req.query;
     const orderId = req.session?.checkout?.orderId;
 
     if (!req.session.user) {
@@ -97,13 +96,16 @@ exports.paymentFailed = async (req, res) => {
     }
 
     // Update the order status in DB
-    const order = await Order.findByIdAndUpdate(orderId, {
+    await Order.findByIdAndUpdate(orderId, {
       status: 'Payment Failed',
       paymentStatus: 'Failed'
-    }, { new: true });
+    });
 
-    // Redirect to order details page with payment failed message
-    return res.redirect(`/user/order-details/${orderId}?status=payment_failed`);
+    // Clear checkout session
+    delete req.session.checkout;
+
+    // Redirect to order details with status
+    return res.redirect(`/order-details/${orderId}?status=payment_failed`);
 
   } catch (err) {
     console.error('❌ Payment failure handling error:', err.message);
@@ -145,7 +147,7 @@ exports.retryPayment = async (req, res) => {
 };
 exports.retryPaymentFromOrder = async (req, res) => {
   try {
-    const { orderId } = req.body;
+    const { orderId } = req.params;
     const user = req.session.user;
     
     if (!user) return res.redirect('/login');
@@ -157,17 +159,20 @@ exports.retryPaymentFromOrder = async (req, res) => {
       return res.status(404).json({ error: 'Order not found' });
     }
 
-    // Store order details in session for checkout
+    // Set up checkout session
     req.session.checkout = {
       orderId: order._id.toString(),
       totalAmount: order.totalAmount,
       productIds: order.products.map(p => p.product._id.toString()),
       quantities: order.products.map(p => p.quantity),
       addressId: order.selectedAddress?._id || null,
-      paymentMethod: 'Razorpay'
+      paymentMethod: 'Razorpay',
+      isRetry: true // Add this flag to indicate retry payment
     };
 
-    res.redirect('/user/checkout');
+    await req.session.save(); // Ensure session is saved
+    res.redirect('/checkout');
+
   } catch (err) {
     console.error('Error in retryPayment:', err);
     res.status(500).json({ error: 'Internal server error' });
