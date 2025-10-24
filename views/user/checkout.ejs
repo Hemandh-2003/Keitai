@@ -749,13 +749,32 @@ document.querySelector('.submit-btn').addEventListener('click', async (e) => {
 
       const rzp = new Razorpay(options);
       
-      rzp.on('payment.failed', function (response) {
-        Swal.fire({
-          icon: 'error',
-          title: 'Payment Failed',
-          text: response.error.description || 'Payment could not be completed.',
-          confirmButtonText: 'OK'
-        });
+      rzp.on('payment.failed', async function (response) {
+        try {
+          // Store failed order ID if available
+          if (response.error && response.error.metadata && response.error.metadata.order_id) {
+            localStorage.setItem('failedOrderId', response.error.metadata.order_id);
+          }
+
+          await Swal.fire({
+            icon: 'error',
+            title: 'Payment Failed',
+            text: 'Your payment was unsuccessful. Redirecting to retry payment...',
+            showConfirmButton: false,
+            timer: 2000
+          });
+
+          // Redirect to retry payment endpoint (fallback to orders if no id)
+          const failedOrderId = response.error?.metadata?.order_id;
+          if (failedOrderId) {
+            window.location.href = `/api/payment/retry/${failedOrderId}`;
+          } else {
+            window.location.href = '/user/orders';
+          }
+        } catch (err) {
+          console.error('Payment failure handling error:', err);
+          window.location.href = '/user/orders'; // Fallback redirect
+        }
       });
       
       rzp.open();
@@ -934,18 +953,26 @@ document.querySelector('.submit-btn').addEventListener('click', async (e) => {
         Swal.fire({ icon: 'error', title: 'Server Error', text: 'Something went wrong' });
       }
     });
-    if (window.performance && window.performance.navigation.type === 2) {
-    const orderId = localStorage.getItem('failedOrderId');
-    if (orderId) {
-        localStorage.removeItem('failedOrderId');
-        window.location.href = `/api/payment/retry/${orderId}`;
-    }
-}
-
 // Store orderId before payment attempt
 function storeOrderId(orderId) {
     localStorage.setItem('failedOrderId', orderId);
 }
+function checkPaymentFailure() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const paymentStatus = urlParams.get('status');
+    const orderId = urlParams.get('orderId');
+
+    if (paymentStatus === 'failed' && orderId) {
+        window.location.href = `/api/payment/retry/${orderId}`;
+        return true;
+    }
+    return false;
+}
+
+// Call this function when the page loads
+document.addEventListener('DOMContentLoaded', function() {
+    checkPaymentFailure();
+});
   </script>
 </body>
 </html>
