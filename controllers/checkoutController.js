@@ -530,7 +530,15 @@ function calculateDiscountAmount(products, quantities, offerPrices = []) {
   });
   return totalDiscount;
 }
-
+// helper: preserve order of productIds
+async function getProductsInOrder(productIds) {
+  // fetch all products at once
+  const products = await Product.find({ _id: { $in: productIds } });
+  // map by id for lookup
+  const map = new Map(products.map(p => [p._id.toString(), p]));
+  // return array in same order as productIds, skipping missing
+  return productIds.map(id => map.get(id.toString())).filter(Boolean);
+}
 exports.retryCheckout = async (req, res) => {
   try {
     if (!req.session.user) return res.redirect('/login');
