@@ -96,18 +96,18 @@ exports.paymentFailed = async (req, res) => {
       return res.redirect('/user/orders');
     }
 
-    // ✅ Update the order status in DB
-    await Order.findByIdAndUpdate(orderId, {
+    // Update the order status in DB
+    const order = await Order.findByIdAndUpdate(orderId, {
       status: 'Payment Failed',
       paymentStatus: 'Failed'
-    });
+    }, { new: true });
 
-    // ✅ Redirect user to order details page (correct path)
-    return res.redirect(`/user/order-details/${orderId}`);
+    // Redirect to order details page with payment failed message
+    return res.redirect(`/user/order-details/${orderId}?status=payment_failed`);
 
   } catch (err) {
     console.error('❌ Payment failure handling error:', err.message);
-    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).send('Internal Server Error during payment failure handling');
+    res.status(500).send('Internal Server Error during payment failure handling');
   }
 };
 
@@ -145,31 +145,31 @@ exports.retryPayment = async (req, res) => {
 };
 exports.retryPaymentFromOrder = async (req, res) => {
   try {
-    const orderId = req.params.orderId;
+    const { orderId } = req.body;
     const user = req.session.user;
+    
     if (!user) return res.redirect('/login');
 
-    const order = await Order.findOne({ _id: orderId, user: user._id }).populate('products.product');
-    if (!order) return res.status(HTTP_STATUS.NOT_FOUND).send('Order not found');
-    if (order.status !== 'Payment Failed' && order.status !== 'Pending') {
-      return res.status(HTTP_STATUS.BAD_REQUEST).send('Payment retry is not allowed for this order');
+    const order = await Order.findOne({ _id: orderId, user: user._id })
+                           .populate('products.product');
+                           
+    if (!order) {
+      return res.status(404).json({ error: 'Order not found' });
     }
 
+    // Store order details in session for checkout
     req.session.checkout = {
-      orderId: order._id.toString(), // use the original order
+      orderId: order._id.toString(),
       totalAmount: order.totalAmount,
       productIds: order.products.map(p => p.product._id.toString()),
       quantities: order.products.map(p => p.quantity),
-      offerPrices: order.products.map(p => p.unitPrice),
       addressId: order.selectedAddress?._id || null,
-      couponId: order.coupon?._id || null,
-      isRetry: true,
-      paymentMethod: order.paymentMethod
+      paymentMethod: 'Razorpay'
     };
 
-    res.redirect('/user/checkout?retry=true'); // flag for retry
+    res.redirect('/user/checkout');
   } catch (err) {
-    console.error('Error in retryPaymentFromOrder:', err);
-    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).send('Server error during payment retry');
+    console.error('Error in retryPayment:', err);
+    res.status(500).json({ error: 'Internal server error' });
   }
 };
