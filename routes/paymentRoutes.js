@@ -13,6 +13,7 @@ router.post('/success', isLoggedIn, paymentController.paymentSuccess);
 router.get('/payment/success/:orderId', isLoggedIn, paymentController.paymentSuccess);
 router.get('/payment/failed', isLoggedIn, paymentController.paymentFailed);
 router.get('/failed', isLoggedIn, paymentController.paymentFailed);
+router.get('/retry/:orderId', paymentController.retryPayment);
 
 // Payment Retry Routes
 router.post('/retry/:orderId', isLoggedIn, paymentController.retryPaymentFromOrder);
