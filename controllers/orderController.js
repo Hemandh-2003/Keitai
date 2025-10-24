@@ -50,22 +50,34 @@ exports.requestReturn = async (req, res) => {
 exports.getOrderDetails = async (req, res) => {
   try {
     const orderId = req.params.orderId;
-    const userId = req.session.user && req.session.user._id;
+    const userId = req.session.user && String(req.session.user._id);
 
     if (!userId) {
       return res.redirect('/user/login');
     }
 
-    const order = await Order.findOne({ _id: orderId, userId }).populate('products.productId');
+    // Load order without assuming the exact user field name or product ref name
+    const order = await Order.findById(orderId)
+      .populate([
+        { path: 'products.productId' },
+        { path: 'products.product' }
+      ]);
 
     if (!order) {
       return res.status(HTTP_STATUS.NOT_FOUND).render('404', { message: MESSAGE.ORDER_NOT_FOUND });
     }
 
-    res.render('user/orderDetails', { order });
+    // Determine owner id from possible fields
+    const ownerId = order.user ? String(order.user) : (order.userId ? String(order.userId) : null);
+
+    if (!ownerId || ownerId !== userId) {
+      // Not the owner — protect details
+      return res.status(HTTP_STATUS.FORBIDDEN).send('You are not authorized to view this order.');
+    }
+
+    return res.render('user/orderDetails', { order });
   } catch (err) {
-    console.error('Order details error:', err);
-    // Avoid rendering a missing 500 view — send a plain 500 response
+    console.error('Order details error:', err && err.stack ? err.stack : err);
     return res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).send(MESSAGE.INTERNAL_SERVER_ERROR);
   }
 };
