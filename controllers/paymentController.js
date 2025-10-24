@@ -130,14 +130,35 @@ const razorpayInstance = new Razorpay({
   key_secret: process.env.RAZORPAY_KEY_SECRET
 });
 exports.retryPayment = async (req, res) => {
-  const { orderId } = req.params;
+  const razorpayOrderId = req.params.orderId;
 
   try {
-    // Redirect user to the order details page so they can retry payment from there
-    return res.redirect(`/user/order-details/${orderId}`);
+    if (!razorpayOrderId) return res.redirect('/user/orders');
+
+    // If the param is a Razorpay order id (starts with "order_") look up the DB order
+    let order = null;
+    if (String(razorpayOrderId).startsWith('order_')) {
+      order = await Order.findOne({ razorpayOrderId }).select('_id');
+    } else {
+      // fallback: param might already be a DB _id
+      try {
+        order = await Order.findById(razorpayOrderId).select('_id');
+      } catch (e) {
+        // invalid ObjectId — ignore and try to find by razorpayOrderId again
+        order = await Order.findOne({ razorpayOrderId }).select('_id');
+      }
+    }
+
+    if (!order) {
+      // Nothing found — send user back to orders list
+      return res.redirect('/user/orders');
+    }
+
+    // Redirect to the user-facing order details page (DB _id)
+    return res.redirect(`/user/order-details/${order._id}`);
   } catch (err) {
     console.error('Error in retryPayment:', err);
-    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).send(MESSAGE.SOMETHING_WENT_WRONG);
+    return res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).send(MESSAGE.SOMETHING_WENT_WRONG || 'Internal Server Error');
   }
 };
 exports.retryPaymentFromOrder = async (req, res) => {
