@@ -50,17 +50,22 @@ exports.requestReturn = async (req, res) => {
 exports.getOrderDetails = async (req, res) => {
   try {
     const orderId = req.params.orderId;
-    const userId = req.session.user._id;
+    const userId = req.session.user && req.session.user._id;
+
+    if (!userId) {
+      return res.redirect('/user/login');
+    }
 
     const order = await Order.findOne({ _id: orderId, userId }).populate('products.productId');
 
     if (!order) {
-      return res.status(HTTP_STATUS.NOT_FOUND).render('404', { message: MESSAGE.ORDER_NOT_FOUND});
+      return res.status(HTTP_STATUS.NOT_FOUND).render('404', { message: MESSAGE.ORDER_NOT_FOUND });
     }
-    //console.log("order console",order);
+
     res.render('user/orderDetails', { order });
   } catch (err) {
     console.error('Order details error:', err);
-    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).render('500', { message: MESSAGE.INTERNAL_SERVER_ERROR });
+    // Avoid rendering a missing 500 view — send a plain 500 response
+    return res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).send(MESSAGE.INTERNAL_SERVER_ERROR);
   }
 };
