@@ -133,8 +133,8 @@ exports.retryPayment = async (req, res) => {
   const { orderId } = req.params;
 
   try {
-    // redirect user to the frontend checkout page for retry
-    return res.redirect(`/user/checkout?orderId=${orderId}`);
+    // Redirect user to the order details page so they can retry payment from there
+    return res.redirect(`/user/order-details/${orderId}`);
   } catch (err) {
     console.error('Error in retryPayment:', err);
     res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).send(MESSAGE.SOMETHING_WENT_WRONG);
