@@ -446,34 +446,42 @@ exports.renderConfirmPayment = async (req, res) => {
 
 exports.createRazorpayOrder = async (req, res) => {
   try {
-    // Ensure totalAmount is a number
-    let totalAmount = Number(req.body.totalAmount);
-    if (isNaN(totalAmount) || totalAmount <= 0) {
-      return res.status(400).json({ error: 'Invalid amount' });
-    }
-
-    // Convert to paise
+    const { totalAmount, orderId } = req.body;
     const amountInPaise = Math.round(totalAmount * 100);
 
-    const options = {
-      amount: amountInPaise,
-      currency: 'INR',
-      receipt: `order_rcpt_${Date.now()}`,
-    };
+    let razorpayOrder;
+    if (orderId) {
+      // Retry: Update existing order with new Razorpay order
+      razorpayOrder = await razorpay.orders.create({
+        amount: amountInPaise,
+        currency: 'INR',
+        receipt: 'retry_' + orderId,
+        payment_capture: 1
+      });
 
-    const order = await razorpay.orders.create(options);
+      await Order.findByIdAndUpdate(orderId, { razorpayOrderId: razorpayOrder.id });
+    } else {
+      // Normal order
+      razorpayOrder = await razorpay.orders.create({
+        amount: amountInPaise,
+        currency: 'INR',
+        receipt: 'receipt_' + Date.now(),
+        payment_capture: 1
+      });
+    }
 
-    console.log('✅ Razorpay order created:', order); // Debug log
     res.json({
-      id: order.id,
-      currency: order.currency,
-      amount: order.amount,
+      success: true,
+      id: razorpayOrder.id,
+      currency: razorpayOrder.currency,
+      amount: razorpayOrder.amount
     });
   } catch (err) {
-    console.error('❌ createRazorpayOrder Error:', err);
+    console.error('Razorpay order creation failed:', err);
     res.status(500).json({ error: 'Failed to create Razorpay order' });
   }
 };
+
 
 exports.createInlineAddress = async (req, res) => {
   try {
