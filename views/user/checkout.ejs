@@ -934,6 +934,18 @@ document.querySelector('.submit-btn').addEventListener('click', async (e) => {
         Swal.fire({ icon: 'error', title: 'Server Error', text: 'Something went wrong' });
       }
     });
+    if (window.performance && window.performance.navigation.type === 2) {
+    const orderId = localStorage.getItem('failedOrderId');
+    if (orderId) {
+        localStorage.removeItem('failedOrderId');
+        window.location.href = `/api/payment/retry/${orderId}`;
+    }
+}
+
+// Store orderId before payment attempt
+function storeOrderId(orderId) {
+    localStorage.setItem('failedOrderId', orderId);
+}
   </script>
 </body>
 </html>

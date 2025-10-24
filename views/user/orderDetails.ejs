@@ -234,12 +234,10 @@
               </form>
               <% } %>
 
-   <% if (order.status === 'Payment Failed') { %>
-    <form action="/api/payment/retry/<%= order._id %>" method="POST" class="retry-payment-form">
-        <button type="submit" class="btn btn-primary retry-payment-btn">
-            <i class="fas fa-redo"></i> Retry Payment
-        </button>
-    </form>
+<% if (order.status === 'Payment Failed') { %>
+    <button onclick="window.location.href='/api/payment/retry/<%= order._id %>'" class="btn btn-primary retry-payment-btn">
+        <i class="fas fa-redo"></i> Retry Payment
+    </button>
 <% } %>
         </div>
       </main>
@@ -521,6 +519,19 @@
           });
         });
       });
+      function handlePaymentFailure() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const paymentStatus = urlParams.get('status');
+    const orderId = urlParams.get('orderId');
+
+    if (paymentStatus === 'failed' && orderId) {
+        // Redirect to retry payment endpoint
+        window.location.href = `/api/payment/retry/${orderId}`;
+    }
+}
+
+// Call the function when page loads
+document.addEventListener('DOMContentLoaded', handlePaymentFailure);
     </script>
 </body>
 
