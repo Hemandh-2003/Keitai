@@ -85,31 +85,32 @@ exports.verifyPayment = async (req, res) => {
 exports.paymentFailed = async (req, res) => {
   try {
     const { error } = req.query;
-    const orderId = req.session.checkout.orderId;
+    const orderId = req.session?.checkout?.orderId;
 
     if (!req.session.user) {
       return res.redirect('/login');
     }
 
-    // ✅ Update order status
-    if (orderId) {
-      await Order.findByIdAndUpdate(orderId, {
-        status: 'Payment Failed'
-      });
+    if (!orderId) {
+      console.warn("⚠️ No order ID found in session during payment failure");
+      return res.redirect('/user/orders');
     }
 
-    // res.render('user/payment-failed', {
-    //   orderId,
-    //   error,
-    //   user: req.session.user
-    // });
-    res.redirect(`/user/order/${orderId}`);
+    // ✅ Update the order status in DB
+    await Order.findByIdAndUpdate(orderId, {
+      status: 'Payment Failed',
+      paymentStatus: 'Failed'
+    });
+
+    // ✅ Redirect user to order details page (correct path)
+    return res.redirect(`/user/order-details/${orderId}`);
 
   } catch (err) {
-    console.error('Payment failure handling error:', err.message);
+    console.error('❌ Payment failure handling error:', err.message);
     res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).send('Internal Server Error during payment failure handling');
   }
 };
+
 
 exports.renderRetryPaymentPage = (req, res) => {
   const { orderId } = req.body;
