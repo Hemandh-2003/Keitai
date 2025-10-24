@@ -79,7 +79,7 @@ app.set('views', path.join(__dirname, 'views'));
 
 app.use(express.static(path.join(__dirname, 'public')));
 app.use('/uploads', express.static(path.join(__dirname, 'public/uploads')));
-app.use('/payment', paymentRoutes);
+app.use('/api/payment', paymentRoutes); 
 app.use(methodOverride('_method'));
 
 const uploadDir = './public/uploads';

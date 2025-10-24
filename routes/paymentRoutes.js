@@ -15,7 +15,7 @@ router.get('/payment/failed', isLoggedIn, paymentController.paymentFailed);
 router.get('/failed', isLoggedIn, paymentController.paymentFailed);
 
 // Payment Retry Routes
-router.post('/retry-payment', isLoggedIn, paymentController.retryPaymentFromOrder);
+router.post('/retry/:orderId', isLoggedIn, paymentController.retryPaymentFromOrder);
 router.get('/retry-payment-page/:orderId', isLoggedIn, paymentController.renderRetryPaymentPage);
 
 // Order Management Routes

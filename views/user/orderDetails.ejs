@@ -234,12 +234,12 @@
               </form>
               <% } %>
 
-               <% if (order.status === 'Payment Failed') { %>
-  <form action="/retry-payment/<%= order._id %>" method="POST" class="action-form">
-    <button type="submit" class="btn btn-warning">
-      <i class="fas fa-redo"></i> Retry Payment
-    </button>
-  </form>
+   <% if (order.status === 'Payment Failed') { %>
+    <form action="/api/payment/retry/<%= order._id %>" method="POST" class="retry-payment-form">
+        <button type="submit" class="btn btn-primary retry-payment-btn">
+            <i class="fas fa-redo"></i> Retry Payment
+        </button>
+    </form>
 <% } %>
         </div>
       </main>

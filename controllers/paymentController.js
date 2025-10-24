@@ -83,34 +83,28 @@ exports.verifyPayment = async (req, res) => {
 };
 
 exports.paymentFailed = async (req, res) => {
-  try {
-    const orderId = req.session?.checkout?.orderId;
+    try {
+        const orderId = req.session?.checkout?.orderId;
+        
+        if (!orderId) {
+            return res.redirect('/user/orders');
+        }
 
-    if (!req.session.user) {
-      return res.redirect('/login');
+        // Update order status
+        await Order.findByIdAndUpdate(orderId, {
+            status: 'Payment Failed',
+            paymentStatus: 'Failed'
+        });
+
+        // Clear checkout session
+        delete req.session.checkout;
+        
+        // Redirect to order details with status
+        return res.redirect(`/api/payment/order-details/${orderId}?status=payment_failed`);
+    } catch (err) {
+        console.error('Payment failure error:', err);
+        res.status(500).send('Internal Server Error');
     }
-
-    if (!orderId) {
-      console.warn("⚠️ No order ID found in session during payment failure");
-      return res.redirect('/user/orders');
-    }
-
-    // Update the order status in DB
-    await Order.findByIdAndUpdate(orderId, {
-      status: 'Payment Failed',
-      paymentStatus: 'Failed'
-    });
-
-    // Clear checkout session
-    delete req.session.checkout;
-
-    // Redirect to order details with status
-    return res.redirect(`/order-details/${orderId}?status=payment_failed`);
-
-  } catch (err) {
-    console.error('❌ Payment failure handling error:', err.message);
-    res.status(500).send('Internal Server Error during payment failure handling');
-  }
 };
 
 
@@ -146,35 +140,38 @@ exports.retryPayment = async (req, res) => {
   }
 };
 exports.retryPaymentFromOrder = async (req, res) => {
-  try {
-    const { orderId } = req.params;
-    const user = req.session.user;
-    
-    if (!user) return res.redirect('/login');
+    try {
+        const { orderId } = req.params;
+        const user = req.session.user;
+        
+        if (!user) {
+            return res.redirect('/login');
+        }
 
-    const order = await Order.findOne({ _id: orderId, user: user._id })
-                           .populate('products.product');
-                           
-    if (!order) {
-      return res.status(404).json({ error: 'Order not found' });
+        const order = await Order.findOne({ 
+            _id: orderId, 
+            user: user._id 
+        }).populate('products.product');
+        
+        if (!order) {
+            return res.status(404).json({ error: 'Order not found' });
+        }
+
+        // Set up checkout session for retry
+        req.session.checkout = {
+            orderId: order._id.toString(),
+            totalAmount: order.totalAmount,
+            productIds: order.products.map(p => p.product._id.toString()),
+            quantities: order.products.map(p => p.quantity),
+            addressId: order.selectedAddress?._id || null,
+            paymentMethod: 'Razorpay',
+            isRetry: true
+        };
+
+        await req.session.save();
+        res.redirect('/user/checkout');
+    } catch (err) {
+        console.error('Retry payment error:', err);
+        res.status(500).json({ error: 'Internal server error' });
     }
-
-    // Set up checkout session
-    req.session.checkout = {
-      orderId: order._id.toString(),
-      totalAmount: order.totalAmount,
-      productIds: order.products.map(p => p.product._id.toString()),
-      quantities: order.products.map(p => p.quantity),
-      addressId: order.selectedAddress?._id || null,
-      paymentMethod: 'Razorpay',
-      isRetry: true // Add this flag to indicate retry payment
-    };
-
-    await req.session.save(); // Ensure session is saved
-    res.redirect('/checkout');
-
-  } catch (err) {
-    console.error('Error in retryPayment:', err);
-    res.status(500).json({ error: 'Internal server error' });
-  }
 };

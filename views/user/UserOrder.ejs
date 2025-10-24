@@ -465,12 +465,12 @@
             </div>
             <footer>
               <% if (order.status==='Payment Failed' ) { %>
-                <form action="/user/retry-payment" method="POST" style="display:inline;">
-                  <input type="hidden" name="orderId" value="<%= order._id %>">
-                  <button type="submit" class="view-details-btn" style="background: #dc3545;">
-                    <i class="fas fa-sync-alt"></i> Retry Payment
-                  </button>
-                </form>
+                 <form action="/api/payment/retry/<%= order._id %>" method="POST" style="display:inline;">
+    <input type="hidden" name="orderId" value="<%= order._id %>">
+    <button type="submit" class="view-details-btn retry-payment-btn">
+      <i class="fas fa-sync-alt"></i> Retry Payment
+    </button>
+  </form>
                 <% } else { %>
                   <button class="view-details-btn">
                     <a href="/user/order/<%= order._id %>">
