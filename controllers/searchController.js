@@ -131,6 +131,13 @@ const getSearchResults = async (req, res) => {
       limit: limitNum
     };
 
+    // Helper function to build pagination URLs
+    const buildPaginationUrl = (page) => {
+      const url = new URL(`${req.protocol}://${req.get('host')}${req.originalUrl}`);
+      url.searchParams.set('page', page);
+      return url.toString();
+    };
+
     res.render('user/search', {
       products,
       categories,
@@ -145,12 +152,21 @@ const getSearchResults = async (req, res) => {
         category: categorySlug
       },
       pagination,
+      buildPaginationUrl,
       title: query ? `Search results for "${query}"` : 'Search Products',
       error: null
     });
 
   } catch (error) {
     console.error('Search error:', error);
+    
+    // Helper function for error case
+    const buildPaginationUrl = (page) => {
+      const url = new URL(`${req.protocol}://${req.get('host')}${req.originalUrl}`);
+      url.searchParams.set('page', page);
+      return url.toString();
+    };
+    
     res.status(500).render('user/search', {
       products: [],
       categories: [],
@@ -169,6 +185,7 @@ const getSearchResults = async (req, res) => {
         prevPage: null,
         limit: 12
       },
+      buildPaginationUrl,
       title: 'Search Products',
       error: 'An error occurred while searching. Please try again.'
     });
