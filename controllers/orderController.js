@@ -1,4 +1,5 @@
 const Order = require('../models/Order');
+const User = require('../models/User');
 const { MESSAGE } = require('../SM/messages');
 const {HTTP_STATUS}= require('../SM/status');
 
@@ -75,7 +76,14 @@ exports.getOrderDetails = async (req, res) => {
       return res.status(HTTP_STATUS.FORBIDDEN).send('You are not authorized to view this order.');
     }
 
-    return res.render('user/orderDetails', { order });
+    // Get user data for Razorpay prefill
+    const user = await User.findById(userId);
+    
+    return res.render('user/orderDetails', { 
+      order,
+      user: user,
+      razorpayKeyId: process.env.RAZORPAY_KEY_ID
+    });
   } catch (err) {
     console.error('Order details error:', err && err.stack ? err.stack : err);
     return res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).send(MESSAGE.INTERNAL_SERVER_ERROR);

@@ -184,24 +184,36 @@ exports.retryPaymentFromOrder = async (req, res) => {
             return res.status(400).json({ error: 'Order is not eligible for retry' });
         }
 
-        // Set up checkout session for retry with proper structure
-        req.session.checkout = {
-            productIds: order.products.map(p => p.product._id.toString()),
-            quantities: order.products.map(p => p.quantity),
-            offerPrices: order.products.map(p => p.unitPrice || p.price),
-            totalAmount: order.totalAmount,
-            orderId: order._id.toString(),
-            selectedAddress: order.selectedAddress?.toString(),
-            isRetry: true,
-            retryOrderId: order._id.toString()
-        };
+        // For AJAX requests, return JSON with payment setup
+        if (req.headers.accept && req.headers.accept.includes('application/json')) {
+            // Set up session for retry payment
+            req.session.checkout = {
+                productIds: order.products.map(p => p.product._id.toString()),
+                quantities: order.products.map(p => p.quantity),
+                offerPrices: order.products.map(p => p.unitPrice || p.price),
+                totalAmount: order.totalAmount,
+                orderId: order._id.toString(),
+                selectedAddress: order.selectedAddress?.toString(),
+                isRetry: true,
+                retryOrderId: order._id.toString()
+            };
 
-        // Clear any existing pending order data
-        delete req.session.pendingOrderData;
-        delete req.session.coupon;
+            // Clear any existing pending order data
+            delete req.session.pendingOrderData;
+            delete req.session.coupon;
 
-        await req.session.save();
-        res.redirect('/user/checkout');
+            await req.session.save();
+
+            return res.json({
+                success: true,
+                orderId: order._id,
+                totalAmount: order.totalAmount,
+                message: 'Ready for retry payment'
+            });
+        }
+
+        // For regular requests, redirect to order details
+        res.redirect(`/user/order-details/${orderId}`);
     } catch (err) {
         console.error('Retry payment error:', err);
         res.status(500).json({ error: 'Internal server error' });
