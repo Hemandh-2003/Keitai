@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>
-        <%= product.name %> - Product Details
+        <%= product ? product.name : 'Product Not Found' %> - Product Details
     </title>
     <link rel="stylesheet" href="/css/search.css">
     <link rel="stylesheet" href="/css/review.css">
@@ -533,6 +533,40 @@
             line-height: 1.7;
             color: #555;
         }
+
+        /* Product Not Found Styles */
+        .product-not-found {
+            padding: 4rem 0;
+            text-align: center;
+            background: #f8f9fa;
+        }
+
+        .product-not-found h1 {
+            font-size: 2.5rem;
+            color: #333;
+            margin-bottom: 1rem;
+        }
+
+        .product-not-found p {
+            font-size: 1.2rem;
+            color: #666;
+            margin-bottom: 2rem;
+        }
+
+        .product-not-found .btn {
+            padding: 12px 30px;
+            background: #007bff;
+            color: white;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .product-not-found .btn:hover {
+            background: #0056b3;
+            transform: translateY(-2px);
+        }
         
         .offer-list {
             list-style: none;
@@ -875,17 +909,18 @@
     <nav aria-label="breadcrumb">
         <ol class="breadcrumb">
             <li class="breadcrumb-item">
-                <a href="/<%= product.category && product.category.name.toLowerCase() %>">
-                    <%= product.category && product.category.name %>
+                <a href="/<%= product && product.category && product.category.name ? product.category.name.toLowerCase() : 'home' %>">
+                    <%= product && product.category && product.category.name ? product.category.name : 'Store' %>
                 </a>
             </li>
             <li class="breadcrumb-item active" aria-current="page">
-                <%= product.name %>
+                <%= product ? product.name : 'Product Not Found' %>
             </li>
         </ol>
     </nav>
 
     <!-- Main Product Section -->
+    <% if (product) { %>
     <section class="product-main">
         <div class="product-gallery">
             <div class="main-image-container">
@@ -1022,6 +1057,16 @@
             </form>
         </div>
     </section>
+    <% } else { %>
+    <!-- Product Not Found -->
+    <section class="product-not-found">
+        <div class="container">
+            <h1>Product Not Found</h1>
+            <p>The product you're looking for doesn't exist or has been removed.</p>
+            <a href="/home" class="btn btn-primary">Back to Store</a>
+        </div>
+    </section>
+    <% } %>
 
     <!-- Product Variants -->
     <% if (variants.length > 0) { %>
@@ -1048,6 +1093,7 @@
     <% } %>
 
     <!-- Product Description -->
+    <% if (product) { %>
     <div class="product-description">
         <h3>Description</h3>
         <p><%= product.description %></p>
@@ -1072,8 +1118,10 @@
             </ul>
         <% } %>
     </div>
+    <% } %>
 
     <!-- Product Highlights -->
+    <% if (product) { %>
     <section class="highlights">
         <div class="container">
             <h2>Product Highlights</h2>
@@ -1090,6 +1138,7 @@
             <% } %>
         </div>
     </section>
+    <% } %>
 
    <!-- Reviews Section -->
 <section id="reviews" class="reviews-section">
