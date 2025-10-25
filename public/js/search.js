@@ -96,8 +96,6 @@ document.addEventListener('DOMContentLoaded', function () {
                         <option value="">All Brands</option>
                         <option value="Apple" ${currentFilters.brand === 'Apple' ? 'selected' : ''}>Apple</option>
                         <option value="Samsung" ${currentFilters.brand === 'Samsung' ? 'selected' : ''}>Samsung</option>
-                        <option value="Dell" ${currentFilters.brand === 'Dell' ? 'selected' : ''}>Dell</option>
-                        <option value="HP" ${currentFilters.brand === 'HP' ? 'selected' : ''}>HP</option>
                     </select>
                 </div>
                 <div class="filter-row">
