@@ -200,6 +200,8 @@ exports.viewOrderDetails = async (req, res) => {
     res.render('user/orderDetails', {
       order,
       selectedAddress,
+      user: req.user,
+      razorpayKeyId: process.env.RAZORPAY_KEY_ID,
     });
 
   } catch (err) {
