@@ -192,16 +192,23 @@ const getSearchResults = async (req, res) => {
   }
 };
 
-// API endpoint for live search (existing functionality)
+// API endpoint for live search with sorting, filtering, and pagination
 const searchAPI = async (req, res) => {
   try {
-    const { query } = req.query;
+    const { 
+      query, 
+      page = 1, 
+      sort = 'relevance', 
+      brand, 
+      price 
+    } = req.query;
 
     if (!query || query.trim() === '') {
-      return res.json([]);
+      return res.json({ products: [], total: 0, pagination: {} });
     }
 
-    const products = await Product.find({
+    // Build search query
+    let searchQuery = {
       $or: [
         { name: { $regex: query, $options: 'i' } },
         { description: { $regex: query, $options: 'i' } },
@@ -209,12 +216,78 @@ const searchAPI = async (req, res) => {
       ],
       isBlocked: false,
       isDeleted: false
-    })
-      .limit(10)
-      .populate('category')
-      .select('name images salesPrice regularPrice brand category');
+    };
 
-    res.json(products);
+    // Add brand filter
+    if (brand) {
+      searchQuery.brand = { $regex: brand, $options: 'i' };
+    }
+
+    // Add price filter
+    if (price) {
+      const priceFilter = {};
+      switch (price) {
+        case 'below-50000':
+          priceFilter.$lt = 50000;
+          break;
+        case '50000-100000':
+          priceFilter.$gte = 50000;
+          priceFilter.$lte = 100000;
+          break;
+        case 'above-100000':
+          priceFilter.$gt = 100000;
+          break;
+      }
+      if (Object.keys(priceFilter).length > 0) {
+        searchQuery.salesPrice = priceFilter;
+      }
+    }
+
+    // Build sort object
+    let sortObj = {};
+    switch (sort) {
+      case 'price-asc':
+        sortObj = { salesPrice: 1 };
+        break;
+      case 'price-desc':
+        sortObj = { salesPrice: -1 };
+        break;
+      case 'name-asc':
+        sortObj = { name: 1 };
+        break;
+      case 'name-desc':
+        sortObj = { name: -1 };
+        break;
+      default: // relevance
+        sortObj = { name: 1 };
+    }
+
+    // Calculate pagination
+    const pageNum = parseInt(page);
+    const limit = 10;
+    const skip = (pageNum - 1) * limit;
+
+    // Get total count
+    const total = await Product.countDocuments(searchQuery);
+
+    // Get products with pagination
+    const products = await Product.find(searchQuery)
+      .populate('category')
+      .select('name images salesPrice regularPrice brand category')
+      .sort(sortObj)
+      .skip(skip)
+      .limit(limit);
+
+    res.json({
+      products,
+      total,
+      pagination: {
+        currentPage: pageNum,
+        totalPages: Math.ceil(total / limit),
+        hasNextPage: pageNum < Math.ceil(total / limit),
+        hasPrevPage: pageNum > 1
+      }
+    });
   } catch (error) {
     console.error('Search API error:', error);
     res.status(500).json({ error: 'Search failed' });
