@@ -220,28 +220,7 @@ app.get('/:slug', async (req, res) => {
   }
 });
 
-app.get('/api/search', async (req, res) => {
-  const { query } = req.query;
-
-  try {
-    const products = await Product.find({
-      $or: [
-        { name: { $regex: query, $options: 'i' } }, 
-        { description: { $regex: query, $options: 'i' } },
-        { brand: { $regex: query, $options: 'i' } }
-      ],
-      isBlocked: false,
-      isDeleted: false
-    })
-      .limit(10)
-      .populate('category');
-
-    res.json(products);
-  } catch (error) {
-    console.error('Search error:', error);
-    res.status(500).json({ error: 'Search failed' });
-  }
-});
+// Search API moved to searchController.js
 
 app.get('/admin/products', async (req, res) => {
   const categories = await Category.find();

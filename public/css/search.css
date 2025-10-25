@@ -104,6 +104,16 @@
     font-size: 15px;
 }
 
+.view-all-results {
+    background: #f8f9fa;
+    border-top: 2px solid #e9ecef;
+    font-weight: 600;
+}
+
+.view-all-results:hover {
+    background: #e9ecef;
+}
+
 .no-results, .error {
     padding: 20px;
     text-align: center;
@@ -148,5 +158,337 @@
 @keyframes spin {
     to {
         transform: translateY(-50%) rotate(360deg);
+    }
+}
+
+/* Search Page Styles */
+.search-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 60px 0 40px;
+    margin-bottom: 30px;
+}
+
+.search-title {
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin-bottom: 10px;
+    text-align: center;
+}
+
+.search-subtitle {
+    font-size: 1.1rem;
+    opacity: 0.9;
+    text-align: center;
+    margin: 0;
+}
+
+.search-content {
+    padding: 0 0 60px;
+}
+
+.filter-sidebar {
+    background: #f8f9fa;
+    border-radius: 12px;
+    padding: 25px;
+    margin-bottom: 30px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+    position: sticky;
+    top: 20px;
+}
+
+.filter-sidebar h3 {
+    font-size: 1.4rem;
+    font-weight: 600;
+    margin-bottom: 25px;
+    color: #333;
+    border-bottom: 2px solid #e9ecef;
+    padding-bottom: 10px;
+}
+
+.filter-group {
+    margin-bottom: 25px;
+}
+
+.filter-group h4 {
+    font-size: 1rem;
+    font-weight: 600;
+    margin-bottom: 12px;
+    color: #555;
+}
+
+.filter-group select,
+.filter-group input {
+    width: 100%;
+    padding: 10px 12px;
+    border: 2px solid #e9ecef;
+    border-radius: 8px;
+    font-size: 14px;
+    transition: all 0.3s ease;
+    background: white;
+}
+
+.filter-group select:focus,
+.filter-group input:focus {
+    outline: none;
+    border-color: #007bff;
+    box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+}
+
+.price-inputs {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.price-inputs input {
+    flex: 1;
+}
+
+.price-inputs span {
+    font-weight: 500;
+    color: #666;
+    white-space: nowrap;
+}
+
+.filter-buttons {
+    display: flex;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+.btn-apply,
+.btn-clear {
+    flex: 1;
+    padding: 12px 20px;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-size: 14px;
+}
+
+.btn-apply {
+    background: #007bff;
+    color: white;
+}
+
+.btn-apply:hover {
+    background: #0056b3;
+    transform: translateY(-1px);
+}
+
+.btn-clear {
+    background: #6c757d;
+    color: white;
+}
+
+.btn-clear:hover {
+    background: #545b62;
+    transform: translateY(-1px);
+}
+
+.products-grid {
+    margin-bottom: 40px;
+}
+
+.product-card {
+    background: white;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+    transition: all 0.3s ease;
+    position: relative;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.product-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+}
+
+.product-card img {
+    width: 100%;
+    height: 200px;
+    object-fit: contain;
+    margin-bottom: 15px;
+    border-radius: 8px;
+}
+
+.product-card p {
+    margin: 8px 0;
+    font-weight: 500;
+    color: #333;
+}
+
+.current-price {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: #28a745;
+}
+
+.original-price {
+    font-size: 1rem;
+    color: #999;
+    text-decoration: line-through;
+}
+
+.discount-badge {
+    background: #ff6b6b;
+    color: white;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 600;
+    margin-left: 8px;
+}
+
+.icon-stack {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    z-index: 10;
+}
+
+.wishlist-icon,
+.cart-icon {
+    width: 40px;
+    height: 40px;
+    border: none;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.9);
+    color: #666;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.wishlist-icon:hover,
+.cart-icon:hover {
+    background: #007bff;
+    color: white;
+    transform: scale(1.1);
+}
+
+.wishlist-icon.active {
+    background: #dc3545;
+    color: white;
+}
+
+.blocked-product {
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+.no-results {
+    text-align: center;
+    padding: 60px 20px;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+}
+
+.no-results-icon {
+    font-size: 4rem;
+    color: #ccc;
+    margin-bottom: 20px;
+}
+
+.no-results h3 {
+    font-size: 1.5rem;
+    color: #333;
+    margin-bottom: 15px;
+}
+
+.no-results p {
+    color: #666;
+    margin-bottom: 25px;
+    font-size: 1.1rem;
+}
+
+.pagination-nav {
+    margin-top: 40px;
+}
+
+.pagination {
+    margin: 0;
+}
+
+.page-link {
+    color: #007bff;
+    border: 2px solid #e9ecef;
+    padding: 10px 15px;
+    margin: 0 2px;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+}
+
+.page-link:hover {
+    background: #007bff;
+    color: white;
+    border-color: #007bff;
+    transform: translateY(-1px);
+}
+
+.page-item.active .page-link {
+    background: #007bff;
+    border-color: #007bff;
+    color: white;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .search-title {
+        font-size: 2rem;
+    }
+    
+    .filter-sidebar {
+        position: static;
+        margin-bottom: 20px;
+    }
+    
+    .filter-buttons {
+        flex-direction: column;
+    }
+    
+    .price-inputs {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .price-inputs span {
+        text-align: center;
+        margin: 5px 0;
+    }
+}
+
+@media (max-width: 576px) {
+    .search-header {
+        padding: 40px 0 30px;
+    }
+    
+    .search-title {
+        font-size: 1.8rem;
+    }
+    
+    .filter-sidebar {
+        padding: 20px;
+    }
+    
+    .product-card {
+        padding: 15px;
+    }
+    
+    .product-card img {
+        height: 150px;
     }
 }

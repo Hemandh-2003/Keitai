@@ -8,6 +8,7 @@ const orderController = require('../controllers/orderController');
 const userController= require('../controllers/userController')
 const checkBlockedUser = require('../middleware/checkBlocked');
 const couponController = require('../controllers/couponController');
+const searchController = require('../controllers/searchController');
 const multer = require('multer');
 const upload = multer();
 const router = express.Router();
@@ -84,5 +85,9 @@ router.post('/retry-payment', ...protect, userController.retryPayment);
 
 //whishlist
 router.post('/add-to-cart-from-wishlist/:productId', ...protect, userController.addToCartFromWishlist);
+
+// Search Routes
+router.get('/search', searchController.getSearchResults);
+router.get('/api/search', searchController.searchAPI);
 
 module.exports = router;

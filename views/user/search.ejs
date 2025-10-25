@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %> - Keitai</title>
+  <link rel="icon" href="/images/faibcon.jpg">
+  <link rel="stylesheet" href="/css/search.css">
+  <link rel="stylesheet" href="/css/page.css">
+  <link rel="stylesheet" href="/css/loader.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+</head>
+
+<body>
+  <div id="loader" class="loader"></div>
+  
+  <!-- Header -->
+  <header>
+    <nav class="navbar">
+      <div class="logo">
+        <a href="/">
+          <img src="/images/logo1.png" alt="Keitai Logo"></a>
+      </div>
+      <ul class="nav-links">
+        <li><a href="/home">Store</a></li>
+        <li><a href="/laptop">Laptop</a></li>
+        <li><a href="/tablet">Tablet</a></li>
+        <li><a href="/phone">Phone</a></li>
+        <li><a href="/watch">Watch</a></li>
+        <li><a href="/earpods">EarPods</a></li>
+        <li><a href="/accessories">Accessories</a></li>
+      </ul>
+      <div class="nav-icons">
+        <div class="search-container">
+          <input type="text" id="search-input" placeholder="Search for products..." value="<%= query %>">
+          <i class="fas fa-search"></i>
+          <div id="search-results"></div>
+        </div>
+        <a href="/cart" class="cart-icon-wrapper position-relative">
+          <i class="fas fa-shopping-cart"></i>
+          <span class="cart-count-badge" id="cart-count">0</span>
+        </a>
+        <a href="/wishlist" class="wishlist-icon-wrapper position-relative" style="margin-left: 18px;">
+          <i class="fas fa-heart"></i>
+          <span class="wishlist-count-badge" id="wishlist-count">
+            <%= wishlist && wishlist.products ? wishlist.products.length : 0 %>
+          </span>
+        </a>
+        <a href="/user/profile"><i class="fas fa-user"></i></a>
+      </div>
+    </nav>
+  </header>
+
+  <!-- Main Content -->
+  <main>
+    <div class="content-wrapper">
+      <!-- Search Header -->
+      <section class="search-header">
+        <div class="container">
+          <div class="row">
+            <div class="col-12">
+              <h1 class="search-title">
+                <% if (query) { %>
+                  Search Results for "<%= query %>"
+                <% } else { %>
+                  Search Products
+                <% } %>
+              </h1>
+              <% if (pagination.totalProducts > 0) { %>
+                <p class="search-subtitle">
+                  Found <%= pagination.totalProducts %> product<%= pagination.totalProducts !== 1 ? 's' : '' %>
+                </p>
+              <% } %>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Filters and Results -->
+      <section class="search-content">
+        <div class="container">
+          <div class="row">
+            <!-- Filter Sidebar -->
+            <div class="col-lg-3 col-md-4">
+              <div class="filter-sidebar">
+                <h3>Filter By</h3>
+                <form method="GET" action="/user/search" id="filter-form">
+                  <input type="hidden" name="q" value="<%= query %>">
+                  
+                  <!-- Sort Filter -->
+                  <div class="filter-group">
+                    <h4>Sort By</h4>
+                    <select name="sort" onchange="this.form.submit()">
+                      <option value="relevance" <%= sort === 'relevance' ? 'selected' : '' %>>Relevance</option>
+                      <option value="price-asc" <%= sort === 'price-asc' ? 'selected' : '' %>>Price: Low to High</option>
+                      <option value="price-desc" <%= sort === 'price-desc' ? 'selected' : '' %>>Price: High to Low</option>
+                      <option value="name-asc" <%= sort === 'name-asc' ? 'selected' : '' %>>Name: A to Z</option>
+                      <option value="name-desc" <%= sort === 'name-desc' ? 'selected' : '' %>>Name: Z to A</option>
+                      <option value="newest" <%= sort === 'newest' ? 'selected' : '' %>>Newest First</option>
+                      <option value="oldest" <%= sort === 'oldest' ? 'selected' : '' %>>Oldest First</option>
+                    </select>
+                  </div>
+
+                  <!-- Category Filter -->
+                  <div class="filter-group">
+                    <h4>Category</h4>
+                    <select name="category" onchange="this.form.submit()">
+                      <option value="">All Categories</option>
+                      <% categories.forEach(category => { %>
+                        <option value="<%= category.slug %>" <%= currentFilters.category === category.slug ? 'selected' : '' %>>
+                          <%= category.name %>
+                        </option>
+                      <% }); %>
+                    </select>
+                  </div>
+
+                  <!-- Brand Filter -->
+                  <div class="filter-group">
+                    <h4>Brand</h4>
+                    <select name="brand" onchange="this.form.submit()">
+                      <option value="">All Brands</option>
+                      <% brands.forEach(brand => { %>
+                        <option value="<%= brand %>" <%= currentFilters.brand === brand ? 'selected' : '' %>>
+                          <%= brand %>
+                        </option>
+                      <% }); %>
+                    </select>
+                  </div>
+
+                  <!-- Price Range Filter -->
+                  <div class="filter-group">
+                    <h4>Price Range</h4>
+                    <div class="price-inputs">
+                      <input type="number" name="price_min" placeholder="Min Price" value="<%= currentFilters.price_min || '' %>">
+                      <span>to</span>
+                      <input type="number" name="price_max" placeholder="Max Price" value="<%= currentFilters.price_max || '' %>">
+                    </div>
+                  </div>
+
+                  <!-- Apply and Clear Buttons -->
+                  <div class="filter-buttons">
+                    <button type="submit" class="btn-apply">Apply Filters</button>
+                    <button type="button" onclick="clearFilters()" class="btn-clear">Clear Filters</button>
+                  </div>
+                </form>
+              </div>
+            </div>
+
+            <!-- Results -->
+            <div class="col-lg-9 col-md-8">
+              <% if (error) { %>
+                <div class="alert alert-danger">
+                  <%= error %>
+                </div>
+              <% } else if (products.length === 0) { %>
+                <div class="no-results">
+                  <div class="no-results-icon">
+                    <i class="fas fa-search"></i>
+                  </div>
+                  <h3>No products found</h3>
+                  <p>
+                    <% if (query) { %>
+                      Sorry, we couldn't find any products matching "<%= query %>". Try adjusting your search terms or filters.
+                    <% } else { %>
+                      Start typing in the search box above to find products.
+                    <% } %>
+                  </p>
+                  <a href="/home" class="btn btn-primary">Browse All Products</a>
+                </div>
+              <% } else { %>
+                <!-- Products Grid -->
+                <div class="products-grid">
+                  <div class="row">
+                    <% products.forEach(product => {
+                      const isOutOfStock = product.stock <= 0;
+                      const isBlocked = product.isBlocked;
+                      const isUnavailable = isOutOfStock || isBlocked;
+                    %>
+                      <div class="col-lg-4 col-md-6 col-sm-6 mb-4">
+                        <a href="<%= isUnavailable ? '#' : '/user/product/' + product._id %>"
+                          style="text-decoration: none; color: inherit; <%= isUnavailable ? 'pointer-events: none; cursor: not-allowed;' : '' %>">
+                          <div class="product-card text-center <%= isUnavailable ? 'blocked-product' : '' %>">
+                            <div class="icon-stack">
+                              <% if (!isUnavailable) { %>
+                                <button class="wishlist-icon <%= (wishlist && Array.isArray(wishlist.products) && wishlist.products.some(p => p._id.toString() === product._id.toString())) ? 'active' : '' %>"
+                                  onclick="toggleWishlist('<%= product._id %>', this, event)">
+                                  <i class="fas fa-heart"></i>
+                                </button>
+                                <button class="cart-icon" onclick="addToCart('<%= product._id %>', event)">
+                                  <i class="fas fa-cart-plus"></i>
+                                </button>
+                              <% } else { %>
+                                <button class="wishlist-icon" disabled style="cursor: not-allowed;" title="Unavailable">
+                                  <i class="fas fa-heart text-muted"></i>
+                                </button>
+                                <button class="cart-icon" disabled style="cursor: not-allowed;" title="Out of Stock">
+                                  <i class="fas fa-cart-plus text-muted"></i>
+                                </button>
+                              <% } %>
+                            </div>
+
+                            <img src="/uploads/<%= product.images[0] %>" alt="<%= product.name %>" class="img-fluid">
+                            <p class="mt-2"><%= product.name %></p>
+
+                            <p>
+                              <% 
+                                var finalPrice = product.salesPrice || product.regularPrice;
+                                var originalPrice = product.regularPrice;
+                                var showDiscount = false;
+                                if (product.offerDetails?.hasOffer) {
+                                  finalPrice = product.offerDetails.price;
+                                  originalPrice = product.offerDetails.originalPrice;
+                                  showDiscount = true;
+                                } else if (product.salesPrice) {
+                                  showDiscount = true;
+                                }
+                              %>
+                              <span class="current-price">₹<%= finalPrice.toLocaleString('en-IN') %></span>
+                              <% if (showDiscount) { %>
+                                <span class="original-price" style="text-decoration: line-through; color: #999; margin-left: 5px;">
+                                  ₹<%= originalPrice.toLocaleString('en-IN') %>
+                                </span>
+                                <% const discountPercent = Math.round((originalPrice - finalPrice) / originalPrice * 100); %>
+                                <% if (discountPercent > 0) { %>
+                                  <span class="discount-badge" style="background: #ff6b6b; color: white; padding: 2px 5px; border-radius: 3px; font-size: 12px; margin-left: 5px;">
+                                    <%= discountPercent %>% OFF
+                                  </span>
+                                <% } %>
+                              <% } %>
+                            </p>
+
+                            <% if (isOutOfStock) { %>
+                              <p class="text-danger fw-bold">Out of Stock</p>
+                            <% } else if (isBlocked) { %>
+                              <p class="text-warning fw-bold">Product Unavailable</p>
+                            <% } %>
+                          </div>
+                        </a>
+                      </div>
+                    <% }); %>
+                  </div>
+                </div>
+
+                <!-- Pagination -->
+                <% if (pagination.totalPages > 1) { %>
+                  <nav aria-label="Search results pagination" class="pagination-nav">
+                    <ul class="pagination justify-content-center">
+                      <% if (pagination.hasPrevPage) { %>
+                        <li class="page-item">
+                          <a class="page-link" href="<%= buildPaginationUrl(pagination.prevPage) %>" aria-label="Previous">
+                            <span aria-hidden="true">&laquo;</span>
+                          </a>
+                        </li>
+                      <% } %>
+
+                      <% for (let i = Math.max(1, pagination.currentPage - 2); i <= Math.min(pagination.totalPages, pagination.currentPage + 2); i++) { %>
+                        <li class="page-item <%= i === pagination.currentPage ? 'active' : '' %>">
+                          <a class="page-link" href="<%= buildPaginationUrl(i) %>"><%= i %></a>
+                        </li>
+                      <% } %>
+
+                      <% if (pagination.hasNextPage) { %>
+                        <li class="page-item">
+                          <a class="page-link" href="<%= buildPaginationUrl(pagination.nextPage) %>" aria-label="Next">
+                            <span aria-hidden="true">&raquo;</span>
+                          </a>
+                        </li>
+                      <% } %>
+                    </ul>
+                  </nav>
+                <% } %>
+              <% } %>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer>
+    <div class="footer-links">
+      <a href="#">Privacy Policy</a>
+      <a href="#">Terms of Service</a>
+      <a href="/user/aboutus" class="text-white text-decoration-none" data-translate="about">About</a>
+      <a href="/user/services" class="text-white text-decoration-none" data-translate="services">Services</a>
+      <a href="/user/support" class="text-white text-decoration-none" data-translate="support">Support</a>
+      <a href="/user/contact" class="text-white text-decoration-none" data-translate="contact">Contact Us</a>
+    </div>
+  </footer>
+
+  <script src="/js/search.js"></script>
+  <script src="/js/page.js"></script>
+  <script src="/js/loader.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/js/bootstrap.bundle.min.js"
+    integrity="sha384-ENjdO4Dr2bkBIFxQpeo1zE63F5oY6pD8Cqh1zFHmZxEFSfoN3jD9RVBl+zR8KSk"
+    crossorigin="anonymous"></script>
+
+  <script>
+    function addToCart(productId, event) {
+      event.preventDefault();
+
+      fetch('/cart/add', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ productId, quantity: 1 })
+      })
+        .then(res => res.json())
+        .then(data => {
+          console.log('Cart response:', data);
+
+          if (data.success) {
+            Swal.fire({
+              icon: 'success',
+              title: 'Added to cart!',
+              showConfirmButton: false,
+              timer: 1200
+            });
+          } else {
+            Swal.fire({
+              icon: 'error',
+              title: 'Failed to add to cart',
+              text: data.message || data.error || 'Please try again.'
+            });
+          }
+        })
+        .catch(error => {
+          console.error('Cart Error:', error);
+          Swal.fire('Error', 'Please Check Your Login', 'error');
+        });
+    }
+
+    function toggleWishlist(productId, btn, event) {
+      event.preventDefault();
+
+      fetch('/wishlist/toggle', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ productId })
+      })
+        .then(res => res.json())
+        .then(data => {
+          if (data.isInWishlist) {
+            btn.classList.add('active');
+            Swal.fire({ icon: 'success', title: 'Added to wishlist!', timer: 1000, showConfirmButton: false });
+          } else {
+            btn.classList.remove('active');
+            Swal.fire({ icon: 'info', title: 'Removed from wishlist', timer: 1000, showConfirmButton: false });
+          }
+        })
+        .catch(err => {
+          console.error('Wishlist toggle error:', err);
+          Swal.fire({ icon: 'error', title: 'Please Check Your Login' });
+        });
+    }
+
+    function clearFilters() {
+      const currentUrl = new URL(window.location);
+      currentUrl.search = '';
+      if (currentUrl.searchParams.get('q')) {
+        currentUrl.searchParams.delete('q');
+      }
+      window.location.href = currentUrl.toString();
+    }
+
+    // Load cart and wishlist counts
+    document.addEventListener('DOMContentLoaded', () => {
+      // Cart count
+      fetch('/cart/count')
+        .then(res => res.json())
+        .then(data => {
+          const badge = document.getElementById('cart-count');
+          if (data.count > 0) {
+            badge.style.display = 'inline-block';
+            badge.textContent = data.count;
+          } else {
+            badge.style.display = 'none';
+          }
+        })
+        .catch(err => console.error('Error fetching cart count:', err));
+
+      // Wishlist count
+      fetch('/wishlist/count')
+        .then(res => res.json())
+        .then(data => {
+          const badge = document.getElementById('wishlist-count');
+          if (badge) {
+            badge.textContent = data.count || 0;
+          }
+        })
+        .catch(err => console.error('Error fetching wishlist count:', err));
+    });
+  </script>
+
+  <!-- Pagination URL Builder -->
+  <script>
+    function buildPaginationUrl(page) {
+      const url = new URL(window.location);
+      url.searchParams.set('page', page);
+      return url.toString();
+    }
+  </script>
+</body>
+
+</html>
