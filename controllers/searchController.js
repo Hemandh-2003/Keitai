@@ -145,7 +145,8 @@ const getSearchResults = async (req, res) => {
         category: categorySlug
       },
       pagination,
-      title: query ? `Search results for "${query}"` : 'Search Products'
+      title: query ? `Search results for "${query}"` : 'Search Products',
+      error: null
     });
 
   } catch (error) {
