@@ -179,16 +179,26 @@ exports.retryPaymentFromOrder = async (req, res) => {
             return res.status(404).json({ error: 'Order not found' });
         }
 
-        // Set up checkout session for retry
+        // Check if order is eligible for retry
+        if (order.status !== 'Payment Failed' && order.paymentStatus !== 'Failed') {
+            return res.status(400).json({ error: 'Order is not eligible for retry' });
+        }
+
+        // Set up checkout session for retry with proper structure
         req.session.checkout = {
-            orderId: order._id.toString(),
-            totalAmount: order.totalAmount,
             productIds: order.products.map(p => p.product._id.toString()),
             quantities: order.products.map(p => p.quantity),
-            addressId: order.selectedAddress?._id || null,
-            paymentMethod: 'Razorpay',
-            isRetry: true
+            offerPrices: order.products.map(p => p.unitPrice || p.price),
+            totalAmount: order.totalAmount,
+            orderId: order._id.toString(),
+            selectedAddress: order.selectedAddress?.toString(),
+            isRetry: true,
+            retryOrderId: order._id.toString()
         };
+
+        // Clear any existing pending order data
+        delete req.session.pendingOrderData;
+        delete req.session.coupon;
 
         await req.session.save();
         res.redirect('/user/checkout');

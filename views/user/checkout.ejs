@@ -364,9 +364,11 @@ const orderId = session?.checkout?.orderId;
                 </div>
               </label>
               <% }); %>
-                <button type="button" class="add-address" id="openAddAddressModal">
-                  <i class="fas fa-plus-circle"></i> Add New Address
-                </button>
+                <% if (!isRetryPayment) { %>
+                  <button type="button" class="add-address" id="openAddAddressModal">
+                    <i class="fas fa-plus-circle"></i> Add New Address
+                  </button>
+                <% } %>
           </div>
         </section>
 
@@ -544,6 +546,17 @@ const orderId = session?.checkout?.orderId;
       if (selectedAddress) {
         selectedAddress.closest('.address-item').classList.add('selected');
       }
+      
+      // For retry payments, pre-select the address if available
+      const retryAddressId = '<%= (isRetryPayment && session.checkout && session.checkout.selectedAddress) ? session.checkout.selectedAddress : "" %>';
+      if (retryAddressId) {
+        const retryAddress = document.querySelector('input[name="selectedAddress"][value="' + retryAddressId + '"]');
+        if (retryAddress) {
+          retryAddress.checked = true;
+          retryAddress.closest('.address-item').classList.add('selected');
+        }
+      }
+      
       // Initialize payment method state
       document.querySelector('input[name="paymentMethod"]:checked').dispatchEvent(new Event('change'));
     });
@@ -751,26 +764,24 @@ document.querySelector('.submit-btn').addEventListener('click', async (e) => {
       
       rzp.on('payment.failed', async function (response) {
         try {
-          // Store failed order ID if available
-          if (response.error && response.error.metadata && response.error.metadata.order_id) {
-            localStorage.setItem('failedOrderId', response.error.metadata.order_id);
-          }
-
+          console.log('Payment failed response:', response);
+          
           await Swal.fire({
             icon: 'error',
             title: 'Payment Failed',
-            text: 'Your payment was unsuccessful. Redirecting to retry payment...',
-            showConfirmButton: false,
-            timer: 2000
+            text: 'Your payment was unsuccessful. You can retry the payment from your orders.',
+            confirmButtonText: 'View Orders',
+            showCancelButton: true,
+            cancelButtonText: 'Try Again'
+          }).then((result) => {
+            if (result.isConfirmed) {
+              // Go to orders page
+              window.location.href = '/user/orders';
+            } else {
+              // Try again - reload checkout page
+              window.location.reload();
+            }
           });
-
-          // Redirect to retry payment endpoint (fallback to orders if no id)
-          const failedOrderId = response.error?.metadata?.order_id;
-          if (failedOrderId) {
-            window.location.href = `/api/payment/retry/${failedOrderId}`;
-          } else {
-            window.location.href = '/user/orders';
-          }
         } catch (err) {
           console.error('Payment failure handling error:', err);
           window.location.href = '/user/orders'; // Fallback redirect

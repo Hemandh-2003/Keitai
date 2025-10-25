@@ -19,7 +19,7 @@ exports.getCheckout = async (req, res) => {
     let checkout = req.session.checkout;
     const user = await User.findById(req.session.user._id);
 
-    // Robust check for session data
+    // Handle retry payment scenario
     if ((!checkout || !Array.isArray(checkout.productIds) || !checkout.productIds.length) && req.session.retryOrderId) {
       const retryOrder = await Order.findById(req.session.retryOrderId).populate('products.product');
       if (!retryOrder) return res.status(HTTP_STATUS.NOT_FOUND).render('user/error', { message: 'Retry order not found' });
@@ -30,6 +30,7 @@ exports.getCheckout = async (req, res) => {
         offerPrices: retryOrder.products.map(p => p.unitPrice),
         totalAmount: retryOrder.totalAmount,
         orderId: retryOrder._id.toString(),
+        selectedAddress: retryOrder.selectedAddress?.toString(),
         isRetry: true
       };
       req.session.checkout = checkout;
@@ -134,16 +135,23 @@ exports.placeOrder = async (req, res) => {
 
   if (!checkoutData || !Array.isArray(checkoutData.productIds)) return res.status(HTTP_STATUS.BAD_REQUEST).json({ error: "Checkout session missing or invalid." });
 
-    const { productIds, quantities, totalAmount: sessionTotal } = checkoutData; // Removed offerPrices from destructuring
+    const { productIds, quantities, totalAmount: sessionTotal, isRetry, orderId: retryOrderId } = checkoutData;
     const user = await User.findById(req.session.user._id);
   if (!user) return res.status(HTTP_STATUS.NOT_FOUND).json({ error: "User not found" });
 
-    const address = user.addresses.id(selectedAddress);
-  if (!address) {
-    const available = (user.addresses || []).map(a => a._id ? a._id.toString() : a.toString());
-    console.error(`Address not found for user ${user._id}. posted selectedAddress=${selectedAddress}. available addresses=${available}`);
-    return res.status(HTTP_STATUS.NOT_FOUND).json({ error: "Address not found", selectedAddress: selectedAddress || null, availableAddresses: available });
-  }
+    // Handle retry payment - use existing address if available
+    let address;
+    if (isRetry && checkoutData.selectedAddress) {
+      address = user.addresses.id(checkoutData.selectedAddress);
+    } else {
+      address = user.addresses.id(selectedAddress);
+    }
+    
+    if (!address) {
+      const available = (user.addresses || []).map(a => a._id ? a._id.toString() : a.toString());
+      console.error(`Address not found for user ${user._id}. posted selectedAddress=${selectedAddress}. available addresses=${available}`);
+      return res.status(HTTP_STATUS.NOT_FOUND).json({ error: "Address not found", selectedAddress: selectedAddress || null, availableAddresses: available });
+    }
 
     // Fetch products based on IDs
     const products = await Product.find({ _id: { $in: productIds } });
@@ -166,9 +174,11 @@ exports.placeOrder = async (req, res) => {
       subTotalAmount += currentPrice * qty;
       orderItems.push({ product: product._id, quantity: qty, unitPrice: currentPrice }); // Store product ID, not the object
       
-      // Update the product stock (deduct quantity)
-      product.quantity -= qty;
-      await product.save();
+      // Only update stock if this is not a retry payment (retry payments don't need stock deduction)
+      if (!isRetry) {
+        product.quantity -= qty;
+        await product.save();
+      }
     }
     
     let totalAmount = subTotalAmount; // Start final total calculation
@@ -192,17 +202,36 @@ exports.placeOrder = async (req, res) => {
     
     // Ensure all response methods return JSON for AJAX compatibility
     if (paymentMethod === "COD" || paymentMethod === "Wallet") {
-      const order = await Order.create({
-        user: user._id,
-        selectedAddress: address._id,
-        products: orderItems,
-        totalAmount,
-        paymentMethod,
-        deliveryCharge,
-        estimatedDelivery: new Date(Date.now() + 6 * 24 * 60 * 60 * 1000),
-        status: paymentMethod === "COD" ? "Placed" : "Paid",
-        couponDiscount
-      });
+      let order;
+      
+      if (isRetry && retryOrderId) {
+        // Update existing order for retry payment
+        order = await Order.findByIdAndUpdate(retryOrderId, {
+          selectedAddress: address._id,
+          products: orderItems,
+          totalAmount,
+          paymentMethod,
+          deliveryCharge,
+          estimatedDelivery: new Date(Date.now() + 6 * 24 * 60 * 60 * 1000),
+          status: paymentMethod === "COD" ? "Placed" : "Paid",
+          paymentStatus: paymentMethod === "COD" ? "Pending" : "Paid",
+          couponDiscount
+        }, { new: true });
+      } else {
+        // Create new order
+        order = await Order.create({
+          user: user._id,
+          selectedAddress: address._id,
+          products: orderItems,
+          totalAmount,
+          paymentMethod,
+          deliveryCharge,
+          estimatedDelivery: new Date(Date.now() + 6 * 24 * 60 * 60 * 1000),
+          status: paymentMethod === "COD" ? "Placed" : "Paid",
+          paymentStatus: paymentMethod === "COD" ? "Pending" : "Paid",
+          couponDiscount
+        });
+      }
 
       if (paymentMethod === "Wallet") {
         user.wallet.balance -= totalAmount;
@@ -252,7 +281,9 @@ exports.placeOrder = async (req, res) => {
         totalAmount,
         paymentMethod,
         deliveryCharge,
-        couponDiscount
+        couponDiscount,
+        isRetry: isRetry || false,
+        retryOrderId: retryOrderId || null
     };
 
     // Return the total amount needed for Razorpay to the client
@@ -699,22 +730,47 @@ exports.verifyPayment = async (req, res) => {
 
     console.log('✅ Payment signature verified, creating order from pending data...');
 
-    // Create order from pending data (pending.products is an array of { product, quantity, unitPrice })
-    const order = await Order.create({
-      user: user._id,
-      selectedAddress: pending.selectedAddress,
-      products: pending.products.map(p => ({
-        product: p.product,
-        quantity: p.quantity,
-        unitPrice: p.unitPrice
-      })),
-      totalAmount: pending.totalAmount,
-      paymentMethod: "Online",
-      deliveryCharge: pending.deliveryCharge,
-      status: "Paid",
-      couponDiscount: pending.couponDiscount,
-      estimatedDelivery: new Date(Date.now() + 6 * 24 * 60 * 60 * 1000),
-    });
+    let order;
+    if (pending.isRetry && pending.retryOrderId) {
+      // Update existing order for retry payment
+      order = await Order.findByIdAndUpdate(pending.retryOrderId, {
+        selectedAddress: pending.selectedAddress,
+        products: pending.products.map(p => ({
+          product: p.product,
+          quantity: p.quantity,
+          unitPrice: p.unitPrice
+        })),
+        totalAmount: pending.totalAmount,
+        paymentMethod: "Online",
+        deliveryCharge: pending.deliveryCharge,
+        status: "Paid",
+        paymentStatus: "Paid",
+        couponDiscount: pending.couponDiscount,
+        estimatedDelivery: new Date(Date.now() + 6 * 24 * 60 * 60 * 1000),
+        razorpayOrderId: razorpay_order_id,
+        razorpayPaymentId: razorpay_payment_id
+      }, { new: true });
+    } else {
+      // Create new order
+      order = await Order.create({
+        user: user._id,
+        selectedAddress: pending.selectedAddress,
+        products: pending.products.map(p => ({
+          product: p.product,
+          quantity: p.quantity,
+          unitPrice: p.unitPrice
+        })),
+        totalAmount: pending.totalAmount,
+        paymentMethod: "Online",
+        deliveryCharge: pending.deliveryCharge,
+        status: "Paid",
+        paymentStatus: "Paid",
+        couponDiscount: pending.couponDiscount,
+        estimatedDelivery: new Date(Date.now() + 6 * 24 * 60 * 60 * 1000),
+        razorpayOrderId: razorpay_order_id,
+        razorpayPaymentId: razorpay_payment_id
+      });
+    }
 
     console.log('✅ Order created:', order._id);
 
@@ -749,8 +805,12 @@ exports.verifyPayment = async (req, res) => {
     req.session.orderId = order._id.toString();
     req.session.paymentVerified = true;
 
-    // Clear pending data
+    // Clear pending data and retry session data
     delete req.session.pendingOrderData;
+    if (pending.isRetry) {
+      delete req.session.retryOrderId;
+      delete req.session.checkout;
+    }
 
     console.log('✅ Session updated, ready to redirect to confirm-payment');
 

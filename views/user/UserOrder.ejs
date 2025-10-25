@@ -465,12 +465,9 @@
             </div>
             <footer>
               <% if (order.status==='Payment Failed' ) { %>
-                 <form action="/api/payment/retry/<%= order._id %>" method="POST" style="display:inline;">
-    <input type="hidden" name="orderId" value="<%= order._id %>">
-    <button type="submit" class="view-details-btn retry-payment-btn">
+                 <button onclick="window.location.href='/api/payment/retry/<%= order._id %>'" class="view-details-btn retry-payment-btn">
       <i class="fas fa-sync-alt"></i> Retry Payment
     </button>
-  </form>
                 <% } else { %>
                   <button class="view-details-btn">
                     <a href="/user/order/<%= order._id %>">
