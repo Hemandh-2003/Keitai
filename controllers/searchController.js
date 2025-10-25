@@ -1,5 +1,6 @@
 const Product = require('../models/Product');
 const Category = require('../models/Category');
+const Wishlist = require('../models/Wishlist');
 
 // Get search results page
 const getSearchResults = async (req, res) => {
@@ -106,6 +107,13 @@ const getSearchResults = async (req, res) => {
       isDeleted: false 
     });
 
+    // Get user's wishlist if logged in
+    let wishlist = null;
+    const userId = req.user?._id;
+    if (userId) {
+      wishlist = await Wishlist.findOne({ user: userId }).populate('products');
+    }
+
     // Calculate pagination info
     const totalPages = Math.ceil(totalProducts / limitNum);
     const hasNextPage = pageNum < totalPages;
@@ -127,6 +135,7 @@ const getSearchResults = async (req, res) => {
       products,
       categories,
       brands,
+      wishlist,
       query: query || '',
       sort,
       currentFilters: {
@@ -145,6 +154,7 @@ const getSearchResults = async (req, res) => {
       products: [],
       categories: [],
       brands: [],
+      wishlist: null,
       query: '',
       sort: 'relevance',
       currentFilters: {},
