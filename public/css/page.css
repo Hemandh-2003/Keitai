@@ -342,6 +342,7 @@ main {
   max-height: 150px;
   border-radius: 8px;
   object-fit: contain;
+  margin-left: 79px;
 }
 
 .product-card .price-container {
