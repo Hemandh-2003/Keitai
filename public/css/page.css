@@ -568,6 +568,7 @@ input[type="checkbox"]:checked, input[type="radio"]:checked {
   top: 10px;
   right: 0px;
   z-index: 2;
+  margin-top: 38px;
 }
 
 .wishlist-icon button {
