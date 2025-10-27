@@ -794,7 +794,7 @@ exports.verifyPayment = async (req, res) => {
 
     console.log('✅ Session updated, ready to redirect to confirm-payment');
 
- return res.redirect('/user/confirm-payment');
+return res.json({ success: true, redirectUrl: "/user/confirm-payment" });
 
   } catch (err) {
     console.error("❌ verifyPayment Error:", err);
