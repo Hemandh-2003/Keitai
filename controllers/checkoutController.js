@@ -255,15 +255,8 @@ exports.placeOrder = async (req, res) => {
       req.session.coupon = null;
       return res.json({ success: true, redirectUrl: '/user/confirm-payment' });
     }
-<<<<<<< HEAD
-
-    // ONLINE PAYMENT - Now only creates the order session, but does NOT create the Razorpay ID.
-    // The EJS client will now call /user/create-razorpay-order
-    
-    // Save order data temporarily to session before Razorpay payment starts
 
 if (paymentMethod === "Online") {
-  // Step 1: Create a pending order in MongoDB
   const order = await Order.create({
     user: user._id,
     selectedAddress: address._id,
@@ -278,8 +271,6 @@ if (paymentMethod === "Online") {
   });
 
   console.log("🟡 Pending order created before Razorpay:", order._id);
-
-  // Step 2: Save to session so that /payment/failed or /verify-payment can find it
   req.session.pendingOrderData = {
     orderId: order._id,
     products: orderItems,
@@ -291,7 +282,7 @@ if (paymentMethod === "Online") {
     isRetry: isRetry || false,
     retryOrderId: retryOrderId || null
   };
-=======
+
     req.session.pendingOrderData = {
         products: orderItems,
         selectedAddress: address._id,
@@ -302,14 +293,11 @@ if (paymentMethod === "Online") {
         isRetry: isRetry || false,
         retryOrderId: retryOrderId || null
     };
->>>>>>> 769d129a38449a7e280834c545fae0bde9b0978e
 
-    // Return the total amount needed for Razorpay to the client
     res.json({ success: true, totalAmount,orderId: order._id, message: "Ready for Razorpay payment" });
 }
   } catch (err) {
     console.error('Place Order error:', err);
-    // Ensure this always returns JSON with an error message
     res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ error: "Failed to create order session: " + err.message });
   }
 };
@@ -336,8 +324,8 @@ exports.renderOrderConfirmation = async (req, res) => {
       paymentMethod: checkoutData.orderData.paymentMethod || "Online",
       address,
       estimatedDate: new Date(Date.now() + 6 * 24 * 60 * 60 * 1000),
-      razorpayKeyId: process.env.RAZORPAY_KEY_ID, // Pass to EJS
-      user: req.session.user // Pass user data for prefill
+      razorpayKeyId: process.env.RAZORPAY_KEY_ID,
+      user: req.session.user 
     });
   } catch (err) {
     console.error("Error rendering order confirmation:", err);
