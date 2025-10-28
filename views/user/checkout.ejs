@@ -611,6 +611,7 @@ document.querySelector('.submit-btn').addEventListener('click', async (e) => {
         }
         
         const data = await response.json();
+        console.log('line 614 redirecturl',data.redirectUrl)
         if (data.success && data.redirectUrl) {
             window.location.href = data.redirectUrl;
         } else {
@@ -727,14 +728,14 @@ document.querySelector('.submit-btn').addEventListener('click', async (e) => {
             });
             
             // Robust verification response handling
-            console.log('verifyRes status:', verifyRes.status, 'ok:', verifyRes.ok);
+            console.log('731 verifyRes status:', verifyRes.status, 'ok:', verifyRes.ok);
             if (!verifyRes.ok) {
                 const errorData = await verifyRes.json().catch(() => ({ error: 'Verification server failed.' }));
                 throw new Error(errorData.error || `Verification failed with status ${verifyRes.status}`);
             }
 
             const verifyData = await verifyRes.json().catch(() => null);
-            console.log('verifyData:', verifyData);
+            console.log('738 verifyData:', verifyData);
 
             if (verifyData && verifyData.success) {
               // Force a replace navigation so no other handlers can interrupt
@@ -761,10 +762,14 @@ document.querySelector('.submit-btn').addEventListener('click', async (e) => {
       };
 
       const rzp = new Razorpay(options);
-      
+      let track = ''
       rzp.on('payment.failed', async function (response) {
+        track=response
+        console.log(track)
+  console.log('Payment failed event triggered:', response);
         try {
           console.log('Payment failed response:', response);
+          console.log('failedOrderId',sessionData);
           
           await Swal.fire({
             icon: 'error',
@@ -774,12 +779,21 @@ document.querySelector('.submit-btn').addEventListener('click', async (e) => {
             showCancelButton: true,
             cancelButtonText: 'Try Again'
           }).then((result) => {
-            if (result.isConfirmed) {
-              // Go to orders page
-              window.location.href = '/user/orders';
-            } else {
-              // Try again - reload checkout page
-              window.location.reload();
+            console.log('User selected option after payment failure:', result);
+            // if (result.isDismissed) {
+            //   // Go to orders page
+            //   window.location.href = '/user/orders';
+            // } else {
+            //   // Try again - reload checkout page
+            //   window.location.reload();
+            // }
+            if(result.isDismissed){
+              const failedOrderId = sessionData?.orderId; // from your checkout session
+              if (failedOrderId) {
+                 window.location.href = `/api/payment/failed?orderId=${failedOrderId}`;
+                } else {
+                 window.location.href = '/user/orders'; // fallback
+              }
             }
           });
         } catch (err) {
@@ -972,9 +986,11 @@ function checkPaymentFailure() {
     const urlParams = new URLSearchParams(window.location.search);
     const paymentStatus = urlParams.get('status');
     const orderId = urlParams.get('orderId');
-
+    console.log('checkpayemnt working()')
+    console.log('status',paymentStatus)
     if (paymentStatus === 'failed' && orderId) {
-        window.location.href = `/api/payment/retry/${orderId}`;
+      console.log('status after',paymentStatus)
+        window.location.href = `/api/retry-checkout/${orderId}`;
         return true;
     }
     return false;

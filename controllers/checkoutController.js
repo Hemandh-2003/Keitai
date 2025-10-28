@@ -275,20 +275,40 @@ exports.placeOrder = async (req, res) => {
     // The EJS client will now call /user/create-razorpay-order
     
     // Save order data temporarily to session before Razorpay payment starts
-    req.session.pendingOrderData = {
-        products: orderItems,
-        selectedAddress: address._id,
-        totalAmount,
-        paymentMethod,
-        deliveryCharge,
-        couponDiscount,
-        isRetry: isRetry || false,
-        retryOrderId: retryOrderId || null
-    };
+
+if (paymentMethod === "Online") {
+  // Step 1: Create a pending order in MongoDB
+  const order = await Order.create({
+    user: user._id,
+    selectedAddress: address._id,
+    products: orderItems,
+    totalAmount,
+    paymentMethod,
+    deliveryCharge,
+    estimatedDelivery: new Date(Date.now() + 6 * 24 * 60 * 60 * 1000),
+    status: "Payment Failed",
+    paymentStatus: "Pending",
+    couponDiscount
+  });
+
+  console.log("🟡 Pending order created before Razorpay:", order._id);
+
+  // Step 2: Save to session so that /payment/failed or /verify-payment can find it
+  req.session.pendingOrderData = {
+    orderId: order._id,
+    products: orderItems,
+    selectedAddress: address._id,
+    totalAmount,
+    paymentMethod,
+    deliveryCharge,
+    couponDiscount,
+    isRetry: isRetry || false,
+    retryOrderId: retryOrderId || null
+  };
 
     // Return the total amount needed for Razorpay to the client
-    res.json({ success: true, totalAmount, message: "Ready for Razorpay payment" });
-
+    res.json({ success: true, totalAmount,orderId: order._id, message: "Ready for Razorpay payment" });
+}
   } catch (err) {
     console.error('Place Order error:', err);
     // Ensure this always returns JSON with an error message
@@ -578,91 +598,91 @@ async function getProductsInOrder(productIds) {
   // return array in same order as productIds, skipping missing
   return productIds.map(id => map.get(id.toString())).filter(Boolean);
 }
-exports.retryCheckout = async (req, res) => {
-  try {
-    if (!req.session.user) return res.redirect('/login');
+// exports.retryCheckout = async (req, res) => {
+//   try {
+//     if (!req.session.user) return res.redirect('/login');
 
-    const userId = req.session.user._id;
+//     const userId = req.session.user._id;
 
-    // Accept either paymentStatus OR status fields (robust)
-    const lastOrder = await Order.findOne({
-      user: userId,
-      $or: [
-        { paymentStatus: { $in: ['failed', 'pending'] } },
-        { status: { $in: ['failed', 'pending'] } }
-      ]
-    }).sort({ createdAt: -1 }).lean();
+//     // Accept either paymentStatus OR status fields (robust)
+//     const lastOrder = await Order.findOne({
+//       user: userId,
+//       $or: [
+//         { paymentStatus: { $in: ['failed', 'pending'] } },
+//         { status: { $in: ['failed', 'pending'] } }
+//       ]
+//     }).sort({ createdAt: -1 }).lean();
 
-    if (!lastOrder || !lastOrder.products || !lastOrder.products.length) {
-      return res.redirect('/cart');
-    }
+//     if (!lastOrder || !lastOrder.products || !lastOrder.products.length) {
+//       return res.redirect('/cart');
+//     }
 
-    const productIds = lastOrder.products.map(p => p.product.toString());
-    const products = await getProductsInOrder(productIds);
+//     const productIds = lastOrder.products.map(p => p.product.toString());
+//     const products = await getProductsInOrder(productIds);
 
-    const sessionCheckout = {
-      productIds: [],
-      quantities: [],
-      offerPrices: [],
-      totalAmount: 0,
-      isFromCart: false
-    };
+//     const sessionCheckout = {
+//       productIds: [],
+//       quantities: [],
+//       offerPrices: [],
+//       totalAmount: 0,
+//       isFromCart: false
+//     };
 
-    // Build sessionCheckout preserving original order and using fields that exist on order items
-    for (const item of lastOrder.products) {
-      const pid = item.product.toString();
-      const prod = products.find(p => p && p._id.toString() === pid);
-      if (!prod || prod.isBlocked || prod.isDeleted) continue;
+//     // Build sessionCheckout preserving original order and using fields that exist on order items
+//     for (const item of lastOrder.products) {
+//       const pid = item.product.toString();
+//       const prod = products.find(p => p && p._id.toString() === pid);
+//       if (!prod || prod.isBlocked || prod.isDeleted) continue;
 
-      const qty = item.quantity || 1;
-      // prefer unitPrice -> price -> fallback to best offer price from DB
-      const price = (item.unitPrice ?? item.price) || (await prod.getBestOfferPrice()).price;
+//       const qty = item.quantity || 1;
+//       // prefer unitPrice -> price -> fallback to best offer price from DB
+//       const price = (item.unitPrice ?? item.price) || (await prod.getBestOfferPrice()).price;
 
-      sessionCheckout.productIds.push(prod._id.toString());
-      sessionCheckout.quantities.push(qty);
-      sessionCheckout.offerPrices.push(price);
-      sessionCheckout.totalAmount += qty * price;
-    }
+//       sessionCheckout.productIds.push(prod._id.toString());
+//       sessionCheckout.quantities.push(qty);
+//       sessionCheckout.offerPrices.push(price);
+//       sessionCheckout.totalAmount += qty * price;
+//     }
 
-    // set retryOrderId so getCheckout can pick up extra data if needed
-    req.session.retryOrderId = lastOrder._id.toString();
-    req.session.checkout = sessionCheckout;
-
-    return res.redirect('/user/checkout');
-  } catch (err) {
-    console.error('Retry checkout error:', err);
-    return res.status(500).redirect('/cart');
-  }
-};
+//     // set retryOrderId so getCheckout can pick up extra data if needed
+//     req.session.retryOrderId = lastOrder._id.toString();
+//     req.session.checkout = sessionCheckout;
+//     console.log('chekcoutilek pon')
+//     return res.redirect('/user/checkout');
+//   } catch (err) {
+//     console.error('Retry checkout error:', err);
+//     return res.status(500).redirect('/cart');
+//   }
+// };
 
 
 exports.retryCheckoutWithOrderId = async (req, res) => {
   try {
     const { orderId } = req.params;
     const userId = req.session.user?._id;
-
+    
     if (!userId) return res.redirect('/login');
-
+    
     const order = await Order.findOne({ _id: orderId, user: userId }).lean();
     if (!order) {
       console.warn('Order not found for retry:', orderId);
       return res.redirect('/user/orders');
     }
-
+    
     // Accept either 'paymentStatus' or 'status' fields marking failure
     const isFailed = (order.paymentStatus && order.paymentStatus === 'failed') ||
-                     (order.status && order.status === 'failed');
-
+    (order.status && order.status === 'failed');
+    
     if (!isFailed) {
       // allow 'pending' as retryable too
       const isPending = (order.paymentStatus && order.paymentStatus === 'pending') ||
-                        (order.status && order.status === 'pending');
+      (order.status && order.status === 'pending');
       if (!isPending) return res.redirect('/user/orders');
     }
 
     const productIds = order.products.map(p => p.product.toString());
     const products = await getProductsInOrder(productIds);
-
+    
     const sessionCheckout = {
       productIds: [],
       quantities: [],
@@ -678,20 +698,21 @@ exports.retryCheckoutWithOrderId = async (req, res) => {
       const pid = item.product.toString();
       const prod = products.find(p => p && p._id.toString() === pid);
       if (!prod || prod.isBlocked || prod.isDeleted) continue;
-
+      
       const qty = item.quantity || 1;
       const price = (item.unitPrice ?? item.price) || (await prod.getBestOfferPrice()).price;
-
+      
       sessionCheckout.productIds.push(prod._id.toString());
       sessionCheckout.quantities.push(qty);
       sessionCheckout.offerPrices.push(price);
       sessionCheckout.totalAmount += qty * price;
     }
-
+    
     // store both checkout and retryOrderId for compatibility
     req.session.checkout = sessionCheckout;
     req.session.retryOrderId = order._id.toString();
-
+    
+    console.log('chekcoutilek povunnu')
     return res.redirect('/user/checkout');
   } catch (err) {
     console.error('Error retrying checkout with orderId:', err);
@@ -814,11 +835,10 @@ exports.verifyPayment = async (req, res) => {
 
     console.log('✅ Session updated, ready to redirect to confirm-payment');
 
-    return res.json({
-      success: true,
-      orderId: order._id,
-      redirectUrl: "/user/confirm-payment"
-    });
+ return res.json({ 
+  success: true, 
+  redirectUrl: '/user/confirm-payment' 
+});
 
   } catch (err) {
     console.error("❌ verifyPayment Error:", err);

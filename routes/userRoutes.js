@@ -46,8 +46,8 @@ router.get('/order-confirmation', protect, checkoutController.renderOrderConfirm
 router.post('/confirm-payment', ...protect, checkoutController.confirmPayment);
 router.get('/confirm-payment', ...protect, checkoutController.renderConfirmPayment);
 router.post('/address/create-inline', checkoutController.createInlineAddress);
-router.get('/retry-checkout', checkoutController.retryCheckout);
-router.get('/retry-checkout/:orderId', checkoutController.retryCheckoutWithOrderId);
+// router.get('/retry-checkout', checkoutController.retryCheckout);
+router.get('/retry-checkout/:orderId', checkoutController.retryCheckoutWithOrderId); 
 router.post('/verify-payment', checkoutController.verifyPayment);
 router.post('/create-razorpay-order', checkoutController.createRazorpayOrder);
 

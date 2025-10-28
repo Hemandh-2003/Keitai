@@ -82,41 +82,100 @@ exports.verifyPayment = async (req, res) => {
   }
 };
 
+// exports.paymentFailed = async (req, res) => {
+//     try {
+//       const orderId = req.query.orderId || req.session?.pendingOrderData?.orderId;
+        
+//         if (!orderId) {
+//             return res.redirect('/user/orders');
+//         }
+
+//         // Update order status
+//         await Order.findByIdAndUpdate(orderId, {
+//             status: 'Payment Failed',
+//             paymentStatus: 'Failed'
+//         });
+
+//         // Clear checkout session
+//         delete req.session.checkout;
+        
+//         // Direct redirect to order details page with retry payment option
+//         return res.redirect(`/user/order-details/${orderId}`);
+//     } catch (err) {
+//         console.error('Payment failure error:', err);
+//         res.status(500).json({ error: 'Payment processing failed. Please try again.' });
+//     }
+// };
+
 exports.paymentFailed = async (req, res) => {
-    try {
-        const orderId = req.session?.checkout?.orderId;
-        
-        if (!orderId) {
-            return res.redirect('/user/orders');
-        }
+  try {
+    const orderId = req.query.orderId || req.session?.pendingOrderData?.orderId;
 
-        // Update order status
-        await Order.findByIdAndUpdate(orderId, {
-            status: 'Payment Failed',
-            paymentStatus: 'Failed'
-        });
-
-        // Clear checkout session
-        delete req.session.checkout;
-        
-        // Direct redirect to order details page with retry payment option
-        return res.redirect(`/user/order-details/${orderId}`);
-    } catch (err) {
-        console.error('Payment failure error:', err);
-        res.status(500).json({ error: 'Payment processing failed. Please try again.' });
+    if (!orderId) {
+      console.warn('⚠️ No orderId found during payment failure redirect.');
+      return res.redirect('/user/orders');
     }
-};
 
+    // Update order to reflect failure
+    await Order.findByIdAndUpdate(orderId, {
+      status: 'Payment Failed',
+      paymentStatus: 'Failed',
+      updatedAt: new Date(),
+    });
+
+    // Clean up sessions
+    delete req.session.checkout;
+    delete req.session.pendingOrderData;
+
+    console.log(`❌ Payment marked as failed for Order: ${orderId}`);
+
+    // Redirect user to order details page with retry option
+    return res.redirect(`/user/order/${orderId}`);
+  } catch (err) {
+    console.error('Payment failure error:', err);
+    res.status(500).json({ error: 'Payment processing failed. Please try again.' });
+  }
+};
 
 exports.renderRetryPaymentPage = (req, res) => {
   const { orderId } = req.body;
-  res.render('user/payment-failed', {
+  res.render('user/checkout', {
     orderId,
     error: 'Please retry your payment.',
     user: req.session.user
   })
 }
+exports.setupRetryPayment = async (req, res) => {
+  try {
+    const { orderId } = req.params;
 
+    // Validate order exists
+    const order = await Order.findById(orderId);
+    if (!order) {
+      return res.status(404).json({ success: false, error: 'Order not found' });
+    }
+
+    // Save retry info in session for checkout
+    req.session.retryOrderId = orderId;
+    req.session.checkout = null; // Clear old checkout if any
+
+    console.log(`🔁 Retry payment initialized for order: ${orderId}`);
+
+    // Respond with redirect URL
+    return res.json({
+      success: true,
+      redirectUrl: '/user/checkout',
+      message: 'Retry payment session prepared.'
+    });
+
+  } catch (error) {
+    console.error('Retry payment setup error:', error);
+    return res.status(500).json({
+      success: false,
+      error: 'Failed to initialize retry payment. Please try again.'
+    });
+  }
+};
 
 exports.paymentSuccess = (req, res) => {
   res.render('user/payment-success', {
@@ -155,7 +214,7 @@ exports.retryPayment = async (req, res) => {
     }
 
     // Redirect to the user-facing order details page (DB _id)
-    return res.redirect(`/user/order-details/${order._id}`);
+    return res.redirect(`/user/order/${order._id}`);
   } catch (err) {
     console.error('Error in retryPayment:', err);
     return res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).send(MESSAGE.SOMETHING_WENT_WRONG || 'Internal Server Error');
@@ -213,7 +272,7 @@ exports.retryPaymentFromOrder = async (req, res) => {
         }
 
         // For regular requests, redirect to order details
-        res.redirect(`/user/order-details/${orderId}`);
+        res.redirect(`/user/order/${orderId}`);
     } catch (err) {
         console.error('Retry payment error:', err);
         res.status(500).json({ error: 'Internal server error' });

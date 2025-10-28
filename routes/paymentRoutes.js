@@ -17,7 +17,7 @@ router.get('/retry/:orderId', paymentController.retryPayment);
 
 // Payment Retry Routes
 router.post('/retry/:orderId', isLoggedIn, paymentController.retryPaymentFromOrder);
-router.get('/retry-payment-page/:orderId', isLoggedIn, paymentController.renderRetryPaymentPage);
+router.get('/retry-payment-page/:orderId', isLoggedIn, paymentController.setupRetryPayment);
 
 // Order Management Routes
 router.get('/order-details/:orderId', isLoggedIn, orderController.getOrderDetails);
