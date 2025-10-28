@@ -19,7 +19,6 @@ exports.getCheckout = async (req, res) => {
     let checkout = req.session.checkout;
     const user = await User.findById(req.session.user._id);
 
-    // Handle retry payment scenario
     if ((!checkout || !Array.isArray(checkout.productIds) || !checkout.productIds.length) && req.session.retryOrderId) {
       const retryOrder = await Order.findById(req.session.retryOrderId).populate('products.product');
       if (!retryOrder) return res.status(HTTP_STATUS.NOT_FOUND).render('user/error', { message: 'Retry order not found' });
@@ -40,11 +39,8 @@ exports.getCheckout = async (req, res) => {
 
     const { productIds, quantities, totalAmount } = checkout;
     const cart = [];
-
-    // NOTE: This logic recalculates product price for display purposes
     for (let i = 0; i < productIds.length; i++) {
       const product = await Product.findById(productIds[i]);
-      // Safety check: skip if product is missing, blocked, or deleted
       if (!product || product.isBlocked || product.isDeleted) continue;
       const offerDetails = await product.getBestOfferPrice();
       cart.push({ product, quantity: quantities[i], offerDetails });
@@ -152,13 +148,10 @@ exports.placeOrder = async (req, res) => {
       console.error(`Address not found for user ${user._id}. posted selectedAddress=${selectedAddress}. available addresses=${available}`);
       return res.status(HTTP_STATUS.NOT_FOUND).json({ error: "Address not found", selectedAddress: selectedAddress || null, availableAddresses: available });
     }
-
-    // Fetch products based on IDs
     const products = await Product.find({ _id: { $in: productIds } });
   if (products.length !== productIds.length) return res.status(HTTP_STATUS.NOT_FOUND).json({ error: "One or more products not found" });
 
-    // **CRITICAL FIX: RECALCULATE FINAL PRICE FROM DATABASE**
-    let subTotalAmount = 0; // Renamed to subTotalAmount for clarity before adding charges/discounts
+    let subTotalAmount = 0; 
     const orderItems = [];
 
     for (let i = 0; i < products.length; i++) {
@@ -167,21 +160,19 @@ exports.placeOrder = async (req, res) => {
       
   if (qty > product.quantity) return res.status(HTTP_STATUS.BAD_REQUEST).json({ error: `Insufficient stock for ${product.name}` });
       
-      // Get the current best offer price directly from the product model/DB
       const offer = await product.getBestOfferPrice(); 
       const currentPrice = offer.price; 
 
       subTotalAmount += currentPrice * qty;
-      orderItems.push({ product: product._id, quantity: qty, unitPrice: currentPrice }); // Store product ID, not the object
+      orderItems.push({ product: product._id, quantity: qty, unitPrice: currentPrice }); 
       
-      // Only update stock if this is not a retry payment (retry payments don't need stock deduction)
       if (!isRetry) {
         product.quantity -= qty;
         await product.save();
       }
     }
     
-    let totalAmount = subTotalAmount; // Start final total calculation
+    let totalAmount = subTotalAmount; 
     
     let deliveryCharge = totalAmount < 50000 ? 80 : 0;
     totalAmount += deliveryCharge;
@@ -195,17 +186,14 @@ exports.placeOrder = async (req, res) => {
       }
     }
 
-    // Payment validation
     if (paymentMethod === "COD" && totalAmount > 20000) return res.status(HTTP_STATUS.BAD_REQUEST).json({ error: "COD limit exceeded." });
     if (paymentMethod === "Wallet" && (!user.wallet || user.wallet.balance < totalAmount)) return res.status(HTTP_STATUS.BAD_REQUEST).json({ error: "Insufficient wallet balance." });
     if (paymentMethod === "Online" && totalAmount > 450000) return res.status(HTTP_STATUS.BAD_REQUEST).json({ error: "Online payment limit exceeded." });
-    
-    // Ensure all response methods return JSON for AJAX compatibility
+
     if (paymentMethod === "COD" || paymentMethod === "Wallet") {
       let order;
       
       if (isRetry && retryOrderId) {
-        // Update existing order for retry payment
         order = await Order.findByIdAndUpdate(retryOrderId, {
           selectedAddress: address._id,
           products: orderItems,
@@ -218,7 +206,6 @@ exports.placeOrder = async (req, res) => {
           couponDiscount
         }, { new: true });
       } else {
-        // Create new order
         order = await Order.create({
           user: user._id,
           selectedAddress: address._id,
@@ -237,8 +224,6 @@ exports.placeOrder = async (req, res) => {
         user.wallet.balance -= totalAmount;
         await user.save();
       }
-
-      // Prepare session data expected by renderConfirmPayment
       try {
         const sessionOrderItems = orderItems.map(oi => {
           const prod = products.find(p => p._id.toString() === oi.product.toString());
@@ -270,6 +255,7 @@ exports.placeOrder = async (req, res) => {
       req.session.coupon = null;
       return res.json({ success: true, redirectUrl: '/user/confirm-payment' });
     }
+<<<<<<< HEAD
 
     // ONLINE PAYMENT - Now only creates the order session, but does NOT create the Razorpay ID.
     // The EJS client will now call /user/create-razorpay-order
@@ -305,6 +291,18 @@ if (paymentMethod === "Online") {
     isRetry: isRetry || false,
     retryOrderId: retryOrderId || null
   };
+=======
+    req.session.pendingOrderData = {
+        products: orderItems,
+        selectedAddress: address._id,
+        totalAmount,
+        paymentMethod,
+        deliveryCharge,
+        couponDiscount,
+        isRetry: isRetry || false,
+        retryOrderId: retryOrderId || null
+    };
+>>>>>>> 769d129a38449a7e280834c545fae0bde9b0978e
 
     // Return the total amount needed for Razorpay to the client
     res.json({ success: true, totalAmount,orderId: order._id, message: "Ready for Razorpay payment" });
@@ -835,10 +833,14 @@ exports.verifyPayment = async (req, res) => {
 
     console.log('✅ Session updated, ready to redirect to confirm-payment');
 
+<<<<<<< HEAD
  return res.json({ 
   success: true, 
   redirectUrl: '/user/confirm-payment' 
 });
+=======
+return res.json({ success: true, redirectUrl: "/user/confirm-payment" });
+>>>>>>> 769d129a38449a7e280834c545fae0bde9b0978e
 
   } catch (err) {
     console.error("❌ verifyPayment Error:", err);

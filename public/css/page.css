@@ -216,7 +216,8 @@ main {
 
 
 .cart-icon-wrapper {
-  position: relative;
+   position: relative;
+  display: inline-block;
 }
 
 .cart-count-badge {
@@ -229,20 +230,18 @@ main {
   padding: 2px 6px;
   font-size: 0.7rem;
   font-weight: bold;
-  display: none;
 }
 
 /* Wishlist Icon */
 .wishlist-icon {
   background: none;
   border: none;
-  font-size: 20px;
   cursor: pointer;
 }
 .wishlist-icon i {
   color: grey;
+  font-size: 20px;
   transition: color 0.3s ease;
-  padding-top: 30px;
 }
 .wishlist-icon:hover i {
   color: rgb(255, 0, 0);
@@ -253,19 +252,17 @@ main {
 /* Add to your CSS file (home.css or watch.css) */
 .wishlist-count-badge {
   position: absolute;
-  margin-left: 0px;
-  top: -8px;
+  top: -6px;
   right: -10px;
-  background: #ff0000;
-  color: #fff;
+  background: red;
+  color: white;
   border-radius: 50%;
-  padding: 2px 7px;
-  font-size: 13px;
+  padding: 2px 6px;
+  font-size: 0.7rem;
   font-weight: bold;
-  z-index: 2;
 }
 .wishlist-icon-wrapper {
-  position: relative;
+ position: relative;
   display: inline-block;
 }
 /* Cart Icon */
@@ -282,9 +279,6 @@ main {
 .cart-icon:hover i {
   color: #084298;
 }
-
-
-
   .blocked-product {
     opacity: 0.6; /* Makes the card appear grayed out */
     pointer-events: none; /* Disables interaction with the card */
@@ -320,51 +314,103 @@ main {
 
 .products {
     display: grid;
-    grid-template-columns: repeat(4, 1fr); /* Always show 4 columns */
+    grid-template-columns: repeat(4, 1fr);
     gap: 1.5rem;
     padding: 1rem;
 }
 
 .product-card {
-    background: #ffffff;
-    border: 1px solid #eee;
-    border-radius: 8px;
-    padding: 15px;
-    text-align: center;
-    position: relative;
-    transition: all 0.3s ease;
+  margin-left: 15px;
+  margin-right: 10px;
+  position: relative;
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 1rem;
+  text-align: center;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
+
 .product-card:hover {
-    transform: scale(1.05);
-    box-shadow: 0 6px 10px rgba(0, 0, 0, 0.2);
+  transform: scale(1.05);
+  box-shadow: 0 6px 10px rgba(0,0,0,0.2);
 }
 
-.product-cards img {
-    width: 100%;
-    max-height: 150px;
-    border-radius: 8px;
-    object-fit: contain; /* Keep the image fully visible */
+.product-card img {
+  width: 100%;
+  max-height: 150px;
+  border-radius: 8px;
+  object-fit: contain;
+  margin-left: 79px;
 }
 
-.product-cards p {
-    margin-top: 0.5rem;
-    font-size: 1rem;
+.product-card .price-container {
+    margin: 10px 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+}
+
+.product-card .current-price {
+    color: #28a745;
+    font-weight: bold;
+    font-size: 1.1rem;
+}
+
+.product-card .original-price {
+    text-decoration: line-through;
+    color: #999;
+    font-size: 0.9rem;
+}
+
+.product-card .discount-badge {
+    background: #e63946;
+    color: white;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 0.8rem;
+}
+
+.product-card .regular-price {
+    font-weight: bold;
     color: #333;
 }
 
-.imgs {
-    width: 100%;
-    max-height: 150px;
-    border-radius: 8px;
-    object-fit: contain;
-    transition: transform 0.3s ease, box-shadow 0.3s ease; /* Smooth transition */
+.product-card .out-of-stock {
+    color: #dc3545;
+    font-size: 0.9rem;
+    margin-top: 5px;
 }
 
-.product-cards:hover {
-    transform: scale(1.05); /* Slightly enlarge the image */
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Add shadow for emphasis */
+/* Update responsive design for product cards */
+@media (max-width: 1024px) {
+    .products {
+        grid-template-columns: repeat(3, 1fr);
+    }
 }
 
+@media (max-width: 768px) {
+    .products {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 480px) {
+    .products {
+        grid-template-columns: 1fr;
+    }
+}
+.action-icons {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-items: flex-end;
+}
 .phone-lineup {
     margin: 2rem 0;
 }
@@ -523,6 +569,7 @@ input[type="checkbox"]:checked, input[type="radio"]:checked {
   top: 10px;
   right: 0px;
   z-index: 2;
+  margin-top: 38px;
 }
 
 .wishlist-icon button {
