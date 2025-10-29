@@ -706,104 +706,108 @@ exports.retryCheckoutWithOrderId = async (req, res) => {
   }
 };
 
+
 exports.verifyPayment = async (req, res) => {
   try {
-    console.log('🔐 verifyPayment called with:', req.body);
+    console.log("🔐 verifyPayment called with:", req.body);
 
     const { razorpay_payment_id, razorpay_order_id, razorpay_signature } = req.body;
     const pending = req.session.pendingOrderData;
     const user = await User.findById(req.session.user._id);
 
-    console.log('Session pendingOrderData:', pending);
-    console.log('User:', user?._id);
+    console.log("Session pendingOrderData:", pending);
+    console.log("User:", user?._id);
 
+    // 1️⃣ Validate session and user
     if (!pending || !user) {
-      console.error('❌ Session expired or pending order data missing');
+      console.error("❌ Session expired or pending order data missing");
       return res.json({ success: false, error: "Session expired. Please try again." });
     }
 
-    // Verify Razorpay signature
-    const crypto = require("crypto");
+    // 2️⃣ Verify Razorpay signature
     const expectedSignature = crypto
       .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET)
-      .update(razorpay_order_id + "|" + razorpay_payment_id)
+      .update(`${razorpay_order_id}|${razorpay_payment_id}`)
       .digest("hex");
 
     if (expectedSignature !== razorpay_signature) {
-      console.error('❌ Invalid Razorpay signature');
-      await Order.findByIdAndUpdate(pending.orderId, {
-        status: "Payment Failed",
-        paymentStatus: "Failed"
-      });
+      console.error("❌ Invalid Razorpay signature");
       return res.json({ success: false, error: "Invalid payment signature" });
     }
 
-    console.log('✅ Payment signature verified, updating order data...');
+    console.log("✅ Payment signature verified, processing order...");
 
+    // 3️⃣ Create or update order
     let order;
 
     if (pending.isRetry && pending.retryOrderId) {
-      // ✅ FIX: Update existing failed order instead of creating a new one
+      // 🔁 Retry payment case: update existing failed order
       order = await Order.findByIdAndUpdate(
         pending.retryOrderId,
         {
           selectedAddress: pending.selectedAddress,
-          products: pending.products.map(p => ({
+          products: pending.products.map((p) => ({
             product: p.product,
             quantity: p.quantity,
-            unitPrice: p.unitPrice
+            unitPrice: p.unitPrice,
           })),
           totalAmount: pending.totalAmount,
           paymentMethod: "Online",
           deliveryCharge: pending.deliveryCharge,
-          status: "Placed",
+          status: "Paid",
           paymentStatus: "Paid",
           couponDiscount: pending.couponDiscount,
           estimatedDelivery: new Date(Date.now() + 6 * 24 * 60 * 60 * 1000),
           razorpayOrderId: razorpay_order_id,
           razorpayPaymentId: razorpay_payment_id,
-          updatedAt: new Date()
         },
         { new: true }
       );
+
       console.log("🔁 Updated failed order to Paid:", order._id);
     } else {
-      // Normal new order (first-time payment)
-      order = await Order.findByIdAndUpdate(
-        pending.orderId,
-        {
-          paymentMethod: "Online",
-          status: "Placed",
-          paymentStatus: "Paid",
-          razorpayOrderId: razorpay_order_id,
-          razorpayPaymentId: razorpay_payment_id,
-          updatedAt: new Date()
-        },
-        { new: true }
-      );
-      console.log("🆕 Marked pending order as Paid:", order._id);
+      // 🆕 New order case
+      order = await Order.create({
+        user: user._id,
+        selectedAddress: pending.selectedAddress,
+        products: pending.products.map((p) => ({
+          product: p.product,
+          quantity: p.quantity,
+          unitPrice: p.unitPrice,
+        })),
+        totalAmount: pending.totalAmount,
+        paymentMethod: "Online",
+        deliveryCharge: pending.deliveryCharge,
+        status: "Paid",
+        paymentStatus: "Paid",
+        couponDiscount: pending.couponDiscount,
+        estimatedDelivery: new Date(Date.now() + 6 * 24 * 60 * 60 * 1000),
+        razorpayOrderId: razorpay_order_id,
+        razorpayPaymentId: razorpay_payment_id,
+      });
+
+      console.log("🆕 New order created:", order._id);
     }
 
-    // Prepare confirmation page data
-    const productIds = pending.products.map(p => p.product);
+    // 4️⃣ Prepare confirmation page session data
+    const productIds = pending.products.map((p) => p.product);
     const productDocs = await Product.find({ _id: { $in: productIds } });
 
-    const orderItems = pending.products.map(p => {
-      const prod = productDocs.find(d => d._id.toString() === p.product.toString());
+    const orderItems = pending.products.map((p) => {
+      const prod = productDocs.find((d) => d._id.toString() === p.product.toString());
       return {
         product: {
           _id: prod?._id || p.product,
-          name: prod?.name || '',
-          brand: prod?.brand || '',
+          name: prod?.name || "",
+          brand: prod?.brand || "",
           images: prod?.images || [],
-          category: prod?.category || null
+          category: prod?.category || null,
         },
         quantity: p.quantity,
-        offerPrice: p.unitPrice
+        offerPrice: p.unitPrice,
       };
     });
 
-    // Update session for confirmation page
     req.session.orderItems = orderItems;
     req.session.address = user.addresses.id(pending.selectedAddress);
     req.session.paymentMethod = "Online";
@@ -814,16 +818,20 @@ exports.verifyPayment = async (req, res) => {
     req.session.orderId = order._id.toString();
     req.session.paymentVerified = true;
 
-    // Clean up sessions
+    // 5️⃣ Cleanup temporary session data
     delete req.session.pendingOrderData;
     if (pending.isRetry) {
       delete req.session.retryOrderId;
       delete req.session.checkout;
     }
 
-    console.log('✅ Session updated, ready to redirect to confirm-payment');
-    return res.json({ success: true, redirectUrl: '/user/confirm-payment' });
+    console.log("✅ Session updated, ready to redirect to confirm-payment");
 
+    // 6️⃣ Send success response for frontend redirection
+    return res.json({
+      success: true,
+      redirectUrl: "/user/confirm-payment",
+    });
   } catch (err) {
     console.error("❌ verifyPayment Error:", err);
     return res.json({ success: false, error: "Payment verification failed" });
