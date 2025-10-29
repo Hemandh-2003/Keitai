@@ -27,7 +27,7 @@ router.get('/address/remove/:addressId', ...protect, userController.removeAddres
 router.get('/orders', ...protect, orderController.viewOrders);
 router.get('/order/:id', ...protect, orderController.viewOrderDetails);
 router.post('/orders/cancel/:id', ...protect, orderController.cancelOrder);
-router.post('/orders/:id/cancel', orderController.cancelEntireOrder);//not using
+//router.post('/orders/:id/cancel', orderController.cancelEntireOrder);
 router.post('/orders/:orderId/return/:productId', orderController.returnProduct);
 router.post('/orders/return/:id', orderController.returnOrder);
 router.post('/orders/cancel-item/:orderId/:productId',...protect,orderController.cancelSingleItem);

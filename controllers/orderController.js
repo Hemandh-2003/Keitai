@@ -6,7 +6,7 @@ const PDFDocument = require('pdfkit');
 const { MESSAGE } = require('../SM/messages');
 const {HTTP_STATUS}= require('../SM/status');
 
-exports.cancelOrder = async (req, res) => {
+/*exports.cancelOrder = async (req, res) => {
   try {
     const { orderId, reason } = req.body;
 
@@ -39,7 +39,7 @@ exports.cancelOrder = async (req, res) => {
     console.error("Cancel order error:", err);
     res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).send(MESSAGE.SOMETHING_WENT_WRONG);
   }
-};
+};*/
 
 
 exports.requestReturn = async (req, res) => {
@@ -1085,7 +1085,7 @@ order.statusHistory.push({
 
 
 // Cancel Order
-exports.cancelOrder = async (req, res) => {
+/*exports.cancelOrder = async (req, res) => {
   try {
     const { orderId } = req.params;
 
@@ -1119,7 +1119,7 @@ exports.cancelOrder = async (req, res) => {
     console.error('Error canceling order:', error);
     res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).send(MESSAGE.SERVER_ERROR);
   }
-};
+};*/
 exports.adminCancelOrder = async (req, res) => {
   try {
     const { orderId } = req.params;
