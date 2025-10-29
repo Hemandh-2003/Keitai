@@ -1,5 +1,4 @@
 const express = require('express');
-const userOrderController= require('../controllers/userOrderController');
 const checkoutController= require('../controllers/checkoutController');
 const productController = require('../controllers/productController'); 
 const settingsController= require('../controllers/settingsController');
@@ -25,14 +24,14 @@ router.post('/address/edit/:addressId', ...protect, userController.updateAddress
 router.get('/address/remove/:addressId', ...protect, userController.removeAddress);
 
 // Order Routes
-router.get('/orders', ...protect, userOrderController.viewOrders);
-router.get('/order/:id', ...protect, userOrderController.viewOrderDetails);
-router.post('/orders/cancel/:id', ...protect, userOrderController.cancelOrder);
-router.post('/orders/:id/cancel', userOrderController.cancelEntireOrder);//not using
-router.post('/orders/:orderId/return/:productId', userOrderController.returnProduct);
-router.post('/orders/return/:id', userOrderController.returnOrder);
-router.post('/orders/cancel-item/:orderId/:productId',...protect,userOrderController.cancelSingleItem);
-router.get('/order/:id/invoice', userOrderController.downloadInvoice);
+router.get('/orders', ...protect, orderController.viewOrders);
+router.get('/order/:id', ...protect, orderController.viewOrderDetails);
+router.post('/orders/cancel/:id', ...protect, orderController.cancelOrder);
+router.post('/orders/:id/cancel', orderController.cancelEntireOrder);//not using
+router.post('/orders/:orderId/return/:productId', orderController.returnProduct);
+router.post('/orders/return/:id', orderController.returnOrder);
+router.post('/orders/cancel-item/:orderId/:productId',...protect,orderController.cancelSingleItem);
+router.get('/order/:id/invoice', orderController.downloadInvoice);
 
 // Product Routes
 // router.get('/home', userController.getProducts);

@@ -2,7 +2,7 @@ const express = require('express');
 const {
   adminDashboard, 
 } = require('../controllers/adminController');
-const adminOrderController= require('../controllers/adminOrderController');
+const orderController= require('../controllers/orderController');
 const adminUserController= require('../controllers/adminUserController');
 const adminCategoryController= require('../controllers/adminCategoryController');
 const offerController= require('../controllers/offerController');
@@ -41,9 +41,9 @@ router.post('/adminlog', async (req, res) => {
 router.get('/dashboard', isAdmin, adminDashboard);
 
 // Order Management Routes
-router.get('/orders', isAdmin, adminOrderController.listOrders); 
-router.post('/orders/update-status/:orderId', isAdmin,adminOrderController.changeOrderStatus); 
-router.post('/orders/cancel/:orderId', isAdmin, adminOrderController.cancelOrder); 
+router.get('/orders', isAdmin, orderController.listOrders); 
+router.post('/orders/update-status/:orderId', isAdmin,orderController.changeOrderStatus); 
+router.post('/orders/cancel/:orderId', isAdmin, orderController.cancelOrder); 
 
 // User Management Routes
 router.get('/users', isAdmin, adminUserController.listUsers);
@@ -80,10 +80,10 @@ router.post('/logout', (req, res) => {
   });
 });
 //order Management Routes
-router.get('/orders', isAdmin, adminOrderController.listOrders);
-router.post('/orders/update-status/:orderId', isAdmin, adminOrderController.changeOrderStatus);
-router.post('/orders/cancel/:orderId', isAdmin, adminOrderController.cancelOrder);
-router.post('/orders/:id/return-status', isAdmin, adminOrderController.updateReturnStatus);
+router.get('/orders', isAdmin, orderController.listOrders);
+router.post('/orders/update-status/:orderId', isAdmin, orderController.changeOrderStatus);
+router.post('/orders/cancel/:orderId', isAdmin, orderController.cancelOrder);
+router.post('/orders/:id/return-status', isAdmin, orderController.updateReturnStatus);
 
 
 // Offer Management Routes
