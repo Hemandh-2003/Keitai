@@ -675,8 +675,27 @@ exports.getContactPage = (req, res) => {
 };
 exports.addToCartFromWishlist = async (req, res) => {
   try {
+    console.log('--- addToCartFromWishlist called ---');
+    console.log('Params:', req.params);
+    console.log('Session user:', req.session ? req.session.user : null);
+
+    if (!req.session || !req.session.user || !req.session.user._id) {
+      console.warn('No session user found');
+      return res.status(HTTP_STATUS.UNAUTHORIZED).json({ success: false, message: 'User not authenticated' });
+    }
+
     const userId = req.session.user._id;
     const productId = req.params.productId;
+
+    if (!productId) {
+      return res.status(HTTP_STATUS.BAD_REQUEST).json({ success: false, message: 'Product id missing' });
+    }
+
+    // Optional: validate productId format
+    const mongoose = require('mongoose');
+    if (!mongoose.Types.ObjectId.isValid(productId)) {
+      return res.status(HTTP_STATUS.BAD_REQUEST).json({ success: false, message: 'Invalid product id' });
+    }
 
     const product = await Product.findOne({ _id: productId, isDeleted: false, isBlocked: false });
 
@@ -707,10 +726,13 @@ exports.addToCartFromWishlist = async (req, res) => {
       { $pull: { products: productId } }
     );
 
-    res.json({ success: true });
+    console.log('Successfully added product to cart and removed from wishlist:', { userId, productId });
+
+    return res.status(HTTP_STATUS.OK).json({ success: true });
   } catch (error) {
     console.error("Add to cart from wishlist error:", error);
-    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ success: false, message: 'Failed to add item to cart' });
+    // TEMP: return error.message for debugging. Remove in production.
+    return res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ success: false, message: 'Failed to add item to cart', error: error.message });
   }
 };
 

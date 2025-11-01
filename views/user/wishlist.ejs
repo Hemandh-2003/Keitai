@@ -276,6 +276,47 @@
       });
     });
   </script>
+<script>
+  document.querySelectorAll('.add-to-cart-btn').forEach(button => {
+    button.addEventListener('click', async (e) => {
+      const productId = e.target.dataset.productId; // <- actual product ID
+
+      try {
+        const res = await fetch(`/add-to-cart-from-wishlist/${productId}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'same-origin'
+        });
+
+        const data = await res.json();
+
+        if (data.success) {
+          Swal.fire({
+            icon: 'success',
+            title: 'Added to Cart!',
+            text: 'Item moved from wishlist to cart.',
+            timer: 1200,
+            showConfirmButton: false
+          });
+          e.target.closest('.wishlist-item').remove();
+        } else {
+          Swal.fire({
+            icon: 'error',
+            title: 'Oops!',
+            text: data.message || 'Failed to add item to cart.'
+          });
+        }
+      } catch (error) {
+        console.error('Error adding to cart (client):', error);
+        Swal.fire({
+          icon: 'error',
+          title: 'Server Error',
+          text: 'Something went wrong. Try again later.'
+        });
+      }
+    });
+  });
+</script>
 </body>
 
 </html>
